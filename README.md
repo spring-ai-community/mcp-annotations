@@ -1,16 +1,27 @@
-# MCP Method Module
+# MCP Annotations
 
-The MCP Method module is part of the Java MCP SDK, providing annotation-based method handling for Model Context Protocol (MCP) servers. This module enables developers to easily create and register methods for handling MCP operations using simple annotations.
+The MCP Annotations project provides annotation-based method handling for Model Context Protocol (MCP) servers in Java. This project consists of two main modules:
+
+1. **mcp-annotations** - Core annotations and method handling for MCP operations
+2. **spring-ai-mcp-annotations** - Spring AI integration for MCP annotations
 
 ## Overview
 
-The MCP Method module provides a set of annotations and callback implementations for three primary MCP operations:
+The MCP Annotations project enables developers to easily create and register methods for handling MCP operations using simple annotations. It provides a clean, declarative approach to implementing MCP server functionality, reducing boilerplate code and improving maintainability.
+
+### Core Module (mcp-annotations)
+
+The core module provides a set of annotations and callback implementations for three primary MCP operations:
 
 1. **Complete** - For auto-completion functionality in prompts and URI templates
 2. **Prompt** - For generating prompt messages
 3. **Resource** - For accessing resources via URI templates
 
 Each operation type has both synchronous and asynchronous implementations, allowing for flexible integration with different application architectures.
+
+### Spring Integration Module (spring-ai-mcp-annotations)
+
+The Spring integration module provides seamless integration with Spring AI and Spring Framework applications. It handles Spring-specific concerns such as AOP proxies and integrates with Spring AI's model abstractions.
 
 ## Key Components
 
@@ -23,7 +34,7 @@ Each operation type has both synchronous and asynchronous implementations, allow
 
 ### Method Callbacks
 
-The module provides callback implementations for each operation type:
+The modules provide callback implementations for each operation type:
 
 #### Complete
 - `AbstractMcpCompleteMethodCallback` - Base class for complete method callbacks
@@ -39,6 +50,22 @@ The module provides callback implementations for each operation type:
 - `AbstractMcpResourceMethodCallback` - Base class for resource method callbacks
 - `SyncMcpResourceMethodCallback` - Synchronous implementation
 - `AsyncMcpResourceMethodCallback` - Asynchronous implementation using Reactor's Mono
+
+### Providers
+
+The project includes provider classes that scan for annotated methods and create appropriate callbacks:
+
+- `SyncMcpCompletionProvider` - Processes `@McpComplete` annotations for synchronous operations
+- `SyncMcpPromptProvider` - Processes `@McpPrompt` annotations for synchronous operations
+- `SyncMcpResourceProvider` - Processes `@McpResource` annotations for synchronous operations
+
+### Spring Integration
+
+The Spring integration module provides:
+
+- `SpringAiMcpAnnotationProvider` - Handles Spring-specific concerns when processing MCP annotations
+- Integration with Spring AOP proxies
+- Support for Spring AI model abstractions
 
 ## Usage Examples
 
@@ -113,15 +140,80 @@ public class AsyncAutocompleteProvider {
 }
 ```
 
+### Resource Example
+
+```java
+public class WeatherResourceProvider {
+    private final WeatherService weatherService;
+    
+    public WeatherResourceProvider(WeatherService weatherService) {
+        this.weatherService = weatherService;
+    }
+    
+    @McpResource(
+        name = "Current Weather",
+        uri = "weather-api://{city}",
+        description = "Get current weather for a city",
+        mimeType = "application/json"
+    )
+    public String getCurrentWeather(@McpArg(name = "city", required = true) String city) {
+        return weatherService.getWeatherForCity(city);
+    }
+}
+```
+
+### Spring Integration Example
+
+```java
+@Configuration
+public class McpConfig {
+    
+    @Bean
+    public List<SyncCompletionSpecification> syncCompletionSpecifications(
+            List<AutocompleteProvider> completeProviders) {
+        return SpringAiMcpAnnotationProvider.createSyncCompleteSpecifications(
+            new ArrayList<>(completeProviders));
+    }
+    
+    @Bean
+    public List<SyncPromptSpecification> syncPromptSpecifications(
+            List<PromptProvider> promptProviders) {
+        return SpringAiMcpAnnotationProvider.createSyncPromptSpecifications(
+            new ArrayList<>(promptProviders));
+    }
+    
+    @Bean
+    public List<SyncResourceSpecification> syncResourceSpecifications(
+            List<ResourceProvider> resourceProviders) {
+        return SpringAiMcpAnnotationProvider.createSyncResourceSpecifications(
+            new ArrayList<>(resourceProviders));
+    }
+}
+```
+
 ## Installation
 
-To use the MCP Method module in your project, add the following dependency to your Maven POM file:
+### Core Module
+
+To use the MCP Annotations core module in your project, add the following dependency to your Maven POM file:
 
 ```xml
 <dependency>
-    <groupId>io.modelcontextprotocol.sdk</groupId>
-    <artifactId>mcp-method</artifactId>
-    <version>0.10.0-SNAPSHOT</version>
+    <groupId>com.logaritex.mcp</groupId>
+    <artifactId>mcp-annotations</artifactId>
+    <version>0.1.0-SNAPSHOT</version>
+</dependency>
+```
+
+### Spring Integration Module
+
+To use the Spring integration module, add the following dependency:
+
+```xml
+<dependency>
+    <groupId>com.logaritex.mcp</groupId>
+    <artifactId>spring-ai-mcp-annotations</artifactId>
+    <version>0.1.0-SNAPSHOT</version>
 </dependency>
 ```
 
@@ -132,8 +224,15 @@ To use the MCP Method module in your project, add the following dependency to yo
 - **Builder pattern for callback creation** - Clean and fluent API for creating method callbacks
 - **Comprehensive validation** - Ensures method signatures are compatible with MCP operations
 - **URI template support** - Powerful URI template handling for resource and completion operations
+- **Spring integration** - Seamless integration with Spring Framework and Spring AI
+- **AOP proxy support** - Proper handling of Spring AOP proxies when processing annotations
 
 ## Requirements
 
 - Java 17 or higher
 - Reactor Core (for async operations)
+- Spring Framework and Spring AI (for spring-ai-mcp-annotations module)
+
+## License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
