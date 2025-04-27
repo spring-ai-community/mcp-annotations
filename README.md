@@ -69,37 +69,86 @@ The Spring integration module provides:
 
 ## Usage Examples
 
+### Prompt Example
+```java
+public class PromptProvider {
+
+    @McpPrompt(name = "personalized-message",
+            description = "Generates a personalized message based on user information")
+    public GetPromptResult personalizedMessage(McpSyncServerExchange exchange,
+            @McpArg(name = "name", description = "The user's name", required = true) String name,
+            @McpArg(name = "age", description = "The user's age", required = false) Integer age,
+            @McpArg(name = "interests", description = "The user's interests", required = false) String interests) {
+
+        exchange.loggingNotification(LoggingMessageNotification.builder()
+            .level(LoggingLevel.INFO)	
+            .data("personalized-message event").build());
+
+        StringBuilder message = new StringBuilder();
+        message.append("Hello, ").append(name).append("!\n\n");
+
+        if (age != null) {
+            message.append("At ").append(age).append(" years old, you have ");
+            if (age < 30) {
+                message.append("so much ahead of you.\n\n");
+            }
+            else if (age < 60) {
+                message.append("gained valuable life experience.\n\n");
+            }
+            else {
+                message.append("accumulated wisdom to share with others.\n\n");
+            }
+        }
+
+        if (interests != null && !interests.isEmpty()) {
+            message.append("Your interest in ")
+                .append(interests)
+                .append(" shows your curiosity and passion for learning.\n\n");
+        }
+
+        message
+            .append("I'm here to assist you with any questions you might have about the Model Context Protocol.");
+
+        return new GetPromptResult("Personalized Message",
+                List.of(new PromptMessage(Role.ASSISTANT, new TextContent(message.toString()))));
+    }
+}
+```
+
 ### Complete Example
 
 ```java
 public class AutocompleteProvider {
+
+    private final Map<String, List<String>> usernameDatabase = new HashMap<>();
     private final Map<String, List<String>> cityDatabase = new HashMap<>();
     
     public AutocompleteProvider() {
         // Initialize with sample data
         cityDatabase.put("l", List.of("Lagos", "Lima", "Lisbon", "London", "Los Angeles"));
+        // ....
+        usernameDatabase.put("a", List.of("alex123", "admin", "alice_wonder", "andrew99"));
         // Add more data...
-    }
-    
+    }    
+
+	@McpComplete(prompt = "personalized-message")
+	public List<String> completeName(String name) {
+		String prefix = name.toLowerCase();
+		String firstLetter = prefix.substring(0, 1);
+		List<String> usernames = usernameDatabase.getOrDefault(firstLetter, List.of());
+
+		return usernames.stream().filter(username -> username.toLowerCase().startsWith(prefix)).toList();
+	}
+
     @McpComplete(prompt = "travel-planner")
     public List<String> completeCityName(CompleteRequest.CompleteArgument argument) {
-        String prefix = argument.value().toLowerCase();
-        if (prefix.isEmpty()) {
-            return List.of("Enter a city name");
-        }
-        
+        String prefix = argument.value().toLowerCase();        
         String firstLetter = prefix.substring(0, 1);
         List<String> cities = cityDatabase.getOrDefault(firstLetter, List.of());
         
         return cities.stream()
             .filter(city -> city.toLowerCase().startsWith(prefix))
             .toList();
-    }
-    
-    @McpComplete(uri = "weather-api://{city}")
-    public List<String> completeCity(CompleteRequest.CompleteArgument argument) {
-        // Similar implementation for URI template completion
-        // ...
     }
 }
 ```
@@ -143,24 +192,80 @@ public class AsyncAutocompleteProvider {
 ### Resource Example
 
 ```java
-public class WeatherResourceProvider {
-    private final WeatherService weatherService;
-    
-    public WeatherResourceProvider(WeatherService weatherService) {
-        this.weatherService = weatherService;
-    }
-    
-    @McpResource(
-        name = "Current Weather",
-        uri = "weather-api://{city}",
-        description = "Get current weather for a city",
-        mimeType = "application/json"
-    )
-    public String getCurrentWeather(@McpArg(name = "city", required = true) String city) {
-        return weatherService.getWeatherForCity(city);
+public class MyResourceProvider {
+
+	private String getUserStatus(String username) {
+		// Simple logic to generate a status
+		if (username.equals("john")) {
+			return "🟢 Online";
+		} else if (username.equals("jane")) {
+			return "🟠 Away";
+		} else if (username.equals("bob")) {
+			return "⚪ Offline";
+		} else if (username.equals("alice")) {
+			return "🔴 Busy";
+		} else {
+			return "⚪ Offline";
+		}
+	}
+
+    @McpResource(uri = "user-status://{username}", 
+        name = "User Status", 
+        description = "Provides the current status for a specific user")
+	public String getUserStatus(String username) {		
+		return this.getUserStatus(username);
+	}
+
+    @McpResource(uri = "user-profile-exchange://{username}", 
+        name = "User Profile with Exchange", 
+        description = "Provides user profile information with server exchange context")
+	public ReadResourceResult getProfileWithExchange(McpSyncServerExchange exchange, String username) {
+
+        exchange.loggingNotification(LoggingMessageNotification.builder()
+			.level(LoggingLevel.INFO)	
+			.data("user-profile-exchange")
+            .build());
+
+		String profileInfo = formatProfileInfo(userProfiles.getOrDefault(username.toLowerCase(), new HashMap<>()));
+
+		return new ReadResourceResult(List.of(new TextResourceContents("user-profile-exchange://" + username,
+				"text/plain", "Profile with exchange for " + username + ": " + profileInfo)));
+	}
+}
+```
+
+### Mcp Server with Resource, Prompt and Completion capabilities
+
+```java
+public class McpSevrverFactory {
+
+    public McpSyncServer createMcpServer(MyResourceProvider myResourceProvider, AutocompleteProvider autocompleteProvider) {
+        
+        List<SyncResourceSpecification> resourceSpecifications = new SyncMcpResourceProvider(List.of(myResourceProvider)).getResourceSpecifications();
+
+        List<SyncCompletionSpecification> completionSpecifications = new SyncMcpCompletionProvider(List.of(autocompleteProvider)).getCompleteSpecifications();
+
+        List<SyncPromptSpecification> promptSpecifications = new SyncMcpPromptProvider(List.of(autocompleteProvider)).getPromptSpecifications();
+
+        // Create a server with custom configuration
+        McpSyncServer syncServer = McpServer.sync(transportProvider)
+            .serverInfo("my-server", "1.0.0")
+            .capabilities(ServerCapabilities.builder()
+                .resources(true)     // Enable resource support
+                .prompts(true)       // Enable prompt support
+                .logging()           // Enable logging support
+                .completions()      // Enable completions support
+                .build())
+            .resources(resourceSpecifications)
+            .completions(completionSpecifications)
+            .prompts(promptSpecifications)
+            .build();
+
+        return syncServer;
     }
 }
 ```
+
 
 ### Spring Integration Example
 
@@ -171,22 +276,19 @@ public class McpConfig {
     @Bean
     public List<SyncCompletionSpecification> syncCompletionSpecifications(
             List<AutocompleteProvider> completeProviders) {
-        return SpringAiMcpAnnotationProvider.createSyncCompleteSpecifications(
-            new ArrayList<>(completeProviders));
+        return SpringAiMcpAnnotationProvider.createSyncCompleteSpecifications(completeProviders);
     }
     
     @Bean
     public List<SyncPromptSpecification> syncPromptSpecifications(
             List<PromptProvider> promptProviders) {
-        return SpringAiMcpAnnotationProvider.createSyncPromptSpecifications(
-            new ArrayList<>(promptProviders));
+        return SpringAiMcpAnnotationProvider.createSyncPromptSpecifications(promptProviders);
     }
     
     @Bean
     public List<SyncResourceSpecification> syncResourceSpecifications(
             List<ResourceProvider> resourceProviders) {
-        return SpringAiMcpAnnotationProvider.createSyncResourceSpecifications(
-            new ArrayList<>(resourceProviders));
+        return SpringAiMcpAnnotationProvider.createSyncResourceSpecifications(resourceProviders);
     }
 }
 ```
