@@ -30,6 +30,7 @@ The Spring integration module provides seamless integration with Spring AI and S
 - **`@McpComplete`** - Annotates methods that provide completion functionality for prompts or URI templates
 - **`@McpPrompt`** - Annotates methods that generate prompt messages
 - **`@McpResource`** - Annotates methods that provide access to resources
+- **`@McpLoggingConsumer`** - Annotates methods that handle logging message notifications from MCP servers
 - **`@McpArg`** - Annotates method parameters as MCP arguments
 
 ### Method Callbacks
@@ -51,6 +52,11 @@ The modules provide callback implementations for each operation type:
 - `SyncMcpResourceMethodCallback` - Synchronous implementation
 - `AsyncMcpResourceMethodCallback` - Asynchronous implementation using Reactor's Mono
 
+#### Logging Consumer
+- `AbstractMcpLoggingConsumerMethodCallback` - Base class for logging consumer method callbacks
+- `SyncMcpLoggingConsumerMethodCallback` - Synchronous implementation
+- `AsyncMcpLoggingConsumerMethodCallback` - Asynchronous implementation using Reactor's Mono
+
 ### Providers
 
 The project includes provider classes that scan for annotated methods and create appropriate callbacks:
@@ -58,6 +64,8 @@ The project includes provider classes that scan for annotated methods and create
 - `SyncMcpCompletionProvider` - Processes `@McpComplete` annotations for synchronous operations
 - `SyncMcpPromptProvider` - Processes `@McpPrompt` annotations for synchronous operations
 - `SyncMcpResourceProvider` - Processes `@McpResource` annotations for synchronous operations
+- `SyncMcpLoggingConsumerProvider` - Processes `@McpLoggingConsumer` annotations for synchronous operations
+- `AsyncMcpLoggingConsumerProvider` - Processes `@McpLoggingConsumer` annotations for asynchronous operations
 
 ### Spring Integration
 
@@ -237,15 +245,24 @@ public class MyResourceProvider {
 ### Mcp Server with Resource, Prompt and Completion capabilities
 
 ```java
-public class McpSevrverFactory {
+public class McpServerFactory {
 
-    public McpSyncServer createMcpServer(MyResourceProvider myResourceProvider, AutocompleteProvider autocompleteProvider) {
+    public McpSyncServer createMcpServer(
+            MyResourceProvider myResourceProvider, 
+            AutocompleteProvider autocompleteProvider,
+            LoggingHandler loggingHandler) {
         
-        List<SyncResourceSpecification> resourceSpecifications = new SyncMcpResourceProvider(List.of(myResourceProvider)).getResourceSpecifications();
+        List<SyncResourceSpecification> resourceSpecifications = 
+            new SyncMcpResourceProvider(List.of(myResourceProvider)).getResourceSpecifications();
 
-        List<SyncCompletionSpecification> completionSpecifications = new SyncMcpCompletionProvider(List.of(autocompleteProvider)).getCompleteSpecifications();
+        List<SyncCompletionSpecification> completionSpecifications = 
+            new SyncMcpCompletionProvider(List.of(autocompleteProvider)).getCompleteSpecifications();
 
-        List<SyncPromptSpecification> promptSpecifications = new SyncMcpPromptProvider(List.of(autocompleteProvider)).getPromptSpecifications();
+        List<SyncPromptSpecification> promptSpecifications = 
+            new SyncMcpPromptProvider(List.of(autocompleteProvider)).getPromptSpecifications();
+            
+        List<Consumer<LoggingMessageNotification>> loggingConsumers = 
+            new SyncMcpLoggingConsumerProvider(List.of(loggingHandler)).getLoggingConsumers();
 
         // Create a server with custom configuration
         McpSyncServer syncServer = McpServer.sync(transportProvider)
@@ -254,7 +271,7 @@ public class McpSevrverFactory {
                 .resources(true)     // Enable resource support
                 .prompts(true)       // Enable prompt support
                 .logging()           // Enable logging support
-                .completions()      // Enable completions support
+                .completions()       // Enable completions support
                 .build())
             .resources(resourceSpecifications)
             .completions(completionSpecifications)
@@ -262,6 +279,52 @@ public class McpSevrverFactory {
             .build();
 
         return syncServer;
+    }
+}
+```
+
+### Mcp Client Logging Consumer Example
+
+```java
+public class LoggingHandler {
+
+    /**
+     * Handle logging message notifications with a single parameter.
+     * @param notification The logging message notification
+     */
+    @McpLoggingConsumer
+    public void handleLoggingMessage(LoggingMessageNotification notification) {
+        System.out.println("Received logging message: " + notification.level() + " - " + notification.logger() + " - "
+                + notification.data());
+    }
+
+    /**
+     * Handle logging message notifications with individual parameters.
+     * @param level The logging level
+     * @param logger The logger name
+     * @param data The log message data
+     */
+    @McpLoggingConsumer
+    public void handleLoggingMessageWithParams(LoggingLevel level, String logger, String data) {
+        System.out.println("Received logging message with params: " + level + " - " + logger + " - " + data);
+    }
+}
+
+public class MyMcpClient {
+
+    public static McpSyncClient createClient(LoggingHandler loggingHandler) {
+
+        List<Consumer<LoggingMessageNotification>> loggingCOnsummers = 
+            new SyncMcpLoggingConsumerProvider(List.of(loggingHandler)).getLoggingConsumers();
+
+        McpSyncClient client = McpClient.sync(transport)
+            .capabilities(ClientCapabilities.builder()
+                // Enable capabilities ..
+                .build())
+            .loggingConsumers(loggingCOnsummers)
+            .build();
+
+        return client;
     }
 }
 ```
@@ -290,6 +353,12 @@ public class McpConfig {
             List<ResourceProvider> resourceProviders) {
         return SpringAiMcpAnnotationProvider.createSyncResourceSpecifications(resourceProviders);
     }
+    
+    @Bean
+    public List<Consumer<LoggingMessageNotification>> syncLoggingConsumers(
+            List<LoggingHandler> loggingHandlers) {
+        return SpringAiMcpAnnotationProvider.createSyncLoggingConsumers(loggingHandlers);
+    }    
 }
 ```
 
@@ -326,6 +395,7 @@ To use the Spring integration module, add the following dependency:
 - **Builder pattern for callback creation** - Clean and fluent API for creating method callbacks
 - **Comprehensive validation** - Ensures method signatures are compatible with MCP operations
 - **URI template support** - Powerful URI template handling for resource and completion operations
+- **Logging consumer support** - Handle logging message notifications from MCP servers
 - **Spring integration** - Seamless integration with Spring Framework and Spring AI
 - **AOP proxy support** - Proper handling of Spring AOP proxies when processing annotations
 

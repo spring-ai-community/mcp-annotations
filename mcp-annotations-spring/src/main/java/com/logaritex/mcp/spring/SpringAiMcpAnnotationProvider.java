@@ -17,13 +17,16 @@ package com.logaritex.mcp.spring;
 
 import java.lang.reflect.Method;
 import java.util.List;
+import java.util.function.Consumer;
 
 import com.logaritex.mcp.provider.SyncMcpCompletionProvider;
+import com.logaritex.mcp.provider.SyncMcpLoggingConsumerProvider;
 import com.logaritex.mcp.provider.SyncMcpPromptProvider;
 import com.logaritex.mcp.provider.SyncMcpResourceProvider;
 import io.modelcontextprotocol.server.McpServerFeatures.SyncCompletionSpecification;
 import io.modelcontextprotocol.server.McpServerFeatures.SyncPromptSpecification;
 import io.modelcontextprotocol.server.McpServerFeatures.SyncResourceSpecification;
+import io.modelcontextprotocol.spec.McpSchema.LoggingMessageNotification;
 
 import org.springframework.aop.support.AopUtils;
 import org.springframework.util.ReflectionUtils;
@@ -75,6 +78,20 @@ public class SpringAiMcpAnnotationProvider {
 
 	}
 
+	private static class SpringAiSyncMcpLoggingConsumerProvider extends SyncMcpLoggingConsumerProvider {
+
+		public SpringAiSyncMcpLoggingConsumerProvider(List<Object> loggingObjects) {
+			super(loggingObjects);
+		}
+
+		@Override
+		protected Method[] doGetClassMethods(Object bean) {
+			return ReflectionUtils
+				.getDeclaredMethods(AopUtils.isAopProxy(bean) ? AopUtils.getTargetClass(bean) : bean.getClass());
+		}
+
+	}
+
 	public static List<SyncCompletionSpecification> createSyncCompleteSpecifications(List<Object> completeObjects) {
 		return new SpringAiSyncMcpCompletionProvider(completeObjects).getCompleteSpecifications();
 	}
@@ -85,6 +102,10 @@ public class SpringAiMcpAnnotationProvider {
 
 	public static List<SyncResourceSpecification> createSyncResourceSpecifications(List<Object> resourceObjects) {
 		return new SpringAiSyncMcpResourceProvider(resourceObjects).getResourceSpecifications();
+	}
+
+	public static List<Consumer<LoggingMessageNotification>> createSyncLoggingConsumers(List<Object> loggingObjects) {
+		return new SpringAiSyncMcpLoggingConsumerProvider(loggingObjects).getLoggingConsumers();
 	}
 
 }
