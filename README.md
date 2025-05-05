@@ -1,6 +1,23 @@
 # MCP Annotations
 
-The MCP Annotations project provides annotation-based method handling for Model Context Protocol (MCP) servers in Java. This project consists of two main modules:
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+[![Java Version](https://img.shields.io/badge/Java-17%2B-orange)](https://www.oracle.com/java/technologies/javase/jdk17-archive-downloads.html)
+
+The MCP Annotations project provides annotation-based method handling for [Model Context Protocol (MCP)](https://github.com/modelcontextprotocol/spec) servers in Java. It simplifies the creation and registration of MCP server methods through a clean, declarative approach using Java annotations.
+
+## Table of Contents
+- [Overview](#overview)
+- [Key Components](#key-components)
+- [Usage Examples](#usage-examples)
+- [Installation](#installation)
+- [Features](#features)
+- [Requirements](#requirements)
+- [Building from Source](#building-from-source)
+- [Contributing](#contributing)
+- [License](#license)
+- [Repository](#repository)
+
+This project consists of two main modules:
 
 1. **mcp-annotations** - Core annotations and method handling for MCP operations
 2. **spring-ai-mcp-annotations** - Spring AI integration for MCP annotations
@@ -8,6 +25,8 @@ The MCP Annotations project provides annotation-based method handling for Model 
 ## Overview
 
 The MCP Annotations project enables developers to easily create and register methods for handling MCP operations using simple annotations. It provides a clean, declarative approach to implementing MCP server functionality, reducing boilerplate code and improving maintainability.
+
+This library builds on top of the [MCP Java SDK](https://github.com/modelcontextprotocol/sdk-java) to provide a higher-level, annotation-based programming model for implementing MCP servers and clients.
 
 ### Core Module (mcp-annotations)
 
@@ -388,6 +407,9 @@ To use the Spring integration module, add the following dependency:
 </dependency>
 ```
 
+The Spring integration module also requires the Spring AI dependency.
+
+
 ## Features
 
 - **Annotation-based method handling** - Simplifies the creation and registration of MCP methods
@@ -403,8 +425,39 @@ To use the Spring integration module, add the following dependency:
 
 - Java 17 or higher
 - Reactor Core (for async operations)
+- MCP Java SDK 0.10.0 or higher
 - Spring Framework and Spring AI (for spring-ai-mcp-annotations module)
+
+## Building from Source
+
+To build the project from source, you'll need:
+- JDK 17 or later
+- Maven 3.6 or later
+
+Clone the repository and build using Maven:
+
+```bash
+git clone https://github.com/spring-ai-community/mcp-annotations.git
+cd mcp-annotations
+./mvnw clean install
+```
+
+## Contributing
+
+Contributions to the MCP Annotations project are welcome! Here's how you can contribute:
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/your-feature-name`)
+3. Commit your changes (`git commit -am 'Add some feature'`)
+4. Push to the branch (`git push origin feature/your-feature-name`)
+5. Create a new Pull Request
+
+Please make sure to follow the existing code style and include appropriate tests for your changes.
 
 ## License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+This project is licensed under the Apache License 2.0 - see the LICENSE file for details.
+
+## Repository
+
+- GitHub: [https://github.com/spring-ai-community/mcp-annotations](https://github.com/spring-ai-community/mcp-annotations)
