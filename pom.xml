@@ -6,7 +6,7 @@
 
 	<groupId>com.logaritex.mcp</groupId>
 	<artifactId>mcp-annotations-parent</artifactId>
-	<version>0.1.0-SNAPSHOT</version>
+	<version>0.1.0</version>
 
 	<packaging>pom</packaging>
 	<url>https://github.com/spring-ai-community/mcp-annotations</url>
