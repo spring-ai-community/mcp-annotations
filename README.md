@@ -28,6 +28,34 @@ The MCP Annotations project enables developers to easily create and register met
 
 This library builds on top of the [MCP Java SDK](https://github.com/modelcontextprotocol/sdk-java) to provide a higher-level, annotation-based programming model for implementing MCP servers and clients.
 
+### Dependencies
+
+To use the mcp-annotations snapshot version you need to add the following repositories to your Maven POM:
+
+```xml
+<repositories>
+  <repository>
+    <id>spring-snapshots</id>
+    <name>Spring Snapshots</name>
+    <url>https://repo.spring.io/snapshot</url>
+    <releases>
+      <enabled>false</enabled>
+    </releases>
+  </repository>
+  <repository>
+    <name>Central Portal Snapshots</name>
+    <id>central-portal-snapshots</id>
+    <url>https://central.sonatype.com/repository/maven-snapshots/</url>
+    <releases>
+      <enabled>false</enabled>
+    </releases>
+    <snapshots>
+      <enabled>true</enabled>
+    </snapshots>
+  </repository>
+</repositories>
+```
+
 ### Core Module (mcp-annotations)
 
 The core module provides a set of annotations and callback implementations for three primary MCP operations:
