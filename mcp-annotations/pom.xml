@@ -27,13 +27,13 @@
 		<dependency>
 			<groupId>io.modelcontextprotocol.sdk</groupId>
 			<artifactId>mcp</artifactId>
-			<version>0.10.0</version>
+			<version>${mcp.java.sdk.version}</version>
 		</dependency>
 
 		<dependency>
 			<groupId>io.modelcontextprotocol.sdk</groupId>
 			<artifactId>mcp-test</artifactId>
-			<version>0.10.0</version>
+			<version>${mcp.java.sdk.version}</version>
 			<scope>test</scope>
 		</dependency>
 
