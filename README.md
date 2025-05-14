@@ -14,8 +14,6 @@ The MCP Annotations project provides annotation-based method handling for [Model
 - [Requirements](#requirements)
 - [Building from Source](#building-from-source)
 - [Contributing](#contributing)
-- [License](#license)
-- [Repository](#repository)
 
 This project consists of two main modules:
 
@@ -325,7 +323,7 @@ public class McpServerFactory {
     public McpSyncServer createMcpServer(
             MyResourceProvider myResourceProvider, 
             AutocompleteProvider autocompleteProvider,
-            LoggingHandler loggingHandler) {
+            PromptProvider promptProvider) {
         
         List<SyncResourceSpecification> resourceSpecifications = 
             new SyncMcpResourceProvider(List.of(myResourceProvider)).getResourceSpecifications();
@@ -334,11 +332,8 @@ public class McpServerFactory {
             new SyncMcpCompletionProvider(List.of(autocompleteProvider)).getCompleteSpecifications();
 
         List<SyncPromptSpecification> promptSpecifications = 
-            new SyncMcpPromptProvider(List.of(autocompleteProvider)).getPromptSpecifications();
+            new SyncMcpPromptProvider(List.of(promptProvider)).getPromptSpecifications();
             
-        List<Consumer<LoggingMessageNotification>> loggingConsumers = 
-            new SyncMcpLoggingConsumerProvider(List.of(loggingHandler)).getLoggingConsumers();
-
         // Create a server with custom configuration
         McpSyncServer syncServer = McpServer.sync(transportProvider)
             .serverInfo("my-server", "1.0.0")
@@ -484,7 +479,3 @@ Please make sure to follow the existing code style and include appropriate tests
 ## License
 
 This project is licensed under the Apache License 2.0 - see the LICENSE file for details.
-
-## Repository
-
-- GitHub: [https://github.com/spring-ai-community/mcp-annotations](https://github.com/spring-ai-community/mcp-annotations)
