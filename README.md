@@ -7,9 +7,9 @@ The MCP Annotations project provides annotation-based method handling for [Model
 
 ## Table of Contents
 - [Overview](#overview)
+- [Installation](#installation)
 - [Key Components](#key-components)
 - [Usage Examples](#usage-examples)
-- [Installation](#installation)
 - [Features](#features)
 - [Requirements](#requirements)
 - [Building from Source](#building-from-source)
@@ -19,7 +19,7 @@ The MCP Annotations project provides annotation-based method handling for [Model
 
 This project consists of two main modules:
 
-1. **mcp-annotations** - Core annotations and method handling for MCP operations
+1. **mcp-annotations** - Core annotations and method handling for MCP operations. Depends only on MCP Java SDK. 
 2. **spring-ai-mcp-annotations** - Spring AI integration for MCP annotations
 
 ## Overview
@@ -28,7 +28,35 @@ The MCP Annotations project enables developers to easily create and register met
 
 This library builds on top of the [MCP Java SDK](https://github.com/modelcontextprotocol/sdk-java) to provide a higher-level, annotation-based programming model for implementing MCP servers and clients.
 
-### Dependencies
+## Installation
+
+### Core Module
+
+To use the MCP Annotations core module in your project, add the following dependency to your Maven POM file:
+
+```xml
+<dependency>
+    <groupId>com.logaritex.mcp</groupId>
+    <artifactId>mcp-annotations</artifactId>
+    <version>0.1.0</version>
+</dependency>
+```
+
+### Spring Integration Module
+
+To use the Spring integration module, add the following dependency:
+
+```xml
+<dependency>
+    <groupId>com.logaritex.mcp</groupId>
+    <artifactId>spring-ai-mcp-annotations</artifactId>
+    <version>0.1.0</version>
+</dependency>
+```
+
+The Spring integration module also requires the Spring AI dependency.
+
+### Snapshot repositories
 
 To use the mcp-annotations snapshot version you need to add the following repositories to your Maven POM:
 
@@ -408,35 +436,6 @@ public class McpConfig {
     }    
 }
 ```
-
-## Installation
-
-### Core Module
-
-To use the MCP Annotations core module in your project, add the following dependency to your Maven POM file:
-
-```xml
-<dependency>
-    <groupId>com.logaritex.mcp</groupId>
-    <artifactId>mcp-annotations</artifactId>
-    <version>0.2.0-SNAPSHOT</version>
-</dependency>
-```
-
-### Spring Integration Module
-
-To use the Spring integration module, add the following dependency:
-
-```xml
-<dependency>
-    <groupId>com.logaritex.mcp</groupId>
-    <artifactId>spring-ai-mcp-annotations</artifactId>
-    <version>0.2.0-SNAPSHOT</version>
-</dependency>
-```
-
-The Spring integration module also requires the Spring AI dependency.
-
 
 ## Features
 
