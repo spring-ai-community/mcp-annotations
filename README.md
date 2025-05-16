@@ -84,11 +84,13 @@ To use the mcp-annotations snapshot version you need to add the following reposi
 
 ### Core Module (mcp-annotations)
 
-The core module provides a set of annotations and callback implementations for three primary MCP operations:
+The core module provides a set of annotations and callback implementations for primary MCP operations:
 
 1. **Complete** - For auto-completion functionality in prompts and URI templates
 2. **Prompt** - For generating prompt messages
 3. **Resource** - For accessing resources via URI templates
+4. **Logging Consumer** - For handling logging message notifications
+5. **Sampling** - For handling sampling requests
 
 Each operation type has both synchronous and asynchronous implementations, allowing for flexible integration with different application architectures.
 
@@ -104,6 +106,7 @@ The Spring integration module provides seamless integration with Spring AI and S
 - **`@McpPrompt`** - Annotates methods that generate prompt messages
 - **`@McpResource`** - Annotates methods that provide access to resources
 - **`@McpLoggingConsumer`** - Annotates methods that handle logging message notifications from MCP servers
+- **`@McpSampling`** - Annotates methods that handle sampling requests from MCP servers
 - **`@McpArg`** - Annotates method parameters as MCP arguments
 
 ### Method Callbacks
@@ -130,6 +133,11 @@ The modules provide callback implementations for each operation type:
 - `SyncMcpLoggingConsumerMethodCallback` - Synchronous implementation
 - `AsyncMcpLoggingConsumerMethodCallback` - Asynchronous implementation using Reactor's Mono
 
+#### Sampling
+- `AbstractMcpSamplingMethodCallback` - Base class for sampling method callbacks
+- `SyncMcpSamplingMethodCallback` - Synchronous implementation
+- `AsyncMcpSamplingMethodCallback` - Asynchronous implementation using Reactor's Mono
+
 ### Providers
 
 The project includes provider classes that scan for annotated methods and create appropriate callbacks:
@@ -139,6 +147,8 @@ The project includes provider classes that scan for annotated methods and create
 - `SyncMcpResourceProvider` - Processes `@McpResource` annotations for synchronous operations
 - `SyncMcpLoggingConsumerProvider` - Processes `@McpLoggingConsumer` annotations for synchronous operations
 - `AsyncMcpLoggingConsumerProvider` - Processes `@McpLoggingConsumer` annotations for asynchronous operations
+- `SyncMcpSamplingProvider` - Processes `@McpSampling` annotations for synchronous operations
+- `AsyncMcpSamplingProvider` - Processes `@McpSampling` annotations for asynchronous operations
 
 ### Spring Integration
 
@@ -399,6 +409,78 @@ public class MyMcpClient {
 }
 ```
 
+### Mcp Client Sampling Example
+
+```java
+public class SamplingHandler {
+
+    /**
+     * Handle sampling requests with a synchronous implementation.
+     * @param request The create message request
+     * @return The create message result
+     */
+    @McpSampling
+    public CreateMessageResult handleSamplingRequest(CreateMessageRequest request) {
+        // Process the request and generate a response
+        return CreateMessageResult.builder()
+            .role(Role.ASSISTANT)
+            .content(new TextContent("This is a response to the sampling request"))
+            .model("test-model")
+            .build();
+    }
+}
+
+public class AsyncSamplingHandler {
+
+    /**
+     * Handle sampling requests with an asynchronous implementation.
+     * @param request The create message request
+     * @return A Mono containing the create message result
+     */
+    @McpSampling
+    public Mono<CreateMessageResult> handleAsyncSamplingRequest(CreateMessageRequest request) {
+        return Mono.just(CreateMessageResult.builder()
+            .role(Role.ASSISTANT)
+            .content(new TextContent("This is an async response to the sampling request"))
+            .model("test-model")
+            .build());
+    }
+}
+
+public class MyMcpClient {
+
+    public static McpSyncClient createSyncClient(SamplingHandler samplingHandler) {
+        Function<CreateMessageRequest, CreateMessageResult> samplingHandler = 
+            new SyncMcpSamplingProvider(List.of(samplingHandler)).getSamplingHandler();
+
+        McpSyncClient client = McpClient.sync(transport)
+            .capabilities(ClientCapabilities.builder()
+                .sampling(true)  // Enable sampling support
+                // Other capabilities...
+                .build())
+            .samplingHandler(samplingHandler)
+            .build();
+
+        return client;
+    }
+    
+    public static McpAsyncClient createAsyncClient(AsyncSamplingHandler asyncSamplingHandler) {
+        Function<CreateMessageRequest, Mono<CreateMessageResult>> samplingHandler = 
+            new AsyncMcpSamplingProvider(List.of(asyncSamplingHandler)).getSamplingHandler();
+
+        McpAsyncClient client = McpClient.async(transport)
+            .capabilities(ClientCapabilities.builder()
+                .sampling(true)  // Enable sampling support
+                // Other capabilities...
+                .build())
+            .samplingHandler(samplingHandler)
+            .build();
+
+        return client;
+    }
+}
+```
+
 
 ### Spring Integration Example
 
@@ -428,7 +510,19 @@ public class McpConfig {
     public List<Consumer<LoggingMessageNotification>> syncLoggingConsumers(
             List<LoggingHandler> loggingHandlers) {
         return SpringAiMcpAnnotationProvider.createSyncLoggingConsumers(loggingHandlers);
-    }    
+    }
+    
+    @Bean
+    public Function<CreateMessageRequest, CreateMessageResult> syncSamplingHandler(
+            List<SamplingHandler> samplingHandlers) {
+        return SpringAiMcpAnnotationProvider.createSyncSamplingHandler(samplingHandlers);
+    }
+    
+    @Bean
+    public Function<CreateMessageRequest, Mono<CreateMessageResult>> asyncSamplingHandler(
+            List<AsyncSamplingHandler> asyncSamplingHandlers) {
+        return SpringAiMcpAnnotationProvider.createAsyncSamplingHandler(asyncSamplingHandlers);
+    }
 }
 ```
 
@@ -440,6 +534,7 @@ public class McpConfig {
 - **Comprehensive validation** - Ensures method signatures are compatible with MCP operations
 - **URI template support** - Powerful URI template handling for resource and completion operations
 - **Logging consumer support** - Handle logging message notifications from MCP servers
+- **Sampling support** - Handle sampling requests from MCP servers
 - **Spring integration** - Seamless integration with Spring Framework and Spring AI
 - **AOP proxy support** - Proper handling of Spring AOP proxies when processing annotations
 
