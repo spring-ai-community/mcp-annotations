@@ -9,6 +9,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.logaritex.mcp.annotation.McpArg;
 import io.modelcontextprotocol.spec.McpSchema.GetPromptRequest;
 import io.modelcontextprotocol.spec.McpSchema.GetPromptResult;
 import io.modelcontextprotocol.spec.McpSchema.Prompt;
@@ -143,7 +144,7 @@ public abstract class AbstractMcpPromptMethodCallback {
 			}
 			else {
 				// For individual argument parameters, extract from the request arguments
-				String paramName = param.getName();
+				String paramName = param.getAnnotation(McpArg.class).name();
 				if (request.arguments() != null && request.arguments().containsKey(paramName)) {
 					Object argValue = request.arguments().get(paramName);
 					args[i] = convertArgumentValue(argValue, paramType);
