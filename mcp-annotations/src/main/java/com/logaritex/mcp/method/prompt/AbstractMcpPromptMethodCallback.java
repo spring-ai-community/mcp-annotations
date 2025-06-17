@@ -144,7 +144,8 @@ public abstract class AbstractMcpPromptMethodCallback {
 			}
 			else {
 				// For individual argument parameters, extract from the request arguments
-				String paramName = param.getAnnotation(McpArg.class).name();
+				McpArg arg = param.getAnnotation(McpArg.class);
+				String paramName = arg != null && !arg.name().isBlank() ? arg.name() : param.getName();
 				if (request.arguments() != null && request.arguments().containsKey(paramName)) {
 					Object argValue = request.arguments().get(paramName);
 					args[i] = convertArgumentValue(argValue, paramType);
