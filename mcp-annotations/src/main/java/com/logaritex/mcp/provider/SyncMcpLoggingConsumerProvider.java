@@ -17,6 +17,8 @@
 package com.logaritex.mcp.provider;
 
 import java.lang.reflect.Method;
+import java.util.Arrays;
+import java.util.Comparator;
 import java.util.List;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
@@ -103,7 +105,11 @@ public class SyncMcpLoggingConsumerProvider {
 	 * @return the methods of the bean class
 	 */
 	protected Method[] doGetClassMethods(Object bean) {
-		return bean.getClass().getDeclaredMethods();
+		Method[] methods = bean.getClass().getDeclaredMethods();
+		Arrays.sort(methods, Comparator
+				.comparing(Method::getName)
+				.thenComparing(method -> Arrays.toString(method.getParameterTypes())));
+		return methods;
 	}
 
 }

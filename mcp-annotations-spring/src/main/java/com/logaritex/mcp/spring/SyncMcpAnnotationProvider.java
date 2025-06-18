@@ -16,6 +16,8 @@
 package com.logaritex.mcp.spring;
 
 import java.lang.reflect.Method;
+import java.util.Arrays;
+import java.util.Comparator;
 import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -92,8 +94,12 @@ public class SyncMcpAnnotationProvider {
 
 		@Override
 		protected Method[] doGetClassMethods(Object bean) {
-			return ReflectionUtils
-				.getDeclaredMethods(AopUtils.isAopProxy(bean) ? AopUtils.getTargetClass(bean) : bean.getClass());
+			Method[] methods = ReflectionUtils
+					.getDeclaredMethods(AopUtils.isAopProxy(bean) ? AopUtils.getTargetClass(bean) : bean.getClass());
+			Arrays.sort(methods, Comparator
+					.comparing(Method::getName)
+					.thenComparing(method -> Arrays.toString(method.getParameterTypes())));
+			return methods;
 		}
 
 	}
