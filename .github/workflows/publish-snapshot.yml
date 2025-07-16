@@ -34,8 +34,8 @@ jobs:
 
       - name: Build with Maven and deploy to Sonatype snapshot repository
         env:
-          MAVEN_USERNAME: ${{ secrets.OSSRH_USERNAME }}
-          MAVEN_PASSWORD: ${{ secrets.OSSRH_TOKEN }}
+          MAVEN_USERNAME: ${{ secrets.MAVEN_USERNAME }}
+          MAVEN_PASSWORD: ${{ secrets.MAVEN_PASSWORD }}
           MAVEN_GPG_PASSPHRASE: ${{ secrets.SIGNING_PASSPHRASE }}
         run: |
           mvn -Pjavadoc -Prelease --batch-mode --update-snapshots deploy
