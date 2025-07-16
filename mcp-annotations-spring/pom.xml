@@ -5,7 +5,7 @@
 	<modelVersion>4.0.0</modelVersion>
 
 	<parent>
-		<groupId>com.logaritex.mcp</groupId>
+		<groupId>org.springaicommunity.mcp</groupId>
 		<artifactId>mcp-annotations-parent</artifactId>
 		<version>0.2.0-SNAPSHOT</version>
 		<relativePath>../pom.xml</relativePath>
@@ -25,7 +25,7 @@
 	<dependencies>
 
 		<dependency>
-			<groupId>com.logaritex.mcp</groupId>
+			<groupId>org.springaicommunity.mcp</groupId>
 			<artifactId>mcp-annotations</artifactId>
 			<version>${project.parent.version}</version>
 		</dependency>
