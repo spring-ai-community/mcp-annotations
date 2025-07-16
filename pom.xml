@@ -4,7 +4,7 @@
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 
-	<groupId>com.logaritex.mcp</groupId>
+	<groupId>org.springaicommunity.mcp</groupId>
 	<artifactId>mcp-annotations-parent</artifactId>
 	<version>0.2.0-SNAPSHOT</version>
 
@@ -22,8 +22,8 @@
 
 
 	<organization>
-		<name>Logaritex</name>
-		<url>https://www.logaritex.com</url>
+		<name>Spring AI Communnity</name>
+		<url>https://github.com/spring-ai-community</url>
 	</organization>
 
 	<licenses>
@@ -55,8 +55,8 @@
 		<maven.compiler.source>17</maven.compiler.source>
 		<maven.compiler.target>17</maven.compiler.target>
 
-		<mcp.java.sdk.version>0.10.0</mcp.java.sdk.version>
-		<spring-ai.version>1.0.0-RC1</spring-ai.version>
+		<mcp.java.sdk.version>0.11.0-SNAPSHOT</mcp.java.sdk.version>
+		<spring-ai.version>1.0.0</spring-ai.version>
 
 		<assert4j.version>3.26.3</assert4j.version>
 		<junit.version>5.10.2</junit.version>
