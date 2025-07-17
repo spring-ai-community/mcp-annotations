@@ -19,15 +19,13 @@ import java.lang.reflect.Method;
 import java.util.List;
 import java.util.function.Function;
 
+import org.springaicommunity.mcp.provider.AsyncMcpLoggingConsumerProvider;
+import org.springaicommunity.mcp.provider.AsyncMcpSamplingProvider;
+
 import io.modelcontextprotocol.spec.McpSchema.CreateMessageRequest;
 import io.modelcontextprotocol.spec.McpSchema.CreateMessageResult;
 import io.modelcontextprotocol.spec.McpSchema.LoggingMessageNotification;
 import reactor.core.publisher.Mono;
-
-import org.springaicommunity.mcp.provider.AsyncMcpLoggingConsumerProvider;
-import org.springaicommunity.mcp.provider.AsyncMcpSamplingProvider;
-import org.springframework.aop.support.AopUtils;
-import org.springframework.util.ReflectionUtils;
 
 /**
  * @author Christian Tzolov
@@ -42,8 +40,7 @@ public class AsyncMcpAnnotationProvider {
 
 		@Override
 		protected Method[] doGetClassMethods(Object bean) {
-			return ReflectionUtils
-				.getDeclaredMethods(AopUtils.isAopProxy(bean) ? AopUtils.getTargetClass(bean) : bean.getClass());
+			return AnnotationProviderUtil.beanMethods(bean);
 		}
 
 	}
@@ -56,8 +53,7 @@ public class AsyncMcpAnnotationProvider {
 
 		@Override
 		protected Method[] doGetClassMethods(Object bean) {
-			return ReflectionUtils
-				.getDeclaredMethods(AopUtils.isAopProxy(bean) ? AopUtils.getTargetClass(bean) : bean.getClass());
+			return AnnotationProviderUtil.beanMethods(bean);
 		}
 
 	}

@@ -20,6 +20,13 @@ import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
+import org.springaicommunity.mcp.provider.AsyncMcpSamplingProvider;
+import org.springaicommunity.mcp.provider.SyncMcpCompletionProvider;
+import org.springaicommunity.mcp.provider.SyncMcpLoggingConsumerProvider;
+import org.springaicommunity.mcp.provider.SyncMcpPromptProvider;
+import org.springaicommunity.mcp.provider.SyncMcpResourceProvider;
+import org.springaicommunity.mcp.provider.SyncMcpSamplingProvider;
+
 import io.modelcontextprotocol.server.McpServerFeatures.SyncCompletionSpecification;
 import io.modelcontextprotocol.server.McpServerFeatures.SyncPromptSpecification;
 import io.modelcontextprotocol.server.McpServerFeatures.SyncResourceSpecification;
@@ -27,15 +34,6 @@ import io.modelcontextprotocol.spec.McpSchema.CreateMessageRequest;
 import io.modelcontextprotocol.spec.McpSchema.CreateMessageResult;
 import io.modelcontextprotocol.spec.McpSchema.LoggingMessageNotification;
 import reactor.core.publisher.Mono;
-
-import org.springaicommunity.mcp.provider.AsyncMcpSamplingProvider;
-import org.springaicommunity.mcp.provider.SyncMcpCompletionProvider;
-import org.springaicommunity.mcp.provider.SyncMcpLoggingConsumerProvider;
-import org.springaicommunity.mcp.provider.SyncMcpPromptProvider;
-import org.springaicommunity.mcp.provider.SyncMcpResourceProvider;
-import org.springaicommunity.mcp.provider.SyncMcpSamplingProvider;
-import org.springframework.aop.support.AopUtils;
-import org.springframework.util.ReflectionUtils;
 
 /**
  * @author Christian Tzolov
@@ -50,8 +48,7 @@ public class SyncMcpAnnotationProvider {
 
 		@Override
 		protected Method[] doGetClassMethods(Object bean) {
-			return ReflectionUtils
-				.getDeclaredMethods(AopUtils.isAopProxy(bean) ? AopUtils.getTargetClass(bean) : bean.getClass());
+			return AnnotationProviderUtil.beanMethods(bean);
 		}
 
 	};
@@ -64,8 +61,7 @@ public class SyncMcpAnnotationProvider {
 
 		@Override
 		protected Method[] doGetClassMethods(Object bean) {
-			return ReflectionUtils
-				.getDeclaredMethods(AopUtils.isAopProxy(bean) ? AopUtils.getTargetClass(bean) : bean.getClass());
+			return AnnotationProviderUtil.beanMethods(bean);
 		}
 
 	};
@@ -78,8 +74,7 @@ public class SyncMcpAnnotationProvider {
 
 		@Override
 		protected Method[] doGetClassMethods(Object bean) {
-			return ReflectionUtils
-				.getDeclaredMethods(AopUtils.isAopProxy(bean) ? AopUtils.getTargetClass(bean) : bean.getClass());
+			return AnnotationProviderUtil.beanMethods(bean);
 		}
 
 	}
@@ -92,8 +87,7 @@ public class SyncMcpAnnotationProvider {
 
 		@Override
 		protected Method[] doGetClassMethods(Object bean) {
-			return ReflectionUtils
-				.getDeclaredMethods(AopUtils.isAopProxy(bean) ? AopUtils.getTargetClass(bean) : bean.getClass());
+			return AnnotationProviderUtil.beanMethods(bean);
 		}
 
 	}
@@ -106,8 +100,7 @@ public class SyncMcpAnnotationProvider {
 
 		@Override
 		protected Method[] doGetClassMethods(Object bean) {
-			return ReflectionUtils
-				.getDeclaredMethods(AopUtils.isAopProxy(bean) ? AopUtils.getTargetClass(bean) : bean.getClass());
+			return AnnotationProviderUtil.beanMethods(bean);
 		}
 
 	}
@@ -120,8 +113,7 @@ public class SyncMcpAnnotationProvider {
 
 		@Override
 		protected Method[] doGetClassMethods(Object bean) {
-			return ReflectionUtils
-				.getDeclaredMethods(AopUtils.isAopProxy(bean) ? AopUtils.getTargetClass(bean) : bean.getClass());
+			return AnnotationProviderUtil.beanMethods(bean);
 		}
 
 	}
