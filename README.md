@@ -34,7 +34,7 @@ To use the MCP Annotations core module in your project, add the following depend
 
 ```xml
 <dependency>
-    <groupId>org.springaicommunity.mcp</groupId>
+    <groupId>org.springaicommunity</groupId>
     <artifactId>mcp-annotations</artifactId>
     <version>0.1.0</version>
 </dependency>
@@ -46,7 +46,7 @@ To use the Spring integration module, add the following dependency:
 
 ```xml
 <dependency>
-    <groupId>corg.springaicommunity.mcp</groupId>
+    <groupId>corg.springaicommunity</groupId>
     <artifactId>spring-ai-mcp-annotations</artifactId>
     <version>0.1.0</version>
 </dependency>
