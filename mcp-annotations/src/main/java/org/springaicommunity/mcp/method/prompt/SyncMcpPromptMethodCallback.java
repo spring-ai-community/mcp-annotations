@@ -66,11 +66,6 @@ public final class SyncMcpPromptMethodCallback extends AbstractMcpPromptMethodCa
 		}
 	}
 
-	/**
-	 * Validates that the method return type is compatible with the prompt callback.
-	 * @param method The method to validate
-	 * @throws IllegalArgumentException if the return type is not compatible
-	 */
 	@Override
 	protected boolean isExchangeType(Class<?> paramType) {
 		return McpSyncServerExchange.class.isAssignableFrom(paramType);

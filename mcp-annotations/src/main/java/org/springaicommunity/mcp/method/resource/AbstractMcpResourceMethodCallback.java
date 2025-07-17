@@ -69,7 +69,10 @@ public abstract class AbstractMcpResourceMethodCallback {
 	 * Constructor for AbstractMcpResourceMethodCallback.
 	 * @param method The method to create a callback for
 	 * @param bean The bean instance that contains the method
-	 * @param resourceAnnotation The resource annotation
+	 * @param uri The URI for the resource
+	 * @param name The name of the resource (optional)
+	 * @param description The description of the resource (optional)
+	 * @param mimeType The MIME type of the resource (optional)
 	 * @param resultConverter The result converter
 	 * @param uriTemplateMangerFactory The URI template manager factory
 	 * @param contentType The content type
@@ -446,8 +449,8 @@ public abstract class AbstractMcpResourceMethodCallback {
 		}
 
 		/**
-		 * Set the URI template manager factory.
-		 * @param uriTemplateManagerFactory The URI template manager factory
+		 * Set the URI for the resource.
+		 * @param uri The URI for the resource
 		 * @return This builder
 		 */
 		public T uri(String uri) {
@@ -493,8 +496,8 @@ public abstract class AbstractMcpResourceMethodCallback {
 		}
 
 		/**
-		 * Set the URI template.
-		 * @param uriTemplateManager The URI template
+		 * Set the URI template manager factory.
+		 * @param uriTemplateManagerFactory The URI template manager factory
 		 * @return This builder
 		 */
 		@SuppressWarnings("unchecked")
