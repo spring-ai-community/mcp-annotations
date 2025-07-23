@@ -14,12 +14,24 @@ public class ResourceAdaptor {
 	}
 
 	public static McpSchema.Resource asResource(McpResource mcpResource) {
-		return new McpSchema.Resource(mcpResource.uri(), mcpResource.name(), mcpResource.description(),
-				mcpResource.mimeType(), null);
+		String name = mcpResource.name();
+		if (name == null || name.isEmpty()) {
+			name = "resource"; // Default name when not specified
+		}
+		return McpSchema.Resource.builder()
+			.uri(mcpResource.uri())
+			.name(name)
+			.description(mcpResource.description())
+			.mimeType(mcpResource.mimeType())
+			.build();
 	}
 
 	public static McpSchema.ResourceTemplate asResourceTemplate(McpResource mcpResource) {
-		return new McpSchema.ResourceTemplate(mcpResource.uri(), mcpResource.name(), mcpResource.description(),
+		String name = mcpResource.name();
+		if (name == null || name.isEmpty()) {
+			name = "resource"; // Default name when not specified
+		}
+		return new McpSchema.ResourceTemplate(mcpResource.uri(), name, mcpResource.description(),
 				mcpResource.mimeType(), null);
 	}
 

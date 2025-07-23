@@ -92,14 +92,10 @@ public final class SyncMcpResourceMethodCallback extends AbstractMcpResourceMeth
 		/**
 		 * Constructor for Builder.
 		 */
-		public Builder() {
+		private Builder() {
 			this.resultConverter = new DefaultMcpReadResourceResultConverter();
 		}
 
-		/**
-		 * Build the callback.
-		 * @return A new SyncMcpResourceMethodCallback instance
-		 */
 		@Override
 		public SyncMcpResourceMethodCallback build() {
 			validate();
@@ -116,11 +112,6 @@ public final class SyncMcpResourceMethodCallback extends AbstractMcpResourceMeth
 		return new Builder();
 	}
 
-	/**
-	 * Validates that the method return type is compatible with the resource callback.
-	 * @param method The method to validate
-	 * @throws IllegalArgumentException if the return type is not compatible
-	 */
 	@Override
 	protected void validateReturnType(Method method) {
 		Class<?> returnType = method.getReturnType();
@@ -137,12 +128,6 @@ public final class SyncMcpResourceMethodCallback extends AbstractMcpResourceMeth
 		}
 	}
 
-	/**
-	 * Checks if a parameter type is compatible with the exchange type.
-	 * @param paramType The parameter type to check
-	 * @return true if the parameter type is compatible with the exchange type, false
-	 * otherwise
-	 */
 	@Override
 	protected boolean isExchangeType(Class<?> paramType) {
 		return McpSyncServerExchange.class.isAssignableFrom(paramType);
