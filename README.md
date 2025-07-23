@@ -36,7 +36,7 @@ To use the MCP Annotations core module in your project, add the following depend
 <dependency>
     <groupId>org.springaicommunity</groupId>
     <artifactId>mcp-annotations</artifactId>
-    <version>0.1.0</version>
+    <version>0.2.0-SNAPSHOT</version>
 </dependency>
 ```
 
@@ -48,7 +48,7 @@ To use the Spring integration module, add the following dependency:
 <dependency>
     <groupId>corg.springaicommunity</groupId>
     <artifactId>spring-ai-mcp-annotations</artifactId>
-    <version>0.1.0</version>
+    <version>0.2.0-SNAPSHOT</version>
 </dependency>
 ```
 
@@ -89,8 +89,9 @@ The core module provides a set of annotations and callback implementations for p
 1. **Complete** - For auto-completion functionality in prompts and URI templates
 2. **Prompt** - For generating prompt messages
 3. **Resource** - For accessing resources via URI templates
-4. **Logging Consumer** - For handling logging message notifications
-5. **Sampling** - For handling sampling requests
+4. **Tool** - For implementing MCP tools with automatic JSON schema generation
+5. **Logging Consumer** - For handling logging message notifications
+6. **Sampling** - For handling sampling requests
 
 Each operation type has both synchronous and asynchronous implementations, allowing for flexible integration with different application architectures.
 
@@ -105,6 +106,8 @@ The Spring integration module provides seamless integration with Spring AI and S
 - **`@McpComplete`** - Annotates methods that provide completion functionality for prompts or URI templates
 - **`@McpPrompt`** - Annotates methods that generate prompt messages
 - **`@McpResource`** - Annotates methods that provide access to resources
+- **`@McpTool`** - Annotates methods that implement MCP tools with automatic JSON schema generation
+- **`@McpToolParam`** - Annotates tool method parameters with descriptions and requirement specifications
 - **`@McpLoggingConsumer`** - Annotates methods that handle logging message notifications from MCP servers
 - **`@McpSampling`** - Annotates methods that handle sampling requests from MCP servers
 - **`@McpArg`** - Annotates method parameters as MCP arguments
@@ -133,6 +136,10 @@ The modules provide callback implementations for each operation type:
 - `SyncMcpLoggingConsumerMethodCallback` - Synchronous implementation
 - `AsyncMcpLoggingConsumerMethodCallback` - Asynchronous implementation using Reactor's Mono
 
+#### Tool
+- `SyncMcpToolMethodCallback` - Synchronous implementation for tool method callbacks
+- `AsyncMcpToolMethodCallback` - Asynchronous implementation using Reactor's Mono
+
 #### Sampling
 - `AbstractMcpSamplingMethodCallback` - Base class for sampling method callbacks
 - `SyncMcpSamplingMethodCallback` - Synchronous implementation
@@ -145,6 +152,8 @@ The project includes provider classes that scan for annotated methods and create
 - `SyncMcpCompletionProvider` - Processes `@McpComplete` annotations for synchronous operations
 - `SyncMcpPromptProvider` - Processes `@McpPrompt` annotations for synchronous operations
 - `SyncMcpResourceProvider` - Processes `@McpResource` annotations for synchronous operations
+- `SyncMcpToolProvider` - Processes `@McpTool` annotations for synchronous operations
+- `AsyncMcpToolProvider` - Processes `@McpTool` annotations for asynchronous operations
 - `SyncMcpLoggingConsumerProvider` - Processes `@McpLoggingConsumer` annotations for synchronous operations
 - `AsyncMcpLoggingConsumerProvider` - Processes `@McpLoggingConsumer` annotations for asynchronous operations
 - `SyncMcpSamplingProvider` - Processes `@McpSampling` annotations for synchronous operations
@@ -322,6 +331,166 @@ public class MyResourceProvider {
 		return new ReadResourceResult(List.of(new TextResourceContents("user-profile-exchange://" + username,
 				"text/plain", "Profile with exchange for " + username + ": " + profileInfo)));
 	}
+}
+```
+
+### Tool Example
+
+```java
+public class CalculatorToolProvider {
+
+    @McpTool(name = "add", description = "Add two numbers together")
+    public int add(
+            @McpToolParam(description = "First number to add", required = true) int a,
+            @McpToolParam(description = "Second number to add", required = true) int b) {
+        return a + b;
+    }
+
+    @McpTool(name = "multiply", description = "Multiply two numbers")
+    public double multiply(
+            @McpToolParam(description = "First number", required = true) double x,
+            @McpToolParam(description = "Second number", required = true) double y) {
+        return x * y;
+    }
+
+    @McpTool(name = "calculate-area", 
+             description = "Calculate the area of a rectangle",
+             annotations = @McpTool.McpAnnotations(
+                 title = "Rectangle Area Calculator",
+                 readOnlyHint = true,
+                 destructiveHint = false,
+                 idempotentHint = true
+             ))
+    public AreaResult calculateRectangleArea(
+            @McpToolParam(description = "Width of the rectangle", required = true) double width,
+            @McpToolParam(description = "Height of the rectangle", required = true) double height) {
+        
+        double area = width * height;
+        return new AreaResult(area, "square units");
+    }
+
+    @McpTool(name = "process-data", description = "Process data with exchange context")
+    public String processData(
+            McpSyncServerExchange exchange,
+            @McpToolParam(description = "Data to process", required = true) String data) {
+        
+        exchange.loggingNotification(LoggingMessageNotification.builder()
+            .level(LoggingLevel.INFO)
+            .data("Processing data: " + data)
+            .build());
+        
+        return "Processed: " + data.toUpperCase();
+    }
+
+    // Async tool example
+    @McpTool(name = "async-calculation", description = "Perform async calculation")
+    public Mono<String> asyncCalculation(
+            @McpToolParam(description = "Input value", required = true) int value) {
+        return Mono.fromCallable(() -> {
+            // Simulate some async work
+            Thread.sleep(100);
+            return "Async result: " + (value * 2);
+        }).subscribeOn(Schedulers.boundedElastic());
+    }
+
+    public static class AreaResult {
+        public double area;
+        public String unit;
+        
+        public AreaResult(double area, String unit) {
+            this.area = area;
+            this.unit = unit;
+        }
+    }
+}
+```
+
+### Async Tool Example
+
+```java
+public class AsyncToolProvider {
+
+    @McpTool(name = "fetch-data", description = "Fetch data asynchronously")
+    public Mono<DataResponse> fetchData(
+            @McpToolParam(description = "Data ID to fetch", required = true) String dataId,
+            @McpToolParam(description = "Include metadata", required = false) Boolean includeMetadata) {
+        
+        return Mono.fromCallable(() -> {
+            // Simulate async data fetching
+            DataResponse response = new DataResponse();
+            response.id = dataId;
+            response.data = "Sample data for " + dataId;
+            response.metadata = Boolean.TRUE.equals(includeMetadata) ? 
+                Map.of("timestamp", System.currentTimeMillis()) : null;
+            return response;
+        }).subscribeOn(Schedulers.boundedElastic());
+    }
+
+    @McpTool(name = "stream-process", description = "Process data stream")
+    public Flux<String> streamProcess(
+            @McpToolParam(description = "Number of items to process", required = true) int count) {
+        
+        return Flux.range(1, count)
+            .map(i -> "Processed item " + i)
+            .delayElements(Duration.ofMillis(100));
+    }
+
+    public static class DataResponse {
+        public String id;
+        public String data;
+        public Map<String, Object> metadata;
+    }
+}
+```
+
+### Mcp Server with Tool capabilities
+
+```java
+public class McpServerFactory {
+
+    public McpSyncServer createMcpServerWithTools(
+            CalculatorToolProvider calculatorProvider,
+            MyResourceProvider resourceProvider) {
+        
+        List<SyncToolSpecification> toolSpecifications = 
+            new SyncMcpToolProvider(List.of(calculatorProvider)).getToolSpecifications();
+
+        List<SyncResourceSpecification> resourceSpecifications = 
+            new SyncMcpResourceProvider(List.of(resourceProvider)).getResourceSpecifications();
+            
+        // Create a server with tool support
+        McpSyncServer syncServer = McpServer.sync(transportProvider)
+            .serverInfo("calculator-server", "1.0.0")
+            .capabilities(ServerCapabilities.builder()
+                .tools(true)         // Enable tool support
+                .resources(true)     // Enable resource support
+                .logging()           // Enable logging support
+                .build())
+            .tools(toolSpecifications)
+            .resources(resourceSpecifications)
+            .build();
+
+        return syncServer;
+    }
+
+    public McpAsyncServer createAsyncMcpServerWithTools(
+            AsyncToolProvider asyncToolProvider) {
+        
+        List<AsyncToolSpecification> asyncToolSpecifications = 
+            new AsyncMcpToolProvider(List.of(asyncToolProvider)).getToolSpecifications();
+            
+        // Create an async server with tool support
+        McpAsyncServer asyncServer = McpServer.async(transportProvider)
+            .serverInfo("async-tool-server", "1.0.0")
+            .capabilities(ServerCapabilities.builder()
+                .tools(true)         // Enable tool support
+                .logging()           // Enable logging support
+                .build())
+            .tools(asyncToolSpecifications)
+            .build();
+
+        return asyncServer;
+    }
 }
 ```
 
@@ -507,6 +676,18 @@ public class McpConfig {
     }
     
     @Bean
+    public List<SyncToolSpecification> syncToolSpecifications(
+            List<CalculatorToolProvider> toolProviders) {
+        return SpringAiMcpAnnotationProvider.createSyncToolSpecifications(toolProviders);
+    }
+    
+    @Bean
+    public List<AsyncToolSpecification> asyncToolSpecifications(
+            List<AsyncToolProvider> asyncToolProviders) {
+        return SpringAiMcpAnnotationProvider.createAsyncToolSpecifications(asyncToolProviders);
+    }
+    
+    @Bean
     public List<Consumer<LoggingMessageNotification>> syncLoggingConsumers(
             List<LoggingHandler> loggingHandlers) {
         return SpringAiMcpAnnotationProvider.createSyncLoggingConsumers(loggingHandlers);
@@ -533,6 +714,7 @@ public class McpConfig {
 - **Builder pattern for callback creation** - Clean and fluent API for creating method callbacks
 - **Comprehensive validation** - Ensures method signatures are compatible with MCP operations
 - **URI template support** - Powerful URI template handling for resource and completion operations
+- **Tool support with automatic JSON schema generation** - Create MCP tools with automatic input/output schema generation from method signatures
 - **Logging consumer support** - Handle logging message notifications from MCP servers
 - **Sampling support** - Handle sampling requests from MCP servers
 - **Spring integration** - Seamless integration with Spring Framework and Spring AI

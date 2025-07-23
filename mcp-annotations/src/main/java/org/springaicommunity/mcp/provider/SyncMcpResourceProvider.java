@@ -42,7 +42,7 @@ public class SyncMcpResourceProvider {
 	public List<SyncResourceSpecification> getResourceSpecifications() {
 
 		List<SyncResourceSpecification> methodCallbacks = this.resourceObjects.stream()
-			.map(resourceObject -> Stream.of(doGetClassMethods(resourceObject))
+			.map(resourceObject -> Stream.of(this.doGetClassMethods(resourceObject))
 				.filter(resourceMethod -> resourceMethod.isAnnotationPresent(McpResource.class))
 				.filter(method -> !Mono.class.isAssignableFrom(method.getReturnType()))
 				.map(mcpResourceMethod -> {
@@ -52,7 +52,13 @@ public class SyncMcpResourceProvider {
 					var name = getName(mcpResourceMethod, resourceAnnotation);
 					var description = resourceAnnotation.description();
 					var mimeType = resourceAnnotation.mimeType();
-					var mcpResource = new McpSchema.Resource(uri, name, description, mimeType, null);
+
+					var mcpResource = McpSchema.Resource.builder()
+						.uri(uri)
+						.name(name)
+						.description(description)
+						.mimeType(mimeType)
+						.build();
 
 					var methodCallback = SyncMcpResourceMethodCallback.builder()
 						.method(mcpResourceMethod)

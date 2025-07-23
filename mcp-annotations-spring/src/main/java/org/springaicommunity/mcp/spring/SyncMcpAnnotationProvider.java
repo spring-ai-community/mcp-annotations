@@ -20,20 +20,20 @@ import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
-import org.springaicommunity.mcp.provider.AsyncMcpSamplingProvider;
 import org.springaicommunity.mcp.provider.SyncMcpCompletionProvider;
 import org.springaicommunity.mcp.provider.SyncMcpLoggingConsumerProvider;
 import org.springaicommunity.mcp.provider.SyncMcpPromptProvider;
 import org.springaicommunity.mcp.provider.SyncMcpResourceProvider;
 import org.springaicommunity.mcp.provider.SyncMcpSamplingProvider;
+import org.springaicommunity.mcp.provider.SyncMcpToolProvider;
 
 import io.modelcontextprotocol.server.McpServerFeatures.SyncCompletionSpecification;
 import io.modelcontextprotocol.server.McpServerFeatures.SyncPromptSpecification;
 import io.modelcontextprotocol.server.McpServerFeatures.SyncResourceSpecification;
+import io.modelcontextprotocol.server.McpServerFeatures.SyncToolSpecification;
 import io.modelcontextprotocol.spec.McpSchema.CreateMessageRequest;
 import io.modelcontextprotocol.spec.McpSchema.CreateMessageResult;
 import io.modelcontextprotocol.spec.McpSchema.LoggingMessageNotification;
-import reactor.core.publisher.Mono;
 
 /**
  * @author Christian Tzolov
@@ -52,6 +52,19 @@ public class SyncMcpAnnotationProvider {
 		}
 
 	};
+
+	private static class SpringAiSyncToolProvider extends SyncMcpToolProvider {
+
+		public SpringAiSyncToolProvider(List<Object> toolObjects) {
+			super(toolObjects);
+		}
+
+		@Override
+		protected Method[] doGetClassMethods(Object bean) {
+			return AnnotationProviderUtil.beanMethods(bean);
+		}
+
+	}
 
 	private static class SpringAiSyncMcpPromptProvider extends SyncMcpPromptProvider {
 
@@ -105,17 +118,8 @@ public class SyncMcpAnnotationProvider {
 
 	}
 
-	private static class SpringAiAsyncMcpSamplingProvider extends AsyncMcpSamplingProvider {
-
-		public SpringAiAsyncMcpSamplingProvider(List<Object> samplingObjects) {
-			super(samplingObjects);
-		}
-
-		@Override
-		protected Method[] doGetClassMethods(Object bean) {
-			return AnnotationProviderUtil.beanMethods(bean);
-		}
-
+	public static List<SyncToolSpecification> createSyncToolSpecifications(List<Object> toolObjects) {
+		return new SpringAiSyncToolProvider(toolObjects).getToolSpecifications();
 	}
 
 	public static List<SyncCompletionSpecification> createSyncCompleteSpecifications(List<Object> completeObjects) {
@@ -137,11 +141,6 @@ public class SyncMcpAnnotationProvider {
 	public static Function<CreateMessageRequest, CreateMessageResult> createSyncSamplingHandler(
 			List<Object> samplingObjects) {
 		return new SpringAiSyncMcpSamplingProvider(samplingObjects).getSamplingHandler();
-	}
-
-	public static Function<CreateMessageRequest, Mono<CreateMessageResult>> createAsyncSamplingHandler(
-			List<Object> samplingObjects) {
-		return new SpringAiAsyncMcpSamplingProvider(samplingObjects).getSamplingHandler();
 	}
 
 }

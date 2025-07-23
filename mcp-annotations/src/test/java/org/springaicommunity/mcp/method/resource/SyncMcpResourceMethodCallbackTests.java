@@ -4,9 +4,17 @@
 
 package org.springaicommunity.mcp.method.resource;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.mock;
+
 import java.lang.reflect.Method;
 import java.util.List;
 import java.util.function.BiFunction;
+
+import org.junit.jupiter.api.Test;
+import org.springaicommunity.mcp.annotation.McpResource;
+import org.springaicommunity.mcp.annotation.ResourceAdaptor;
 
 import io.modelcontextprotocol.server.McpSyncServerExchange;
 import io.modelcontextprotocol.spec.McpSchema.BlobResourceContents;
@@ -14,14 +22,6 @@ import io.modelcontextprotocol.spec.McpSchema.ReadResourceRequest;
 import io.modelcontextprotocol.spec.McpSchema.ReadResourceResult;
 import io.modelcontextprotocol.spec.McpSchema.ResourceContents;
 import io.modelcontextprotocol.spec.McpSchema.TextResourceContents;
-import org.junit.jupiter.api.Test;
-import org.springaicommunity.mcp.annotation.McpResource;
-import org.springaicommunity.mcp.annotation.ResourceAdaptor;
-import org.springaicommunity.mcp.method.resource.SyncMcpResourceMethodCallback;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.Mockito.mock;
 
 /**
  * Tests for {@link SyncMcpResourceMethodCallback}.
@@ -140,12 +140,12 @@ public class SyncMcpResourceMethodCallbackTests {
 
 			@Override
 			public String name() {
-				return "";
+				return "testResource";
 			}
 
 			@Override
 			public String description() {
-				return "";
+				return "Test resource description";
 			}
 
 			@Override
@@ -410,17 +410,17 @@ public class SyncMcpResourceMethodCallbackTests {
 
 			@Override
 			public String name() {
-				return "";
+				return "testResourceWithExtraVariables";
 			}
 
 			@Override
 			public String description() {
-				return "";
+				return "Test resource with extra URI variables";
 			}
 
 			@Override
 			public String mimeType() {
-				return "";
+				return "text/plain";
 			}
 		};
 

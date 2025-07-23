@@ -21,7 +21,9 @@ import java.util.function.Function;
 
 import org.springaicommunity.mcp.provider.AsyncMcpLoggingConsumerProvider;
 import org.springaicommunity.mcp.provider.AsyncMcpSamplingProvider;
+import org.springaicommunity.mcp.provider.AsyncMcpToolProvider;
 
+import io.modelcontextprotocol.server.McpServerFeatures.AsyncToolSpecification;
 import io.modelcontextprotocol.spec.McpSchema.CreateMessageRequest;
 import io.modelcontextprotocol.spec.McpSchema.CreateMessageResult;
 import io.modelcontextprotocol.spec.McpSchema.LoggingMessageNotification;
@@ -58,6 +60,19 @@ public class AsyncMcpAnnotationProvider {
 
 	}
 
+	private static class SpringAiAsyncMcpToolProvider extends AsyncMcpToolProvider {
+
+		public SpringAiAsyncMcpToolProvider(List<Object> toolObjects) {
+			super(toolObjects);
+		}
+
+		@Override
+		protected Method[] doGetClassMethods(Object bean) {
+			return AnnotationProviderUtil.beanMethods(bean);
+		}
+
+	}
+
 	public static List<Function<LoggingMessageNotification, Mono<Void>>> createAsyncLoggingConsumers(
 			List<Object> loggingObjects) {
 		return new SpringAiAsyncMcpLoggingConsumerProvider(loggingObjects).getLoggingConsumers();
@@ -66,6 +81,10 @@ public class AsyncMcpAnnotationProvider {
 	public static Function<CreateMessageRequest, Mono<CreateMessageResult>> createAsyncSamplingHandler(
 			List<Object> samplingObjects) {
 		return new SpringAiAsyncMcpSamplingProvider(samplingObjects).getSamplingHandler();
+	}
+
+	public static List<AsyncToolSpecification> createAsyncToolSpecifications(List<Object> toolObjects) {
+		return new SpringAiAsyncMcpToolProvider(toolObjects).getToolSpecifications();
 	}
 
 }
