@@ -122,7 +122,7 @@
 								Automatic-Module-Name:  ${project.groupId}.${project.artifactId}
 								Import-Package:         jakarta.*;resolution:=optional, \
 								                        *;
-								Export-Package:         io.modelcontextprotocol.*;version="${version}";-noimport:=true
+								Export-Package:         org.springaicommunity.mcp.*;version="${version}";-noimport:=true
 								-noimportjava:          true;
 								-nouses:                true;
 								-removeheaders:         Private-Package
