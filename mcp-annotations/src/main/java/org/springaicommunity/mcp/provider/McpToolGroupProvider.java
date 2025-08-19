@@ -1,4 +1,4 @@
-package bndtools.demo.mcpserver;
+package org.springaicommunity.mcp.provider;
 
 import java.lang.reflect.Method;
 

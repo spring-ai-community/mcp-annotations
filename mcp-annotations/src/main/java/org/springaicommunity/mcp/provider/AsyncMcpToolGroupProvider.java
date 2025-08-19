@@ -1,4 +1,4 @@
-package bndtools.demo.mcpserver;
+package org.springaicommunity.mcp.provider;
 
 import java.util.Arrays;
 import java.util.List;
