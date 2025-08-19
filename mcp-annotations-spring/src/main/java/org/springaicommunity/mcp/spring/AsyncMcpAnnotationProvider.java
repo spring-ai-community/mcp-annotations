@@ -19,6 +19,7 @@ import java.lang.reflect.Method;
 import java.util.List;
 import java.util.function.Function;
 
+import org.springaicommunity.mcp.provider.AsyncMcpElicitationProvider;
 import org.springaicommunity.mcp.provider.AsyncMcpLoggingConsumerProvider;
 import org.springaicommunity.mcp.provider.AsyncMcpSamplingProvider;
 import org.springaicommunity.mcp.provider.AsyncMcpToolProvider;
@@ -26,6 +27,8 @@ import org.springaicommunity.mcp.provider.AsyncMcpToolProvider;
 import io.modelcontextprotocol.server.McpServerFeatures.AsyncToolSpecification;
 import io.modelcontextprotocol.spec.McpSchema.CreateMessageRequest;
 import io.modelcontextprotocol.spec.McpSchema.CreateMessageResult;
+import io.modelcontextprotocol.spec.McpSchema.ElicitRequest;
+import io.modelcontextprotocol.spec.McpSchema.ElicitResult;
 import io.modelcontextprotocol.spec.McpSchema.LoggingMessageNotification;
 import reactor.core.publisher.Mono;
 
@@ -60,6 +63,19 @@ public class AsyncMcpAnnotationProvider {
 
 	}
 
+	private static class SpringAiAsyncMcpElicitationProvider extends AsyncMcpElicitationProvider {
+
+		public SpringAiAsyncMcpElicitationProvider(List<Object> elicitationObjects) {
+			super(elicitationObjects);
+		}
+
+		@Override
+		protected Method[] doGetClassMethods(Object bean) {
+			return AnnotationProviderUtil.beanMethods(bean);
+		}
+
+	}
+
 	private static class SpringAiAsyncMcpToolProvider extends AsyncMcpToolProvider {
 
 		public SpringAiAsyncMcpToolProvider(List<Object> toolObjects) {
@@ -81,6 +97,11 @@ public class AsyncMcpAnnotationProvider {
 	public static Function<CreateMessageRequest, Mono<CreateMessageResult>> createAsyncSamplingHandler(
 			List<Object> samplingObjects) {
 		return new SpringAiAsyncMcpSamplingProvider(samplingObjects).getSamplingHandler();
+	}
+
+	public static Function<ElicitRequest, Mono<ElicitResult>> createAsyncElicitationHandler(
+			List<Object> elicitationObjects) {
+		return new SpringAiAsyncMcpElicitationProvider(elicitationObjects).getElicitationHandler();
 	}
 
 	public static List<AsyncToolSpecification> createAsyncToolSpecifications(List<Object> toolObjects) {
