@@ -23,8 +23,12 @@ import org.springaicommunity.mcp.provider.AsyncMcpElicitationProvider;
 import org.springaicommunity.mcp.provider.AsyncMcpLoggingConsumerProvider;
 import org.springaicommunity.mcp.provider.AsyncMcpSamplingProvider;
 import org.springaicommunity.mcp.provider.AsyncMcpToolProvider;
+import org.springaicommunity.mcp.provider.AsyncStatelessMcpPromptProvider;
+import org.springaicommunity.mcp.provider.AsyncStatelessMcpResourceProvider;
+import org.springaicommunity.mcp.provider.AsyncStatelessMcpToolProvider;
 
 import io.modelcontextprotocol.server.McpServerFeatures.AsyncToolSpecification;
+import io.modelcontextprotocol.server.McpStatelessServerFeatures;
 import io.modelcontextprotocol.spec.McpSchema.CreateMessageRequest;
 import io.modelcontextprotocol.spec.McpSchema.CreateMessageResult;
 import io.modelcontextprotocol.spec.McpSchema.ElicitRequest;
@@ -89,6 +93,45 @@ public class AsyncMcpAnnotationProvider {
 
 	}
 
+	private static class SpringAiAsyncStatelessMcpToolProvider extends AsyncStatelessMcpToolProvider {
+
+		public SpringAiAsyncStatelessMcpToolProvider(List<Object> toolObjects) {
+			super(toolObjects);
+		}
+
+		@Override
+		protected Method[] doGetClassMethods(Object bean) {
+			return AnnotationProviderUtil.beanMethods(bean);
+		}
+
+	}
+
+	private static class SpringAiAsyncStatelessPromptProvider extends AsyncStatelessMcpPromptProvider {
+
+		public SpringAiAsyncStatelessPromptProvider(List<Object> promptObjects) {
+			super(promptObjects);
+		}
+
+		@Override
+		protected Method[] doGetClassMethods(Object bean) {
+			return AnnotationProviderUtil.beanMethods(bean);
+		}
+
+	}
+
+	private static class SpringAiAsyncStatelessResourceProvider extends AsyncStatelessMcpResourceProvider {
+
+		public SpringAiAsyncStatelessResourceProvider(List<Object> resourceObjects) {
+			super(resourceObjects);
+		}
+
+		@Override
+		protected Method[] doGetClassMethods(Object bean) {
+			return AnnotationProviderUtil.beanMethods(bean);
+		}
+
+	}
+
 	public static List<Function<LoggingMessageNotification, Mono<Void>>> createAsyncLoggingConsumers(
 			List<Object> loggingObjects) {
 		return new SpringAiAsyncMcpLoggingConsumerProvider(loggingObjects).getLoggingConsumers();
@@ -106,6 +149,21 @@ public class AsyncMcpAnnotationProvider {
 
 	public static List<AsyncToolSpecification> createAsyncToolSpecifications(List<Object> toolObjects) {
 		return new SpringAiAsyncMcpToolProvider(toolObjects).getToolSpecifications();
+	}
+
+	public static List<McpStatelessServerFeatures.AsyncToolSpecification> createAsyncStatelessToolSpecifications(
+			List<Object> toolObjects) {
+		return new SpringAiAsyncStatelessMcpToolProvider(toolObjects).getToolSpecifications();
+	}
+
+	public static List<McpStatelessServerFeatures.AsyncPromptSpecification> createAsyncStatelessPromptSpecifications(
+			List<Object> promptObjects) {
+		return new SpringAiAsyncStatelessPromptProvider(promptObjects).getPromptSpecifications();
+	}
+
+	public static List<McpStatelessServerFeatures.AsyncResourceSpecification> createAsyncStatelessResourceSpecifications(
+			List<Object> resourceObjects) {
+		return new SpringAiAsyncStatelessResourceProvider(resourceObjects).getResourceSpecifications();
 	}
 
 }

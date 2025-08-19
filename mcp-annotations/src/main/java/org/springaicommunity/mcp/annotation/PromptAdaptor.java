@@ -44,7 +44,7 @@ public class PromptAdaptor {
 
 	private static String getName(McpPrompt promptAnnotation, Method method) {
 		Assert.notNull(method, "method cannot be null");
-		if (promptAnnotation == null || (promptAnnotation.name() == null)) {
+		if (promptAnnotation == null || (promptAnnotation.name() == null) || promptAnnotation.name().isEmpty()) {
 			return method.getName();
 		}
 		return promptAnnotation.name();
