@@ -21,6 +21,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 
 import org.springaicommunity.mcp.provider.SyncMcpCompletionProvider;
+import org.springaicommunity.mcp.provider.SyncMcpElicitationProvider;
 import org.springaicommunity.mcp.provider.SyncMcpLoggingConsumerProvider;
 import org.springaicommunity.mcp.provider.SyncMcpPromptProvider;
 import org.springaicommunity.mcp.provider.SyncMcpResourceProvider;
@@ -33,6 +34,8 @@ import io.modelcontextprotocol.server.McpServerFeatures.SyncResourceSpecificatio
 import io.modelcontextprotocol.server.McpServerFeatures.SyncToolSpecification;
 import io.modelcontextprotocol.spec.McpSchema.CreateMessageRequest;
 import io.modelcontextprotocol.spec.McpSchema.CreateMessageResult;
+import io.modelcontextprotocol.spec.McpSchema.ElicitRequest;
+import io.modelcontextprotocol.spec.McpSchema.ElicitResult;
 import io.modelcontextprotocol.spec.McpSchema.LoggingMessageNotification;
 
 /**
@@ -118,6 +121,19 @@ public class SyncMcpAnnotationProvider {
 
 	}
 
+	private static class SpringAiSyncMcpElicitationProvider extends SyncMcpElicitationProvider {
+
+		public SpringAiSyncMcpElicitationProvider(List<Object> elicitationObjects) {
+			super(elicitationObjects);
+		}
+
+		@Override
+		protected Method[] doGetClassMethods(Object bean) {
+			return AnnotationProviderUtil.beanMethods(bean);
+		}
+
+	}
+
 	public static List<SyncToolSpecification> createSyncToolSpecifications(List<Object> toolObjects) {
 		return new SpringAiSyncToolProvider(toolObjects).getToolSpecifications();
 	}
@@ -141,6 +157,10 @@ public class SyncMcpAnnotationProvider {
 	public static Function<CreateMessageRequest, CreateMessageResult> createSyncSamplingHandler(
 			List<Object> samplingObjects) {
 		return new SpringAiSyncMcpSamplingProvider(samplingObjects).getSamplingHandler();
+	}
+
+	public static Function<ElicitRequest, ElicitResult> createSyncElicitationHandler(List<Object> elicitationObjects) {
+		return new SpringAiSyncMcpElicitationProvider(elicitationObjects).getElicitationHandler();
 	}
 
 }

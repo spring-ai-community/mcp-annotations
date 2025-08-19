@@ -1,0 +1,85 @@
+/*
+ * Copyright 2025-2025 the original author or authors.
+ */
+
+package org.springaicommunity.mcp.provider;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
+import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+
+import org.junit.jupiter.api.Test;
+import org.springaicommunity.mcp.annotation.McpElicitation;
+
+import io.modelcontextprotocol.spec.McpSchema.ElicitRequest;
+import io.modelcontextprotocol.spec.McpSchema.ElicitResult;
+
+/**
+ * Tests for {@link SyncMcpElicitationProvider}.
+ *
+ * @author Christian Tzolov
+ */
+public class SyncMcpElicitationProviderTests {
+
+	@Test
+	public void testGetElicitationHandler() {
+		var provider = new SyncMcpElicitationProvider(List.of(new TestElicitationHandler()));
+		Function<ElicitRequest, ElicitResult> handler = provider.getElicitationHandler();
+
+		assertNotNull(handler);
+
+		ElicitRequest request = new ElicitRequest("Please provide your name",
+				Map.of("type", "object", "properties", Map.of("name", Map.of("type", "string"))));
+		ElicitResult result = handler.apply(request);
+
+		assertNotNull(result);
+		assertEquals(ElicitResult.Action.ACCEPT, result.action());
+		assertNotNull(result.content());
+		assertEquals("Test User", result.content().get("name"));
+	}
+
+	@Test
+	public void testNoElicitationMethods() {
+		var provider = new SyncMcpElicitationProvider(List.of(new Object()));
+
+		assertThrows(IllegalStateException.class, () -> provider.getElicitationHandler(),
+				"No elicitation methods found");
+	}
+
+	@Test
+	public void testMultipleElicitationMethods() {
+		var provider = new SyncMcpElicitationProvider(List.of(new MultipleElicitationHandler()));
+
+		assertThrows(IllegalStateException.class, () -> provider.getElicitationHandler(),
+				"Multiple elicitation methods found");
+	}
+
+	public static class TestElicitationHandler {
+
+		@McpElicitation
+		public ElicitResult handleElicitation(ElicitRequest request) {
+			return new ElicitResult(ElicitResult.Action.ACCEPT,
+					Map.of("name", "Test User", "message", request.message()));
+		}
+
+	}
+
+	public static class MultipleElicitationHandler {
+
+		@McpElicitation
+		public ElicitResult handleElicitation1(ElicitRequest request) {
+			return new ElicitResult(ElicitResult.Action.ACCEPT, Map.of("handler", "1"));
+		}
+
+		@McpElicitation
+		public ElicitResult handleElicitation2(ElicitRequest request) {
+			return new ElicitResult(ElicitResult.Action.ACCEPT, Map.of("handler", "2"));
+		}
+
+	}
+
+}

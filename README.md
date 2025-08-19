@@ -92,6 +92,7 @@ The core module provides a set of annotations and callback implementations for p
 4. **Tool** - For implementing MCP tools with automatic JSON schema generation
 5. **Logging Consumer** - For handling logging message notifications
 6. **Sampling** - For handling sampling requests
+7. **Elicitation** - For handling elicitation requests to gather additional information from users
 
 Each operation type has both synchronous and asynchronous implementations, allowing for flexible integration with different application architectures.
 
@@ -110,6 +111,7 @@ The Spring integration module provides seamless integration with Spring AI and S
 - **`@McpToolParam`** - Annotates tool method parameters with descriptions and requirement specifications
 - **`@McpLoggingConsumer`** - Annotates methods that handle logging message notifications from MCP servers
 - **`@McpSampling`** - Annotates methods that handle sampling requests from MCP servers
+- **`@McpElicitation`** - Annotates methods that handle elicitation requests to gather additional information from users
 - **`@McpArg`** - Annotates method parameters as MCP arguments
 
 ### Method Callbacks
@@ -145,6 +147,11 @@ The modules provide callback implementations for each operation type:
 - `SyncMcpSamplingMethodCallback` - Synchronous implementation
 - `AsyncMcpSamplingMethodCallback` - Asynchronous implementation using Reactor's Mono
 
+#### Elicitation
+- `AbstractMcpElicitationMethodCallback` - Base class for elicitation method callbacks
+- `SyncMcpElicitationMethodCallback` - Synchronous implementation
+- `AsyncMcpElicitationMethodCallback` - Asynchronous implementation using Reactor's Mono
+
 ### Providers
 
 The project includes provider classes that scan for annotated methods and create appropriate callbacks:
@@ -158,6 +165,8 @@ The project includes provider classes that scan for annotated methods and create
 - `AsyncMcpLoggingConsumerProvider` - Processes `@McpLoggingConsumer` annotations for asynchronous operations
 - `SyncMcpSamplingProvider` - Processes `@McpSampling` annotations for synchronous operations
 - `AsyncMcpSamplingProvider` - Processes `@McpSampling` annotations for asynchronous operations
+- `SyncMcpElicitationProvider` - Processes `@McpElicitation` annotations for synchronous operations
+- `AsyncMcpElicitationProvider` - Processes `@McpElicitation` annotations for asynchronous operations
 
 ### Spring Integration
 
@@ -650,6 +659,128 @@ public class MyMcpClient {
 }
 ```
 
+### Mcp Client Elicitation Example
+
+```java
+public class ElicitationHandler {
+
+    /**
+     * Handle elicitation requests with a synchronous implementation.
+     * @param request The elicitation request
+     * @return The elicitation result
+     */
+    @McpElicitation
+    public ElicitResult handleElicitationRequest(ElicitRequest request) {
+        // Example implementation that accepts the request and returns user data
+        // In a real implementation, this would present a form to the user
+        // and collect their input based on the requested schema
+        
+        Map<String, Object> userData = new HashMap<>();
+        
+        // Check what information is being requested based on the schema
+        Map<String, Object> schema = request.requestedSchema();
+        if (schema != null && schema.containsKey("properties")) {
+            @SuppressWarnings("unchecked")
+            Map<String, Object> properties = (Map<String, Object>) schema.get("properties");
+            
+            // Simulate user providing the requested information
+            if (properties.containsKey("name")) {
+                userData.put("name", "John Doe");
+            }
+            if (properties.containsKey("email")) {
+                userData.put("email", "john.doe@example.com");
+            }
+            if (properties.containsKey("age")) {
+                userData.put("age", 30);
+            }
+            if (properties.containsKey("preferences")) {
+                userData.put("preferences", Map.of("theme", "dark", "notifications", true));
+            }
+        }
+        
+        return new ElicitResult(ElicitResult.Action.ACCEPT, userData);
+    }
+
+    /**
+     * Handle elicitation requests that should be declined.
+     * @param request The elicitation request
+     * @return The elicitation result with decline action
+     */
+    @McpElicitation
+    public ElicitResult handleDeclineElicitationRequest(ElicitRequest request) {
+        // Example of declining an elicitation request
+        return new ElicitResult(ElicitResult.Action.DECLINE, null);
+    }
+}
+
+public class AsyncElicitationHandler {
+
+    /**
+     * Handle elicitation requests with an asynchronous implementation.
+     * @param request The elicitation request
+     * @return A Mono containing the elicitation result
+     */
+    @McpElicitation
+    public Mono<ElicitResult> handleAsyncElicitationRequest(ElicitRequest request) {
+        return Mono.fromCallable(() -> {
+            // Simulate async processing of the elicitation request
+            // In a real implementation, this might involve showing a UI form
+            // and waiting for user input
+            
+            Map<String, Object> userData = new HashMap<>();
+            userData.put("response", "Async elicitation response");
+            userData.put("timestamp", System.currentTimeMillis());
+            userData.put("message", request.message());
+            
+            return new ElicitResult(ElicitResult.Action.ACCEPT, userData);
+        }).delayElement(Duration.ofMillis(100)); // Simulate processing delay
+    }
+
+    /**
+     * Handle elicitation requests that might be cancelled.
+     * @param request The elicitation request
+     * @return A Mono containing the elicitation result with cancel action
+     */
+    @McpElicitation
+    public Mono<ElicitResult> handleCancelElicitationRequest(ElicitRequest request) {
+        return Mono.just(new ElicitResult(ElicitResult.Action.CANCEL, null));
+    }
+}
+
+public class MyMcpClient {
+
+    public static McpSyncClient createSyncClientWithElicitation(ElicitationHandler elicitationHandler) {
+        Function<ElicitRequest, ElicitResult> elicitationHandler = 
+            new SyncMcpElicitationProvider(List.of(elicitationHandler)).getElicitationHandler();
+
+        McpSyncClient client = McpClient.sync(transport)
+            .capabilities(ClientCapabilities.builder()
+                .elicitation()  // Enable elicitation support
+                // Other capabilities...
+                .build())
+            .elicitationHandler(elicitationHandler)
+            .build();
+
+        return client;
+    }
+    
+    public static McpAsyncClient createAsyncClientWithElicitation(AsyncElicitationHandler asyncElicitationHandler) {
+        Function<ElicitRequest, Mono<ElicitResult>> elicitationHandler = 
+            new AsyncMcpElicitationProvider(List.of(asyncElicitationHandler)).getElicitationHandler();
+
+        McpAsyncClient client = McpClient.async(transport)
+            .capabilities(ClientCapabilities.builder()
+                .elicitation()  // Enable elicitation support
+                // Other capabilities...
+                .build())
+            .elicitationHandler(elicitationHandler)
+            .build();
+
+        return client;
+    }
+}
+```
+
 
 ### Spring Integration Example
 
@@ -703,6 +834,18 @@ public class McpConfig {
     public Function<CreateMessageRequest, Mono<CreateMessageResult>> asyncSamplingHandler(
             List<AsyncSamplingHandler> asyncSamplingHandlers) {
         return SpringAiMcpAnnotationProvider.createAsyncSamplingHandler(asyncSamplingHandlers);
+    }
+    
+    @Bean
+    public Function<ElicitRequest, ElicitResult> syncElicitationHandler(
+            List<ElicitationHandler> elicitationHandlers) {
+        return SpringAiMcpAnnotationProvider.createSyncElicitationHandler(elicitationHandlers);
+    }
+    
+    @Bean
+    public Function<ElicitRequest, Mono<ElicitResult>> asyncElicitationHandler(
+            List<AsyncElicitationHandler> asyncElicitationHandlers) {
+        return SpringAiMcpAnnotationProvider.createAsyncElicitationHandler(asyncElicitationHandlers);
     }
 }
 ```
