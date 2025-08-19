@@ -13,6 +13,7 @@ public class McpToolGroupProvider {
 	protected static final Logger logger = LoggerFactory.getLogger(McpToolGroupProvider.class);
 
 	private final Object serviceObject;
+
 	private final Class<?> toolGroup;
 
 	public McpToolGroupProvider(Object serviceObject, Class<?> toolGroup) {
