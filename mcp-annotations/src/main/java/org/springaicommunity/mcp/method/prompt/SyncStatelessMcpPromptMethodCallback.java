@@ -10,47 +10,47 @@ import java.util.function.BiFunction;
 
 import org.springaicommunity.mcp.annotation.McpPrompt;
 
-import io.modelcontextprotocol.server.McpSyncServerExchange;
+import io.modelcontextprotocol.server.McpTransportContext;
 import io.modelcontextprotocol.spec.McpSchema.GetPromptRequest;
 import io.modelcontextprotocol.spec.McpSchema.GetPromptResult;
 import io.modelcontextprotocol.spec.McpSchema.PromptMessage;
 
 /**
- * Class for creating BiFunction callbacks around prompt methods.
+ * Class for creating BiFunction callbacks around prompt methods for stateless contexts.
  *
  * This class provides a way to convert methods annotated with {@link McpPrompt} into
- * callback functions that can be used to handle prompt requests. It supports various
- * method signatures and return types.
+ * callback functions that can be used to handle prompt requests in stateless
+ * environments. It supports various method signatures and return types.
  *
  * @author Christian Tzolov
  */
-public final class SyncMcpPromptMethodCallback extends AbstractMcpPromptMethodCallback
-		implements BiFunction<McpSyncServerExchange, GetPromptRequest, GetPromptResult> {
+public final class SyncStatelessMcpPromptMethodCallback extends AbstractMcpPromptMethodCallback
+		implements BiFunction<McpTransportContext, GetPromptRequest, GetPromptResult> {
 
-	private SyncMcpPromptMethodCallback(Builder builder) {
+	private SyncStatelessMcpPromptMethodCallback(Builder builder) {
 		super(builder.method, builder.bean, builder.prompt);
 	}
 
 	/**
-	 * Apply the callback to the given exchange and request.
+	 * Apply the callback to the given context and request.
 	 * <p>
 	 * This method builds the arguments for the method call, invokes the method, and
 	 * converts the result to a GetPromptResult.
-	 * @param exchange The server exchange, may be null if the method doesn't require it
+	 * @param context The transport context, may be null if the method doesn't require it
 	 * @param request The prompt request, must not be null
 	 * @return The prompt result
 	 * @throws McpPromptMethodException if there is an error invoking the prompt method
 	 * @throws IllegalArgumentException if the request is null
 	 */
 	@Override
-	public GetPromptResult apply(McpSyncServerExchange exchange, GetPromptRequest request) {
+	public GetPromptResult apply(McpTransportContext context, GetPromptRequest request) {
 		if (request == null) {
 			throw new IllegalArgumentException("Request must not be null");
 		}
 
 		try {
 			// Build arguments for the method call
-			Object[] args = this.buildArgs(this.method, exchange, request);
+			Object[] args = this.buildArgs(this.method, context, request);
 
 			// Invoke the method
 			this.method.setAccessible(true);
@@ -68,7 +68,7 @@ public final class SyncMcpPromptMethodCallback extends AbstractMcpPromptMethodCa
 
 	@Override
 	protected boolean isExchangeOrContextType(Class<?> paramType) {
-		return McpSyncServerExchange.class.isAssignableFrom(paramType);
+		return McpTransportContext.class.isAssignableFrom(paramType);
 	}
 
 	@Override
@@ -87,21 +87,21 @@ public final class SyncMcpPromptMethodCallback extends AbstractMcpPromptMethodCa
 	}
 
 	/**
-	 * Builder for creating SyncMcpPromptMethodCallback instances.
+	 * Builder for creating SyncStatelessMcpPromptMethodCallback instances.
 	 * <p>
-	 * This builder provides a fluent API for constructing SyncMcpPromptMethodCallback
-	 * instances with the required parameters.
+	 * This builder provides a fluent API for constructing
+	 * SyncStatelessMcpPromptMethodCallback instances with the required parameters.
 	 */
-	public static class Builder extends AbstractBuilder<Builder, SyncMcpPromptMethodCallback> {
+	public static class Builder extends AbstractBuilder<Builder, SyncStatelessMcpPromptMethodCallback> {
 
 		/**
 		 * Build the callback.
-		 * @return A new SyncMcpPromptMethodCallback instance
+		 * @return A new SyncStatelessMcpPromptMethodCallback instance
 		 */
 		@Override
-		public SyncMcpPromptMethodCallback build() {
+		public SyncStatelessMcpPromptMethodCallback build() {
 			validate();
-			return new SyncMcpPromptMethodCallback(this);
+			return new SyncStatelessMcpPromptMethodCallback(this);
 		}
 
 	}

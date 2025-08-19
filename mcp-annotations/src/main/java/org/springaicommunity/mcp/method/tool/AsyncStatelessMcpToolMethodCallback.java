@@ -16,62 +16,53 @@
 
 package org.springaicommunity.mcp.method.tool;
 
-import java.lang.reflect.Method;
 import java.util.function.BiFunction;
 
 import org.springaicommunity.mcp.annotation.McpTool;
 
-import io.modelcontextprotocol.server.McpAsyncServerExchange;
+import io.modelcontextprotocol.server.McpTransportContext;
 import io.modelcontextprotocol.spec.McpSchema.CallToolRequest;
 import io.modelcontextprotocol.spec.McpSchema.CallToolResult;
 import reactor.core.publisher.Mono;
 
 /**
- * Class for creating Function callbacks around tool methods.
+ * Class for creating Function callbacks around async stateless tool methods.
  *
  * This class provides a way to convert methods annotated with {@link McpTool} into
- * callback functions that can be used to handle tool requests.
+ * callback functions that can be used to handle tool requests asynchronously in a
+ * stateless manner using McpTransportContext.
  *
  * @author Christian Tzolov
  */
-public final class AsyncMcpToolMethodCallback extends AbstractAsyncMcpToolMethodCallback<McpAsyncServerExchange>
-		implements BiFunction<McpAsyncServerExchange, CallToolRequest, Mono<CallToolResult>> {
+public final class AsyncStatelessMcpToolMethodCallback extends AbstractAsyncMcpToolMethodCallback<McpTransportContext>
+		implements BiFunction<McpTransportContext, CallToolRequest, Mono<CallToolResult>> {
 
-	public AsyncMcpToolMethodCallback(ReturnMode returnMode, Method toolMethod, Object toolObject) {
+	public AsyncStatelessMcpToolMethodCallback(ReturnMode returnMode, java.lang.reflect.Method toolMethod,
+			Object toolObject) {
 		super(returnMode, toolMethod, toolObject);
 	}
 
 	@Override
 	protected boolean isExchangeOrContextType(Class<?> paramType) {
-		return McpAsyncServerExchange.class.isAssignableFrom(paramType);
-	}
-
-	/**
-	 * Public method for backward compatibility with tests. Delegates to the protected
-	 * isExchangeOrContextType method.
-	 * @param paramType The parameter type to check
-	 * @return true if the parameter type is an exchange type, false otherwise
-	 */
-	public boolean isExchangeType(Class<?> paramType) {
-		return isExchangeOrContextType(paramType);
+		return McpTransportContext.class.isAssignableFrom(paramType);
 	}
 
 	/**
 	 * Apply the callback to the given request.
 	 * <p>
 	 * This method builds the arguments for the method call, invokes the method, and
-	 * returns the result.
-	 * @param exchange The server exchange context
+	 * returns the result asynchronously.
+	 * @param mcpTransportContext The transport context
 	 * @param request The tool call request, must not be null
-	 * @return The result of the method invocation
+	 * @return A Mono containing the result of the method invocation
 	 */
 	@Override
-	public Mono<CallToolResult> apply(McpAsyncServerExchange exchange, CallToolRequest request) {
+	public Mono<CallToolResult> apply(McpTransportContext mcpTransportContext, CallToolRequest request) {
 
 		return validateRequest(request).then(Mono.defer(() -> {
 			try {
 				// Build arguments for the method call
-				Object[] args = this.buildMethodArguments(exchange, request.arguments());
+				Object[] args = this.buildMethodArguments(mcpTransportContext, request.arguments());
 
 				// Invoke the method
 				Object result = this.callMethod(args);
