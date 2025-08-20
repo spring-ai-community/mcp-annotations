@@ -73,7 +73,7 @@ public abstract class AbstractMcpPromptMethodCallback {
 	 * @return true if the parameter type is compatible with the exchange type, false
 	 * otherwise
 	 */
-	protected abstract boolean isExchangeType(Class<?> paramType);
+	protected abstract boolean isExchangeOrContextType(Class<?> paramType);
 
 	/**
 	 * Validates method parameters.
@@ -91,7 +91,7 @@ public abstract class AbstractMcpPromptMethodCallback {
 		for (java.lang.reflect.Parameter param : parameters) {
 			Class<?> paramType = param.getType();
 
-			if (isExchangeType(paramType)) {
+			if (isExchangeOrContextType(paramType)) {
 				if (hasExchangeParam) {
 					throw new IllegalArgumentException("Method cannot have more than one exchange parameter: "
 							+ method.getName() + " in " + method.getDeclaringClass().getName());
@@ -134,7 +134,7 @@ public abstract class AbstractMcpPromptMethodCallback {
 			java.lang.reflect.Parameter param = parameters[i];
 			Class<?> paramType = param.getType();
 
-			if (isExchangeType(paramType)) {
+			if (isExchangeOrContextType(paramType)) {
 				args[i] = exchange;
 			}
 			else if (GetPromptRequest.class.isAssignableFrom(paramType)) {

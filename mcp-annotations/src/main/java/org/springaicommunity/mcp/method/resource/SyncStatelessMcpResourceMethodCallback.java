@@ -11,36 +11,37 @@ import java.util.function.BiFunction;
 
 import org.springaicommunity.mcp.annotation.McpResource;
 
-import io.modelcontextprotocol.server.McpSyncServerExchange;
+import io.modelcontextprotocol.server.McpTransportContext;
 import io.modelcontextprotocol.spec.McpSchema.ReadResourceRequest;
 import io.modelcontextprotocol.spec.McpSchema.ReadResourceResult;
 import io.modelcontextprotocol.spec.McpSchema.ResourceContents;
 
 /**
- * Class for creating BiFunction callbacks around resource methods.
+ * Class for creating BiFunction callbacks around resource methods for stateless contexts.
  *
  * This class provides a way to convert methods annotated with {@link McpResource} into
- * callback functions that can be used to handle resource requests. It supports various
- * method signatures and return types, and handles URI template variables.
+ * callback functions that can be used to handle resource requests in stateless
+ * environments. It supports various method signatures and return types, and handles URI
+ * template variables.
  *
  * @author Christian Tzolov
  */
-public final class SyncMcpResourceMethodCallback extends AbstractMcpResourceMethodCallback
-		implements BiFunction<McpSyncServerExchange, ReadResourceRequest, ReadResourceResult> {
+public final class SyncStatelessMcpResourceMethodCallback extends AbstractMcpResourceMethodCallback
+		implements BiFunction<McpTransportContext, ReadResourceRequest, ReadResourceResult> {
 
-	private SyncMcpResourceMethodCallback(Builder builder) {
+	private SyncStatelessMcpResourceMethodCallback(Builder builder) {
 		super(builder.method, builder.bean, builder.uri, builder.name, builder.description, builder.mimeType,
 				builder.resultConverter, builder.uriTemplateManagerFactory, builder.contentType);
 		this.validateMethod(this.method);
 	}
 
 	/**
-	 * Apply the callback to the given exchange and request.
+	 * Apply the callback to the given context and request.
 	 * <p>
 	 * This method extracts URI variable values from the request URI, builds the arguments
 	 * for the method call, invokes the method, and converts the result to a
 	 * ReadResourceResult.
-	 * @param exchange The server exchange, may be null if the method doesn't require it
+	 * @param context The transport context, may be null if the method doesn't require it
 	 * @param request The resource request, must not be null
 	 * @return The resource result
 	 * @throws McpResourceMethodException if there is an error invoking the resource
@@ -49,7 +50,7 @@ public final class SyncMcpResourceMethodCallback extends AbstractMcpResourceMeth
 	 * extraction fails
 	 */
 	@Override
-	public ReadResourceResult apply(McpSyncServerExchange exchange, ReadResourceRequest request) {
+	public ReadResourceResult apply(McpTransportContext context, ReadResourceRequest request) {
 		if (request == null) {
 			throw new IllegalArgumentException("Request must not be null");
 		}
@@ -66,7 +67,7 @@ public final class SyncMcpResourceMethodCallback extends AbstractMcpResourceMeth
 			}
 
 			// Build arguments for the method call
-			Object[] args = this.buildArgs(this.method, exchange, request, uriVariableValues);
+			Object[] args = this.buildArgs(this.method, context, request, uriVariableValues);
 
 			// Invoke the method
 			this.method.setAccessible(true);
@@ -82,12 +83,12 @@ public final class SyncMcpResourceMethodCallback extends AbstractMcpResourceMeth
 	}
 
 	/**
-	 * Builder for creating SyncMcpResourceMethodCallback instances.
+	 * Builder for creating SyncStatelessMcpResourceMethodCallback instances.
 	 * <p>
-	 * This builder provides a fluent API for constructing SyncMcpResourceMethodCallback
-	 * instances with the required parameters.
+	 * This builder provides a fluent API for constructing
+	 * SyncStatelessMcpResourceMethodCallback instances with the required parameters.
 	 */
-	public static class Builder extends AbstractBuilder<Builder, SyncMcpResourceMethodCallback> {
+	public static class Builder extends AbstractBuilder<Builder, SyncStatelessMcpResourceMethodCallback> {
 
 		/**
 		 * Constructor for Builder.
@@ -97,9 +98,9 @@ public final class SyncMcpResourceMethodCallback extends AbstractMcpResourceMeth
 		}
 
 		@Override
-		public SyncMcpResourceMethodCallback build() {
+		public SyncStatelessMcpResourceMethodCallback build() {
 			validate();
-			return new SyncMcpResourceMethodCallback(this);
+			return new SyncStatelessMcpResourceMethodCallback(this);
 		}
 
 	}
@@ -130,7 +131,7 @@ public final class SyncMcpResourceMethodCallback extends AbstractMcpResourceMeth
 
 	@Override
 	protected boolean isExchangeOrContextType(Class<?> paramType) {
-		return McpSyncServerExchange.class.isAssignableFrom(paramType);
+		return McpTransportContext.class.isAssignableFrom(paramType);
 	}
 
 }

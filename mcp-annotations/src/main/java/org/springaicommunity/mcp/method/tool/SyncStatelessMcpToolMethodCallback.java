@@ -20,7 +20,7 @@ import java.util.function.BiFunction;
 
 import org.springaicommunity.mcp.annotation.McpTool;
 
-import io.modelcontextprotocol.server.McpSyncServerExchange;
+import io.modelcontextprotocol.server.McpTransportContext;
 import io.modelcontextprotocol.spec.McpSchema.CallToolRequest;
 import io.modelcontextprotocol.spec.McpSchema.CallToolResult;
 
@@ -30,46 +30,29 @@ import io.modelcontextprotocol.spec.McpSchema.CallToolResult;
  * This class provides a way to convert methods annotated with {@link McpTool} into
  * callback functions that can be used to handle tool requests.
  *
+ * @author James Ward
  * @author Christian Tzolov
  */
-public final class SyncMcpToolMethodCallback extends AbstractSyncMcpToolMethodCallback<McpSyncServerExchange>
-		implements BiFunction<McpSyncServerExchange, CallToolRequest, CallToolResult> {
+public final class SyncStatelessMcpToolMethodCallback extends AbstractSyncMcpToolMethodCallback<McpTransportContext>
+		implements BiFunction<McpTransportContext, CallToolRequest, CallToolResult> {
 
-	public SyncMcpToolMethodCallback(ReturnMode returnMode, java.lang.reflect.Method toolMethod, Object toolObject) {
+	public SyncStatelessMcpToolMethodCallback(ReturnMode returnMode, java.lang.reflect.Method toolMethod,
+			Object toolObject) {
 		super(returnMode, toolMethod, toolObject);
 	}
 
 	@Override
 	protected boolean isExchangeOrContextType(Class<?> paramType) {
-		return McpSyncServerExchange.class.isAssignableFrom(paramType);
+		return McpTransportContext.class.isAssignableFrom(paramType);
 	}
 
-	/**
-	 * Public method for backward compatibility with tests. Delegates to the protected
-	 * isExchangeOrContextType method.
-	 * @param paramType The parameter type to check
-	 * @return true if the parameter type is an exchange type, false otherwise
-	 */
-	public boolean isExchangeType(Class<?> paramType) {
-		return isExchangeOrContextType(paramType);
-	}
-
-	/**
-	 * Apply the callback to the given request.
-	 * <p>
-	 * This method builds the arguments for the method call, invokes the method, and
-	 * returns the result.
-	 * @param exchange The server exchange context
-	 * @param request The tool call request, must not be null
-	 * @return The result of the method invocation
-	 */
 	@Override
-	public CallToolResult apply(McpSyncServerExchange exchange, CallToolRequest request) {
-		validateRequest(request);
+	public CallToolResult apply(McpTransportContext mcpTransportContext, CallToolRequest callToolRequest) {
+		validateRequest(callToolRequest);
 
 		try {
 			// Build arguments for the method call
-			Object[] args = this.buildMethodArguments(exchange, request.arguments());
+			Object[] args = this.buildMethodArguments(mcpTransportContext, callToolRequest.arguments());
 
 			// Invoke the method
 			Object result = this.callMethod(args);

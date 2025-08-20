@@ -18,7 +18,7 @@ The MCP Annotations project provides annotation-based method handling for [Model
 This project consists of two main modules:
 
 1. **mcp-annotations** - Core annotations and method handling for MCP operations. Depends only on MCP Java SDK. 
-2. **spring-ai-mcp-annotations** - Spring AI integration for MCP annotations
+2. **mcp-annotations-spring** - Spring AI integration for MCP annotations
 
 ## Overview
 
@@ -46,8 +46,8 @@ To use the Spring integration module, add the following dependency:
 
 ```xml
 <dependency>
-    <groupId>corg.springaicommunity</groupId>
-    <artifactId>spring-ai-mcp-annotations</artifactId>
+    <groupId>org.springaicommunity</groupId>
+    <artifactId>mcp-annotations-spring</artifactId>
     <version>0.2.0-SNAPSHOT</version>
 </dependency>
 ```
@@ -92,10 +92,11 @@ The core module provides a set of annotations and callback implementations for p
 4. **Tool** - For implementing MCP tools with automatic JSON schema generation
 5. **Logging Consumer** - For handling logging message notifications
 6. **Sampling** - For handling sampling requests
+7. **Elicitation** - For handling elicitation requests to gather additional information from users
 
 Each operation type has both synchronous and asynchronous implementations, allowing for flexible integration with different application architectures.
 
-### Spring Integration Module (spring-ai-mcp-annotations)
+### Spring Integration Module (mcp-annotations-spring)
 
 The Spring integration module provides seamless integration with Spring AI and Spring Framework applications. It handles Spring-specific concerns such as AOP proxies and integrates with Spring AI's model abstractions.
 
@@ -110,6 +111,7 @@ The Spring integration module provides seamless integration with Spring AI and S
 - **`@McpToolParam`** - Annotates tool method parameters with descriptions and requirement specifications
 - **`@McpLoggingConsumer`** - Annotates methods that handle logging message notifications from MCP servers
 - **`@McpSampling`** - Annotates methods that handle sampling requests from MCP servers
+- **`@McpElicitation`** - Annotates methods that handle elicitation requests to gather additional information from users
 - **`@McpArg`** - Annotates method parameters as MCP arguments
 
 ### Method Callbacks
@@ -120,16 +122,22 @@ The modules provide callback implementations for each operation type:
 - `AbstractMcpCompleteMethodCallback` - Base class for complete method callbacks
 - `SyncMcpCompleteMethodCallback` - Synchronous implementation
 - `AsyncMcpCompleteMethodCallback` - Asynchronous implementation using Reactor's Mono
+- `SyncStatelessMcpCompleteMethodCallback` - Synchronous stateless implementation using `McpTransportContext`
+- `AsyncStatelessMcpCompleteMethodCallback` - Asynchronous stateless implementation using `McpTransportContext`
 
 #### Prompt
 - `AbstractMcpPromptMethodCallback` - Base class for prompt method callbacks
 - `SyncMcpPromptMethodCallback` - Synchronous implementation
 - `AsyncMcpPromptMethodCallback` - Asynchronous implementation using Reactor's Mono
+- `SyncStatelessMcpPromptMethodCallback` - Synchronous stateless implementation using `McpTransportContext`
+- `AsyncStatelessMcpPromptMethodCallback` - Asynchronous stateless implementation using `McpTransportContext`
 
 #### Resource
 - `AbstractMcpResourceMethodCallback` - Base class for resource method callbacks
 - `SyncMcpResourceMethodCallback` - Synchronous implementation
 - `AsyncMcpResourceMethodCallback` - Asynchronous implementation using Reactor's Mono
+- `SyncStatelessMcpResourceMethodCallback` - Synchronous stateless implementation using `McpTransportContext`
+- `AsyncStatelessMcpResourceMethodCallback` - Asynchronous stateless implementation using `McpTransportContext`
 
 #### Logging Consumer
 - `AbstractMcpLoggingConsumerMethodCallback` - Base class for logging consumer method callbacks
@@ -137,18 +145,28 @@ The modules provide callback implementations for each operation type:
 - `AsyncMcpLoggingConsumerMethodCallback` - Asynchronous implementation using Reactor's Mono
 
 #### Tool
-- `SyncMcpToolMethodCallback` - Synchronous implementation for tool method callbacks
-- `AsyncMcpToolMethodCallback` - Asynchronous implementation using Reactor's Mono
+- `AbstractSyncMcpToolMethodCallback` - Base class for synchronous tool method callbacks
+- `AbstractAsyncMcpToolMethodCallback` - Base class for asynchronous tool method callbacks
+- `SyncMcpToolMethodCallback` - Synchronous implementation for tool method callbacks with server exchange
+- `AsyncMcpToolMethodCallback` - Asynchronous implementation using Reactor's Mono with server exchange
+- `SyncStatelessMcpToolMethodCallback` - Synchronous stateless implementation for tool method callbacks
+- `AsyncStatelessMcpToolMethodCallback` - Asynchronous stateless implementation using Reactor's Mono
 
 #### Sampling
 - `AbstractMcpSamplingMethodCallback` - Base class for sampling method callbacks
 - `SyncMcpSamplingMethodCallback` - Synchronous implementation
 - `AsyncMcpSamplingMethodCallback` - Asynchronous implementation using Reactor's Mono
 
+#### Elicitation
+- `AbstractMcpElicitationMethodCallback` - Base class for elicitation method callbacks
+- `SyncMcpElicitationMethodCallback` - Synchronous implementation
+- `AsyncMcpElicitationMethodCallback` - Asynchronous implementation using Reactor's Mono
+
 ### Providers
 
 The project includes provider classes that scan for annotated methods and create appropriate callbacks:
 
+#### Stateful Providers (using McpSyncServerExchange/McpAsyncServerExchange)
 - `SyncMcpCompletionProvider` - Processes `@McpComplete` annotations for synchronous operations
 - `SyncMcpPromptProvider` - Processes `@McpPrompt` annotations for synchronous operations
 - `SyncMcpResourceProvider` - Processes `@McpResource` annotations for synchronous operations
@@ -158,6 +176,18 @@ The project includes provider classes that scan for annotated methods and create
 - `AsyncMcpLoggingConsumerProvider` - Processes `@McpLoggingConsumer` annotations for asynchronous operations
 - `SyncMcpSamplingProvider` - Processes `@McpSampling` annotations for synchronous operations
 - `AsyncMcpSamplingProvider` - Processes `@McpSampling` annotations for asynchronous operations
+- `SyncMcpElicitationProvider` - Processes `@McpElicitation` annotations for synchronous operations
+- `AsyncMcpElicitationProvider` - Processes `@McpElicitation` annotations for asynchronous operations
+
+#### Stateless Providers (using McpTransportContext)
+- `SyncStatelessMcpCompleteProvider` - Processes `@McpComplete` annotations for synchronous stateless operations
+- `AsyncStatelessMcpCompleteProvider` - Processes `@McpComplete` annotations for asynchronous stateless operations
+- `SyncStatelessMcpPromptProvider` - Processes `@McpPrompt` annotations for synchronous stateless operations
+- `AsyncStatelessMcpPromptProvider` - Processes `@McpPrompt` annotations for asynchronous stateless operations
+- `SyncStatelessMcpResourceProvider` - Processes `@McpResource` annotations for synchronous stateless operations
+- `AsyncStatelessMcpResourceProvider` - Processes `@McpResource` annotations for asynchronous stateless operations
+- `SyncStatelessMcpToolProvider` - Processes `@McpTool` annotations for synchronous stateless operations
+- `AsyncStatelessMcpToolProvider` - Processes `@McpTool` annotations for asynchronous stateless operations
 
 ### Spring Integration
 
@@ -650,6 +680,310 @@ public class MyMcpClient {
 }
 ```
 
+### Mcp Client Elicitation Example
+
+```java
+public class ElicitationHandler {
+
+    /**
+     * Handle elicitation requests with a synchronous implementation.
+     * @param request The elicitation request
+     * @return The elicitation result
+     */
+    @McpElicitation
+    public ElicitResult handleElicitationRequest(ElicitRequest request) {
+        // Example implementation that accepts the request and returns user data
+        // In a real implementation, this would present a form to the user
+        // and collect their input based on the requested schema
+        
+        Map<String, Object> userData = new HashMap<>();
+        
+        // Check what information is being requested based on the schema
+        Map<String, Object> schema = request.requestedSchema();
+        if (schema != null && schema.containsKey("properties")) {
+            @SuppressWarnings("unchecked")
+            Map<String, Object> properties = (Map<String, Object>) schema.get("properties");
+            
+            // Simulate user providing the requested information
+            if (properties.containsKey("name")) {
+                userData.put("name", "John Doe");
+            }
+            if (properties.containsKey("email")) {
+                userData.put("email", "john.doe@example.com");
+            }
+            if (properties.containsKey("age")) {
+                userData.put("age", 30);
+            }
+            if (properties.containsKey("preferences")) {
+                userData.put("preferences", Map.of("theme", "dark", "notifications", true));
+            }
+        }
+        
+        return new ElicitResult(ElicitResult.Action.ACCEPT, userData);
+    }
+
+    /**
+     * Handle elicitation requests that should be declined.
+     * @param request The elicitation request
+     * @return The elicitation result with decline action
+     */
+    @McpElicitation
+    public ElicitResult handleDeclineElicitationRequest(ElicitRequest request) {
+        // Example of declining an elicitation request
+        return new ElicitResult(ElicitResult.Action.DECLINE, null);
+    }
+}
+
+public class AsyncElicitationHandler {
+
+    /**
+     * Handle elicitation requests with an asynchronous implementation.
+     * @param request The elicitation request
+     * @return A Mono containing the elicitation result
+     */
+    @McpElicitation
+    public Mono<ElicitResult> handleAsyncElicitationRequest(ElicitRequest request) {
+        return Mono.fromCallable(() -> {
+            // Simulate async processing of the elicitation request
+            // In a real implementation, this might involve showing a UI form
+            // and waiting for user input
+            
+            Map<String, Object> userData = new HashMap<>();
+            userData.put("response", "Async elicitation response");
+            userData.put("timestamp", System.currentTimeMillis());
+            userData.put("message", request.message());
+            
+            return new ElicitResult(ElicitResult.Action.ACCEPT, userData);
+        }).delayElement(Duration.ofMillis(100)); // Simulate processing delay
+    }
+
+    /**
+     * Handle elicitation requests that might be cancelled.
+     * @param request The elicitation request
+     * @return A Mono containing the elicitation result with cancel action
+     */
+    @McpElicitation
+    public Mono<ElicitResult> handleCancelElicitationRequest(ElicitRequest request) {
+        return Mono.just(new ElicitResult(ElicitResult.Action.CANCEL, null));
+    }
+}
+
+public class MyMcpClient {
+
+    public static McpSyncClient createSyncClientWithElicitation(ElicitationHandler elicitationHandler) {
+        Function<ElicitRequest, ElicitResult> elicitationHandler = 
+            new SyncMcpElicitationProvider(List.of(elicitationHandler)).getElicitationHandler();
+
+        McpSyncClient client = McpClient.sync(transport)
+            .capabilities(ClientCapabilities.builder()
+                .elicitation()  // Enable elicitation support
+                // Other capabilities...
+                .build())
+            .elicitationHandler(elicitationHandler)
+            .build();
+
+        return client;
+    }
+    
+    public static McpAsyncClient createAsyncClientWithElicitation(AsyncElicitationHandler asyncElicitationHandler) {
+        Function<ElicitRequest, Mono<ElicitResult>> elicitationHandler = 
+            new AsyncMcpElicitationProvider(List.of(asyncElicitationHandler)).getElicitationHandler();
+
+        McpAsyncClient client = McpClient.async(transport)
+            .capabilities(ClientCapabilities.builder()
+                .elicitation()  // Enable elicitation support
+                // Other capabilities...
+                .build())
+            .elicitationHandler(elicitationHandler)
+            .build();
+
+        return client;
+    }
+}
+```
+
+
+### Stateless Examples
+
+The library supports stateless implementations that use `McpTransportContext` instead of `McpSyncServerExchange` or `McpAsyncServerExchange`. This is useful for scenarios where you don't need the full server exchange context.
+
+#### Stateless Complete Example
+
+```java
+public class StatelessAutocompleteProvider {
+
+    private final Map<String, List<String>> cityDatabase = new HashMap<>();
+    
+    public StatelessAutocompleteProvider() {
+        // Initialize with sample data
+        cityDatabase.put("l", List.of("Lagos", "Lima", "Lisbon", "London", "Los Angeles"));
+        // Add more data...
+    }    
+
+    @McpComplete(prompt = "travel-planner")
+    public List<String> completeCityName(McpTransportContext context, CompleteRequest.CompleteArgument argument) {
+        String prefix = argument.value().toLowerCase();        
+        String firstLetter = prefix.substring(0, 1);
+        List<String> cities = cityDatabase.getOrDefault(firstLetter, List.of());
+        
+        return cities.stream()
+            .filter(city -> city.toLowerCase().startsWith(prefix))
+            .toList();
+    }
+
+    // Stateless method without context parameter
+    @McpComplete(prompt = "simple-complete")
+    public List<String> simpleComplete(String value) {
+        return List.of("option1", "option2", "option3")
+            .stream()
+            .filter(option -> option.startsWith(value.toLowerCase()))
+            .toList();
+    }
+}
+```
+
+#### Stateless Prompt Example
+
+```java
+public class StatelessPromptProvider {
+
+    @McpPrompt(name = "simple-greeting", description = "Generate a simple greeting")
+    public GetPromptResult simpleGreeting(
+            @McpArg(name = "name", description = "The user's name", required = true) String name) {
+        
+        String message = "Hello, " + name + "! How can I help you today?";
+        
+        return new GetPromptResult("Simple Greeting",
+                List.of(new PromptMessage(Role.ASSISTANT, new TextContent(message))));
+    }
+
+    @McpPrompt(name = "contextual-greeting", description = "Generate a greeting with context")
+    public GetPromptResult contextualGreeting(
+            McpTransportContext context,
+            @McpArg(name = "name", description = "The user's name", required = true) String name) {
+        
+        // You can access transport context if needed
+        String message = "Hello, " + name + "! Welcome to our stateless MCP server.";
+        
+        return new GetPromptResult("Contextual Greeting",
+                List.of(new PromptMessage(Role.ASSISTANT, new TextContent(message))));
+    }
+}
+```
+
+#### Stateless Resource Example
+
+```java
+public class StatelessResourceProvider {
+
+    private final Map<String, String> resourceData = new HashMap<>();
+    
+    public StatelessResourceProvider() {
+        resourceData.put("config", "server.port=8080\nserver.host=localhost");
+        resourceData.put("readme", "# Welcome\nThis is a sample resource.");
+    }
+
+    @McpResource(uri = "config://{key}", 
+        name = "Configuration", 
+        description = "Provides configuration data")
+    public String getConfig(String key) {
+        return resourceData.getOrDefault(key, "Configuration not found");
+    }
+
+    @McpResource(uri = "data://{id}", 
+        name = "Data Resource", 
+        description = "Provides data with transport context")
+    public ReadResourceResult getData(McpTransportContext context, String id) {
+        String data = resourceData.getOrDefault(id, "Data not found for ID: " + id);
+        
+        return new ReadResourceResult(List.of(
+            new TextResourceContents("data://" + id, "text/plain", data)
+        ));
+    }
+}
+```
+
+#### Stateless Tool Example
+
+```java
+public class StatelessCalculatorProvider {
+
+    @McpTool(name = "add-stateless", description = "Add two numbers (stateless)")
+    public int addStateless(
+            @McpToolParam(description = "First number", required = true) int a,
+            @McpToolParam(description = "Second number", required = true) int b) {
+        return a + b;
+    }
+
+    @McpTool(name = "multiply-with-context", description = "Multiply with transport context")
+    public double multiplyWithContext(
+            McpTransportContext context,
+            @McpToolParam(description = "First number", required = true) double x,
+            @McpToolParam(description = "Second number", required = true) double y) {
+        // Access transport context if needed
+        return x * y;
+    }
+
+    // Async stateless tool
+    @McpTool(name = "async-divide", description = "Divide two numbers asynchronously")
+    public Mono<Double> asyncDivide(
+            @McpToolParam(description = "Dividend", required = true) double dividend,
+            @McpToolParam(description = "Divisor", required = true) double divisor) {
+        
+        return Mono.fromCallable(() -> {
+            if (divisor == 0) {
+                throw new IllegalArgumentException("Division by zero");
+            }
+            return dividend / divisor;
+        });
+    }
+}
+```
+
+#### Using Stateless Providers
+
+```java
+public class StatelessMcpServerFactory {
+
+    public McpSyncServer createStatelessServer(
+            StatelessAutocompleteProvider completeProvider,
+            StatelessPromptProvider promptProvider,
+            StatelessResourceProvider resourceProvider,
+            StatelessCalculatorProvider toolProvider) {
+        
+        // Create stateless specifications
+        List<McpStatelessServerFeatures.SyncCompletionSpecification> completionSpecs = 
+            new SyncStatelessMcpCompleteProvider(List.of(completeProvider)).getCompleteSpecifications();
+
+        List<McpStatelessServerFeatures.SyncPromptSpecification> promptSpecs = 
+            new SyncStatelessMcpPromptProvider(List.of(promptProvider)).getPromptSpecifications();
+
+        List<McpStatelessServerFeatures.SyncResourceSpecification> resourceSpecs = 
+            new SyncStatelessMcpResourceProvider(List.of(resourceProvider)).getResourceSpecifications();
+
+        List<McpStatelessServerFeatures.SyncToolSpecification> toolSpecs = 
+            new SyncStatelessMcpToolProvider(List.of(toolProvider)).getToolSpecifications();
+            
+        // Create a stateless server
+        McpSyncServer syncServer = McpServer.sync(transportProvider)
+            .serverInfo("stateless-server", "1.0.0")
+            .capabilities(ServerCapabilities.builder()
+                .tools(true)
+                .resources(true)
+                .prompts(true)
+                .completions()
+                .logging()
+                .build())
+            .statelessTools(toolSpecs)
+            .statelessResources(resourceSpecs)
+            .statelessPrompts(promptSpecs)
+            .statelessCompletions(completionSpecs)
+            .build();
+
+        return syncServer;
+    }
+}
+```
 
 ### Spring Integration Example
 
@@ -704,6 +1038,38 @@ public class McpConfig {
             List<AsyncSamplingHandler> asyncSamplingHandlers) {
         return SpringAiMcpAnnotationProvider.createAsyncSamplingHandler(asyncSamplingHandlers);
     }
+    
+    @Bean
+    public Function<ElicitRequest, ElicitResult> syncElicitationHandler(
+            List<ElicitationHandler> elicitationHandlers) {
+        return SpringAiMcpAnnotationProvider.createSyncElicitationHandler(elicitationHandlers);
+    }
+    
+    @Bean
+    public Function<ElicitRequest, Mono<ElicitResult>> asyncElicitationHandler(
+            List<AsyncElicitationHandler> asyncElicitationHandlers) {
+        return SpringAiMcpAnnotationProvider.createAsyncElicitationHandler(asyncElicitationHandlers);
+    }
+    
+    // Stateless Spring Integration Examples
+    
+    @Bean
+    public List<McpStatelessServerFeatures.SyncToolSpecification> syncStatelessToolSpecifications(
+            List<StatelessCalculatorProvider> statelessToolProviders) {
+        return SpringAiMcpAnnotationProvider.createSyncStatelessToolSpecifications(statelessToolProviders);
+    }
+    
+    @Bean
+    public List<McpStatelessServerFeatures.SyncPromptSpecification> syncStatelessPromptSpecifications(
+            List<StatelessPromptProvider> statelessPromptProviders) {
+        return SpringAiMcpAnnotationProvider.createSyncStatelessPromptSpecifications(statelessPromptProviders);
+    }
+    
+    @Bean
+    public List<McpStatelessServerFeatures.SyncResourceSpecification> syncStatelessResourceSpecifications(
+            List<StatelessResourceProvider> statelessResourceProviders) {
+        return SpringAiMcpAnnotationProvider.createSyncStatelessResourceSpecifications(statelessResourceProviders);
+    }
 }
 ```
 
@@ -711,21 +1077,23 @@ public class McpConfig {
 
 - **Annotation-based method handling** - Simplifies the creation and registration of MCP methods
 - **Support for both synchronous and asynchronous operations** - Flexible integration with different application architectures
+- **Stateful and stateless implementations** - Choose between full server exchange context (`McpSyncServerExchange`/`McpAsyncServerExchange`) or lightweight transport context (`McpTransportContext`) for all MCP operations
+- **Comprehensive stateless support** - All MCP operations (Complete, Prompt, Resource, Tool) support stateless implementations for scenarios where full server context is not needed
 - **Builder pattern for callback creation** - Clean and fluent API for creating method callbacks
 - **Comprehensive validation** - Ensures method signatures are compatible with MCP operations
 - **URI template support** - Powerful URI template handling for resource and completion operations
 - **Tool support with automatic JSON schema generation** - Create MCP tools with automatic input/output schema generation from method signatures
 - **Logging consumer support** - Handle logging message notifications from MCP servers
 - **Sampling support** - Handle sampling requests from MCP servers
-- **Spring integration** - Seamless integration with Spring Framework and Spring AI
+- **Spring integration** - Seamless integration with Spring Framework and Spring AI, including support for both stateful and stateless operations
 - **AOP proxy support** - Proper handling of Spring AOP proxies when processing annotations
 
 ## Requirements
 
 - Java 17 or higher
 - Reactor Core (for async operations)
-- MCP Java SDK 0.10.0 or higher
-- Spring Framework and Spring AI (for spring-ai-mcp-annotations module)
+- MCP Java SDK 0.11.2 or higher
+- Spring Framework and Spring AI (for mcp-annotations-spring module)
 
 ## Building from Source
 

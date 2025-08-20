@@ -19,13 +19,20 @@ import java.lang.reflect.Method;
 import java.util.List;
 import java.util.function.Function;
 
+import org.springaicommunity.mcp.provider.AsyncMcpElicitationProvider;
 import org.springaicommunity.mcp.provider.AsyncMcpLoggingConsumerProvider;
 import org.springaicommunity.mcp.provider.AsyncMcpSamplingProvider;
 import org.springaicommunity.mcp.provider.AsyncMcpToolProvider;
+import org.springaicommunity.mcp.provider.AsyncStatelessMcpPromptProvider;
+import org.springaicommunity.mcp.provider.AsyncStatelessMcpResourceProvider;
+import org.springaicommunity.mcp.provider.AsyncStatelessMcpToolProvider;
 
 import io.modelcontextprotocol.server.McpServerFeatures.AsyncToolSpecification;
+import io.modelcontextprotocol.server.McpStatelessServerFeatures;
 import io.modelcontextprotocol.spec.McpSchema.CreateMessageRequest;
 import io.modelcontextprotocol.spec.McpSchema.CreateMessageResult;
+import io.modelcontextprotocol.spec.McpSchema.ElicitRequest;
+import io.modelcontextprotocol.spec.McpSchema.ElicitResult;
 import io.modelcontextprotocol.spec.McpSchema.LoggingMessageNotification;
 import reactor.core.publisher.Mono;
 
@@ -60,10 +67,62 @@ public class AsyncMcpAnnotationProvider {
 
 	}
 
+	private static class SpringAiAsyncMcpElicitationProvider extends AsyncMcpElicitationProvider {
+
+		public SpringAiAsyncMcpElicitationProvider(List<Object> elicitationObjects) {
+			super(elicitationObjects);
+		}
+
+		@Override
+		protected Method[] doGetClassMethods(Object bean) {
+			return AnnotationProviderUtil.beanMethods(bean);
+		}
+
+	}
+
 	private static class SpringAiAsyncMcpToolProvider extends AsyncMcpToolProvider {
 
 		public SpringAiAsyncMcpToolProvider(List<Object> toolObjects) {
 			super(toolObjects);
+		}
+
+		@Override
+		protected Method[] doGetClassMethods(Object bean) {
+			return AnnotationProviderUtil.beanMethods(bean);
+		}
+
+	}
+
+	private static class SpringAiAsyncStatelessMcpToolProvider extends AsyncStatelessMcpToolProvider {
+
+		public SpringAiAsyncStatelessMcpToolProvider(List<Object> toolObjects) {
+			super(toolObjects);
+		}
+
+		@Override
+		protected Method[] doGetClassMethods(Object bean) {
+			return AnnotationProviderUtil.beanMethods(bean);
+		}
+
+	}
+
+	private static class SpringAiAsyncStatelessPromptProvider extends AsyncStatelessMcpPromptProvider {
+
+		public SpringAiAsyncStatelessPromptProvider(List<Object> promptObjects) {
+			super(promptObjects);
+		}
+
+		@Override
+		protected Method[] doGetClassMethods(Object bean) {
+			return AnnotationProviderUtil.beanMethods(bean);
+		}
+
+	}
+
+	private static class SpringAiAsyncStatelessResourceProvider extends AsyncStatelessMcpResourceProvider {
+
+		public SpringAiAsyncStatelessResourceProvider(List<Object> resourceObjects) {
+			super(resourceObjects);
 		}
 
 		@Override
@@ -83,8 +142,28 @@ public class AsyncMcpAnnotationProvider {
 		return new SpringAiAsyncMcpSamplingProvider(samplingObjects).getSamplingHandler();
 	}
 
+	public static Function<ElicitRequest, Mono<ElicitResult>> createAsyncElicitationHandler(
+			List<Object> elicitationObjects) {
+		return new SpringAiAsyncMcpElicitationProvider(elicitationObjects).getElicitationHandler();
+	}
+
 	public static List<AsyncToolSpecification> createAsyncToolSpecifications(List<Object> toolObjects) {
 		return new SpringAiAsyncMcpToolProvider(toolObjects).getToolSpecifications();
+	}
+
+	public static List<McpStatelessServerFeatures.AsyncToolSpecification> createAsyncStatelessToolSpecifications(
+			List<Object> toolObjects) {
+		return new SpringAiAsyncStatelessMcpToolProvider(toolObjects).getToolSpecifications();
+	}
+
+	public static List<McpStatelessServerFeatures.AsyncPromptSpecification> createAsyncStatelessPromptSpecifications(
+			List<Object> promptObjects) {
+		return new SpringAiAsyncStatelessPromptProvider(promptObjects).getPromptSpecifications();
+	}
+
+	public static List<McpStatelessServerFeatures.AsyncResourceSpecification> createAsyncStatelessResourceSpecifications(
+			List<Object> resourceObjects) {
+		return new SpringAiAsyncStatelessResourceProvider(resourceObjects).getResourceSpecifications();
 	}
 
 }

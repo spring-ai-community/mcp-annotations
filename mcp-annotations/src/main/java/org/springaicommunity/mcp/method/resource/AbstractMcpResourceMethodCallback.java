@@ -158,7 +158,7 @@ public abstract class AbstractMcpResourceMethodCallback {
 		for (Parameter param : parameters) {
 			Class<?> paramType = param.getType();
 
-			if (isExchangeType(paramType)) {
+			if (isExchangeOrContextType(paramType)) {
 				if (hasExchangeParam) {
 					throw new IllegalArgumentException("Method cannot have more than one exchange parameter: "
 							+ method.getName() + " in " + method.getDeclaringClass().getName());
@@ -205,7 +205,7 @@ public abstract class AbstractMcpResourceMethodCallback {
 
 		for (Parameter param : parameters) {
 			Class<?> paramType = param.getType();
-			if (isExchangeType(paramType)) {
+			if (isExchangeOrContextType(paramType)) {
 				exchangeParamCount++;
 			}
 			else if (ReadResourceRequest.class.isAssignableFrom(paramType)) {
@@ -240,7 +240,7 @@ public abstract class AbstractMcpResourceMethodCallback {
 		// Check that all non-special parameters are String type (for URI variables)
 		for (Parameter param : parameters) {
 			Class<?> paramType = param.getType();
-			if (!isExchangeType(paramType) && !ReadResourceRequest.class.isAssignableFrom(paramType)
+			if (!isExchangeOrContextType(paramType) && !ReadResourceRequest.class.isAssignableFrom(paramType)
 					&& !String.class.isAssignableFrom(paramType)) {
 				throw new IllegalArgumentException("URI variable parameters must be of type String: " + method.getName()
 						+ " in " + method.getDeclaringClass().getName() + ", parameter of type " + paramType.getName()
@@ -293,7 +293,7 @@ public abstract class AbstractMcpResourceMethodCallback {
 		// First pass: assign special parameters (exchange and request)
 		for (int i = 0; i < parameters.length; i++) {
 			Class<?> paramType = parameters[i].getType();
-			if (isExchangeType(paramType)) {
+			if (isExchangeOrContextType(paramType)) {
 				args[i] = exchange;
 			}
 			else if (ReadResourceRequest.class.isAssignableFrom(paramType)) {
@@ -339,7 +339,7 @@ public abstract class AbstractMcpResourceMethodCallback {
 			Parameter param = parameters[i];
 			Class<?> paramType = param.getType();
 
-			if (isExchangeType(paramType)) {
+			if (isExchangeOrContextType(paramType)) {
 				args[i] = exchange;
 			}
 			else if (ReadResourceRequest.class.isAssignableFrom(paramType)) {
@@ -361,7 +361,7 @@ public abstract class AbstractMcpResourceMethodCallback {
 	 * @return true if the parameter type is compatible with the exchange type, false
 	 * otherwise
 	 */
-	protected abstract boolean isExchangeType(Class<?> paramType);
+	protected abstract boolean isExchangeOrContextType(Class<?> paramType);
 
 	/**
 	 * Returns the content type of the resource.
