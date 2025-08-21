@@ -53,4 +53,10 @@ import java.lang.annotation.Target;
 @Documented
 public @interface McpSampling {
 
+	/**
+	 * Used as connection or client identifier to select the MCP client, the sampling
+	 * method is associated with. If not specified, is applied to all clients.
+	 */
+	String clientId() default "";
+
 }

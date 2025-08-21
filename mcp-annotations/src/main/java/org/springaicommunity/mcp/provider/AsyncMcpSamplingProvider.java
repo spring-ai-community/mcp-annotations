@@ -23,6 +23,7 @@ import java.util.stream.Stream;
 
 import org.springaicommunity.mcp.annotation.McpSampling;
 import org.springaicommunity.mcp.method.sampling.AsyncMcpSamplingMethodCallback;
+import org.springaicommunity.mcp.method.sampling.AsyncSamplingSpecification;
 
 import io.modelcontextprotocol.spec.McpSchema.CreateMessageRequest;
 import io.modelcontextprotocol.spec.McpSchema.CreateMessageResult;
@@ -78,8 +79,8 @@ public class AsyncMcpSamplingProvider {
 	 * @throws IllegalStateException if no sampling methods are found or if multiple
 	 * sampling methods are found
 	 */
-	public Function<CreateMessageRequest, Mono<CreateMessageResult>> getSamplingHandler() {
-		List<Function<CreateMessageRequest, Mono<CreateMessageResult>>> samplingHandlers = this.samplingObjects.stream()
+	public List<AsyncSamplingSpecification> getSamplingSpecifictions() {
+		List<AsyncSamplingSpecification> samplingHandlers = this.samplingObjects.stream()
 			.map(samplingObject -> Stream.of(doGetClassMethods(samplingObject))
 				.filter(method -> method.isAnnotationPresent(McpSampling.class))
 				.filter(method -> method.getParameterCount() == 1
@@ -96,7 +97,7 @@ public class AsyncMcpSamplingProvider {
 						.sampling(samplingAnnotation)
 						.build();
 
-					return methodCallback;
+					return new AsyncSamplingSpecification(samplingAnnotation.clientId(), methodCallback);
 				})
 				.toList())
 			.flatMap(List::stream)
@@ -109,7 +110,7 @@ public class AsyncMcpSamplingProvider {
 			throw new IllegalStateException("Multiple sampling methods found: " + samplingHandlers.size());
 		}
 
-		return samplingHandlers.get(0);
+		return samplingHandlers;
 	}
 
 	/**

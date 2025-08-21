@@ -14,8 +14,8 @@ import java.util.function.Function;
 import org.junit.jupiter.api.Test;
 import org.springaicommunity.mcp.annotation.McpSampling;
 import org.springaicommunity.mcp.method.sampling.AsyncMcpSamplingMethodCallbackExample;
+import org.springaicommunity.mcp.method.sampling.AsyncSamplingSpecification;
 import org.springaicommunity.mcp.method.sampling.SamlingTestHelper;
-import org.springaicommunity.mcp.provider.AsyncMcpSamplingProvider;
 
 import io.modelcontextprotocol.spec.McpSchema.CreateMessageRequest;
 import io.modelcontextprotocol.spec.McpSchema.CreateMessageResult;
@@ -49,7 +49,9 @@ public class AsyncMcpSamplingProviderTests {
 		SingleValidMethod example = new SingleValidMethod();
 		AsyncMcpSamplingProvider provider = new AsyncMcpSamplingProvider(List.of(example));
 
-		Function<CreateMessageRequest, Mono<CreateMessageResult>> handler = provider.getSamplingHandler();
+		List<AsyncSamplingSpecification> samplingSpecs = provider.getSamplingSpecifictions();
+
+		Function<CreateMessageRequest, Mono<CreateMessageResult>> handler = samplingSpecs.get(0).samplingHandler();
 
 		assertThat(handler).isNotNull();
 
@@ -74,7 +76,7 @@ public class AsyncMcpSamplingProviderTests {
 	void testEmptySamplingObjects() {
 		AsyncMcpSamplingProvider provider = new AsyncMcpSamplingProvider(Collections.emptyList());
 
-		assertThatThrownBy(() -> provider.getSamplingHandler()).isInstanceOf(IllegalStateException.class)
+		assertThatThrownBy(() -> provider.getSamplingSpecifictions()).isInstanceOf(IllegalStateException.class)
 			.hasMessageContaining("No sampling methods found");
 	}
 
@@ -96,7 +98,7 @@ public class AsyncMcpSamplingProviderTests {
 			}
 		};
 
-		assertThatThrownBy(() -> provider.getSamplingHandler()).isInstanceOf(IllegalStateException.class)
+		assertThatThrownBy(() -> provider.getSamplingSpecifictions()).isInstanceOf(IllegalStateException.class)
 			.hasMessageContaining("Multiple sampling methods found");
 	}
 
@@ -119,7 +121,9 @@ public class AsyncMcpSamplingProviderTests {
 		DirectResultOnly example = new DirectResultOnly();
 		AsyncMcpSamplingProvider provider = new AsyncMcpSamplingProvider(List.of(example));
 
-		Function<CreateMessageRequest, Mono<CreateMessageResult>> handler = provider.getSamplingHandler();
+		List<AsyncSamplingSpecification> samplingSpecs = provider.getSamplingSpecifictions();
+
+		Function<CreateMessageRequest, Mono<CreateMessageResult>> handler = samplingSpecs.get(0).samplingHandler();
 
 		assertThat(handler).isNotNull();
 

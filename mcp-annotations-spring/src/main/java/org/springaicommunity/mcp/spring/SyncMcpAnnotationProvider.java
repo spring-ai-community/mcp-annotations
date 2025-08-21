@@ -17,9 +17,10 @@ package org.springaicommunity.mcp.spring;
 
 import java.lang.reflect.Method;
 import java.util.List;
-import java.util.function.Consumer;
-import java.util.function.Function;
 
+import org.springaicommunity.mcp.method.elicitation.SyncElicitationSpecification;
+import org.springaicommunity.mcp.method.logging.SyncLoggingSpecification;
+import org.springaicommunity.mcp.method.sampling.SyncSamplingSpecification;
 import org.springaicommunity.mcp.provider.SyncMcpCompletionProvider;
 import org.springaicommunity.mcp.provider.SyncMcpElicitationProvider;
 import org.springaicommunity.mcp.provider.SyncMcpLoggingConsumerProvider;
@@ -36,11 +37,6 @@ import io.modelcontextprotocol.server.McpServerFeatures.SyncPromptSpecification;
 import io.modelcontextprotocol.server.McpServerFeatures.SyncResourceSpecification;
 import io.modelcontextprotocol.server.McpServerFeatures.SyncToolSpecification;
 import io.modelcontextprotocol.server.McpStatelessServerFeatures;
-import io.modelcontextprotocol.spec.McpSchema.CreateMessageRequest;
-import io.modelcontextprotocol.spec.McpSchema.CreateMessageResult;
-import io.modelcontextprotocol.spec.McpSchema.ElicitRequest;
-import io.modelcontextprotocol.spec.McpSchema.ElicitResult;
-import io.modelcontextprotocol.spec.McpSchema.LoggingMessageNotification;
 
 /**
  * @author Christian Tzolov
@@ -208,17 +204,17 @@ public class SyncMcpAnnotationProvider {
 		return new SpringAiSyncStatelessResourceProvider(resourceObjects).getResourceSpecifications();
 	}
 
-	public static List<Consumer<LoggingMessageNotification>> createSyncLoggingConsumers(List<Object> loggingObjects) {
-		return new SpringAiSyncMcpLoggingConsumerProvider(loggingObjects).getLoggingConsumers();
+	public static List<SyncLoggingSpecification> createSyncLoggingSpecifications(List<Object> loggingObjects) {
+		return new SpringAiSyncMcpLoggingConsumerProvider(loggingObjects).getLoggingSpecifications();
 	}
 
-	public static Function<CreateMessageRequest, CreateMessageResult> createSyncSamplingHandler(
-			List<Object> samplingObjects) {
-		return new SpringAiSyncMcpSamplingProvider(samplingObjects).getSamplingHandler();
+	public static List<SyncSamplingSpecification> createSyncSamplingSpecifications(List<Object> samplingObjects) {
+		return new SpringAiSyncMcpSamplingProvider(samplingObjects).getSamplingSpecifications();
 	}
 
-	public static Function<ElicitRequest, ElicitResult> createSyncElicitationHandler(List<Object> elicitationObjects) {
-		return new SpringAiSyncMcpElicitationProvider(elicitationObjects).getElicitationHandler();
+	public static List<SyncElicitationSpecification> createSyncElicitationSpecifications(
+			List<Object> elicitationObjects) {
+		return new SpringAiSyncMcpElicitationProvider(elicitationObjects).getElicitationSpecifications();
 	}
 
 }

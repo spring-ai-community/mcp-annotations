@@ -22,6 +22,7 @@ import java.util.function.Function;
 import java.util.stream.Stream;
 
 import org.springaicommunity.mcp.annotation.McpElicitation;
+import org.springaicommunity.mcp.method.elicitation.AsyncElicitationSpecification;
 import org.springaicommunity.mcp.method.elicitation.AsyncMcpElicitationMethodCallback;
 
 import io.modelcontextprotocol.spec.McpSchema.ElicitRequest;
@@ -73,13 +74,13 @@ public class AsyncMcpElicitationProvider {
 	}
 
 	/**
-	 * Get the elicitation handler.
-	 * @return the elicitation handler
+	 * Get the elicitation specifications.
+	 * @return the elicitation specifications
 	 * @throws IllegalStateException if no elicitation methods are found or if multiple
 	 * elicitation methods are found
 	 */
-	public Function<ElicitRequest, Mono<ElicitResult>> getElicitationHandler() {
-		List<Function<ElicitRequest, Mono<ElicitResult>>> elicitationHandlers = this.elicitationObjects.stream()
+	public List<AsyncElicitationSpecification> getElicitationSpecifications() {
+		List<AsyncElicitationSpecification> elicitationHandlers = this.elicitationObjects.stream()
 			.map(elicitationObject -> Stream.of(doGetClassMethods(elicitationObject))
 				.filter(method -> method.isAnnotationPresent(McpElicitation.class))
 				.filter(method -> method.getParameterCount() == 1
@@ -96,7 +97,7 @@ public class AsyncMcpElicitationProvider {
 						.elicitation(elicitationAnnotation)
 						.build();
 
-					return methodCallback;
+					return new AsyncElicitationSpecification(elicitationAnnotation.clientId(), methodCallback);
 				})
 				.toList())
 			.flatMap(List::stream)
@@ -109,7 +110,7 @@ public class AsyncMcpElicitationProvider {
 			throw new IllegalStateException("Multiple elicitation methods found: " + elicitationHandlers.size());
 		}
 
-		return elicitationHandlers.get(0);
+		return elicitationHandlers;
 	}
 
 	/**

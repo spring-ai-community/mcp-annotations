@@ -14,8 +14,7 @@ import java.util.function.Function;
 import org.junit.jupiter.api.Test;
 import org.springaicommunity.mcp.annotation.McpSampling;
 import org.springaicommunity.mcp.method.sampling.SamlingTestHelper;
-import org.springaicommunity.mcp.method.sampling.SyncMcpSamplingMethodCallbackExample;
-import org.springaicommunity.mcp.provider.SyncMcpSamplingProvider;
+import org.springaicommunity.mcp.method.sampling.SyncSamplingSpecification;
 
 import io.modelcontextprotocol.spec.McpSchema.CreateMessageRequest;
 import io.modelcontextprotocol.spec.McpSchema.CreateMessageResult;
@@ -47,7 +46,9 @@ public class SyncMcpSamplingProviderTests {
 		SingleValidMethod example = new SingleValidMethod();
 		SyncMcpSamplingProvider provider = new SyncMcpSamplingProvider(List.of(example));
 
-		Function<CreateMessageRequest, CreateMessageResult> handler = provider.getSamplingHandler();
+		List<SyncSamplingSpecification> samplingSpecs = provider.getSamplingSpecifications();
+
+		Function<CreateMessageRequest, CreateMessageResult> handler = samplingSpecs.get(0).samplingHandler();
 
 		assertThat(handler).isNotNull();
 
@@ -69,7 +70,7 @@ public class SyncMcpSamplingProviderTests {
 	void testEmptySamplingObjects() {
 		SyncMcpSamplingProvider provider = new SyncMcpSamplingProvider(Collections.emptyList());
 
-		assertThatThrownBy(() -> provider.getSamplingHandler()).isInstanceOf(IllegalStateException.class)
+		assertThatThrownBy(() -> provider.getSamplingSpecifications()).isInstanceOf(IllegalStateException.class)
 			.hasMessageContaining("No sampling methods found");
 	}
 
@@ -101,7 +102,7 @@ public class SyncMcpSamplingProviderTests {
 		MultipleSamplingMethods example = new MultipleSamplingMethods();
 		SyncMcpSamplingProvider provider = new SyncMcpSamplingProvider(List.of(example));
 
-		assertThatThrownBy(() -> provider.getSamplingHandler()).isInstanceOf(IllegalStateException.class)
+		assertThatThrownBy(() -> provider.getSamplingSpecifications()).isInstanceOf(IllegalStateException.class)
 			.hasMessageContaining("Multiple sampling methods found");
 	}
 

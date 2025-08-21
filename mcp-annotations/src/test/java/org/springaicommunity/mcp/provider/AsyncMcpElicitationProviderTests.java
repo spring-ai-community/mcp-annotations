@@ -14,6 +14,7 @@ import java.util.function.Function;
 
 import org.junit.jupiter.api.Test;
 import org.springaicommunity.mcp.annotation.McpElicitation;
+import org.springaicommunity.mcp.method.elicitation.AsyncElicitationSpecification;
 
 import io.modelcontextprotocol.spec.McpSchema.ElicitRequest;
 import io.modelcontextprotocol.spec.McpSchema.ElicitResult;
@@ -30,7 +31,9 @@ public class AsyncMcpElicitationProviderTests {
 	@Test
 	public void testGetElicitationHandler() {
 		var provider = new AsyncMcpElicitationProvider(List.of(new TestElicitationHandler()));
-		Function<ElicitRequest, Mono<ElicitResult>> handler = provider.getElicitationHandler();
+
+		AsyncElicitationSpecification specification = provider.getElicitationSpecifications().get(0);
+		Function<ElicitRequest, Mono<ElicitResult>> handler = specification.elicitationHandler();
 
 		assertNotNull(handler);
 
@@ -48,7 +51,8 @@ public class AsyncMcpElicitationProviderTests {
 	@Test
 	public void testGetElicitationHandlerWithSyncMethod() {
 		var provider = new AsyncMcpElicitationProvider(List.of(new SyncElicitationHandler()));
-		Function<ElicitRequest, Mono<ElicitResult>> handler = provider.getElicitationHandler();
+		AsyncElicitationSpecification specification = provider.getElicitationSpecifications().get(0);
+		Function<ElicitRequest, Mono<ElicitResult>> handler = specification.elicitationHandler();
 
 		assertNotNull(handler);
 
@@ -67,7 +71,7 @@ public class AsyncMcpElicitationProviderTests {
 	public void testNoElicitationMethods() {
 		var provider = new AsyncMcpElicitationProvider(List.of(new Object()));
 
-		assertThrows(IllegalStateException.class, () -> provider.getElicitationHandler(),
+		assertThrows(IllegalStateException.class, () -> provider.getElicitationSpecifications(),
 				"No elicitation methods found");
 	}
 
@@ -75,7 +79,7 @@ public class AsyncMcpElicitationProviderTests {
 	public void testMultipleElicitationMethods() {
 		var provider = new AsyncMcpElicitationProvider(List.of(new MultipleElicitationHandler()));
 
-		assertThrows(IllegalStateException.class, () -> provider.getElicitationHandler(),
+		assertThrows(IllegalStateException.class, () -> provider.getElicitationSpecifications(),
 				"Multiple elicitation methods found");
 	}
 

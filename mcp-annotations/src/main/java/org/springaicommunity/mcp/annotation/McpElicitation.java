@@ -51,4 +51,10 @@ import java.lang.annotation.Target;
 @Documented
 public @interface McpElicitation {
 
+	/**
+	 * Used as connection or client identifier to select the MCP client, the elicitation
+	 * method is associated with. If not specified, is applied to all clients.
+	 */
+	String clientId() default "";
+
 }

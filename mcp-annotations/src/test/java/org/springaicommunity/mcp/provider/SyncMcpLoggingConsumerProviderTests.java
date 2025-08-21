@@ -11,7 +11,7 @@ import java.util.function.Consumer;
 
 import org.junit.jupiter.api.Test;
 import org.springaicommunity.mcp.annotation.McpLoggingConsumer;
-import org.springaicommunity.mcp.provider.SyncMcpLoggingConsumerProvider;
+import org.springaicommunity.mcp.method.logging.SyncLoggingSpecification;
 
 import io.modelcontextprotocol.spec.McpSchema.LoggingLevel;
 import io.modelcontextprotocol.spec.McpSchema.LoggingMessageNotification;
@@ -60,7 +60,10 @@ public class SyncMcpLoggingConsumerProviderTests {
 		LoggingHandler loggingHandler = new LoggingHandler();
 		SyncMcpLoggingConsumerProvider provider = new SyncMcpLoggingConsumerProvider(List.of(loggingHandler));
 
-		List<Consumer<LoggingMessageNotification>> consumers = provider.getLoggingConsumers();
+		List<SyncLoggingSpecification> specifications = provider.getLoggingSpecifications();
+		List<Consumer<LoggingMessageNotification>> consumers = specifications.stream()
+			.map(SyncLoggingSpecification::loggingHandler)
+			.toList();
 
 		// Should find 2 annotated methods
 		assertThat(consumers).hasSize(2);
@@ -86,7 +89,10 @@ public class SyncMcpLoggingConsumerProviderTests {
 	void testEmptyList() {
 		SyncMcpLoggingConsumerProvider provider = new SyncMcpLoggingConsumerProvider(List.of());
 
-		List<Consumer<LoggingMessageNotification>> consumers = provider.getLoggingConsumers();
+		List<Consumer<LoggingMessageNotification>> consumers = provider.getLoggingSpecifications()
+			.stream()
+			.map(SyncLoggingSpecification::loggingHandler)
+			.toList();
 
 		assertThat(consumers).isEmpty();
 	}
@@ -97,7 +103,10 @@ public class SyncMcpLoggingConsumerProviderTests {
 		LoggingHandler handler2 = new LoggingHandler();
 		SyncMcpLoggingConsumerProvider provider = new SyncMcpLoggingConsumerProvider(List.of(handler1, handler2));
 
-		List<Consumer<LoggingMessageNotification>> consumers = provider.getLoggingConsumers();
+		List<Consumer<LoggingMessageNotification>> consumers = provider.getLoggingSpecifications()
+			.stream()
+			.map(SyncLoggingSpecification::loggingHandler)
+			.toList();
 
 		// Should find 4 annotated methods (2 from each handler)
 		assertThat(consumers).hasSize(4);
