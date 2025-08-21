@@ -22,6 +22,7 @@ import java.util.function.Consumer;
 import java.util.stream.Stream;
 
 import org.springaicommunity.mcp.annotation.McpLoggingConsumer;
+import org.springaicommunity.mcp.method.logging.SyncLoggingSpecification;
 import org.springaicommunity.mcp.method.logging.SyncMcpLoggingConsumerMethodCallback;
 
 import io.modelcontextprotocol.spec.McpSchema.LoggingMessageNotification;
@@ -74,9 +75,9 @@ public class SyncMcpLoggingConsumerProvider {
 	 * Get the list of logging consumer callbacks.
 	 * @return the list of logging consumer callbacks
 	 */
-	public List<Consumer<LoggingMessageNotification>> getLoggingConsumers() {
+	public List<SyncLoggingSpecification> getLoggingSpecifications() {
 
-		List<Consumer<LoggingMessageNotification>> loggingConsumers = this.loggingConsumerObjects.stream()
+		List<SyncLoggingSpecification> loggingConsumers = this.loggingConsumerObjects.stream()
 			.map(consumerObject -> Stream.of(doGetClassMethods(consumerObject))
 				.filter(method -> method.isAnnotationPresent(McpLoggingConsumer.class))
 				.filter(method -> !Mono.class.isAssignableFrom(method.getReturnType()))
@@ -89,7 +90,7 @@ public class SyncMcpLoggingConsumerProvider {
 						.loggingConsumer(loggingConsumerAnnotation)
 						.build();
 
-					return methodCallback;
+					return new SyncLoggingSpecification(loggingConsumerAnnotation.clientId(), methodCallback);
 				})
 				.toList())
 			.flatMap(List::stream)

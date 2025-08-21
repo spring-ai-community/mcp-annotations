@@ -22,7 +22,9 @@ import java.util.function.Function;
 import java.util.stream.Stream;
 
 import org.springaicommunity.mcp.annotation.McpLoggingConsumer;
+import org.springaicommunity.mcp.method.logging.AsyncLoggingSpecification;
 import org.springaicommunity.mcp.method.logging.AsyncMcpLoggingConsumerMethodCallback;
+import org.springaicommunity.mcp.method.logging.SyncLoggingSpecification;
 
 import io.modelcontextprotocol.spec.McpSchema.LoggingMessageNotification;
 import io.modelcontextprotocol.util.Assert;
@@ -75,9 +77,9 @@ public class AsyncMcpLoggingConsumerProvider {
 	 * Get the list of logging consumer callbacks.
 	 * @return the list of logging consumer callbacks
 	 */
-	public List<Function<LoggingMessageNotification, Mono<Void>>> getLoggingConsumers() {
+	public List<AsyncLoggingSpecification> getLoggingSpecifications() {
 
-		List<Function<LoggingMessageNotification, Mono<Void>>> loggingConsumers = this.loggingConsumerObjects.stream()
+		List<AsyncLoggingSpecification> loggingConsumers = this.loggingConsumerObjects.stream()
 			.map(consumerObject -> Stream.of(doGetClassMethods(consumerObject))
 				.filter(method -> method.isAnnotationPresent(McpLoggingConsumer.class))
 				.map(mcpLoggingConsumerMethod -> {
@@ -90,7 +92,7 @@ public class AsyncMcpLoggingConsumerProvider {
 						.loggingConsumer(loggingConsumerAnnotation)
 						.build();
 
-					return methodCallback;
+					return new AsyncLoggingSpecification(loggingConsumerAnnotation.clientId(), methodCallback);
 				})
 				.toList())
 			.flatMap(List::stream)

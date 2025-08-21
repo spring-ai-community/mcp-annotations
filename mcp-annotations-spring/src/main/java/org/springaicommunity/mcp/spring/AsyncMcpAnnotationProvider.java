@@ -17,8 +17,10 @@ package org.springaicommunity.mcp.spring;
 
 import java.lang.reflect.Method;
 import java.util.List;
-import java.util.function.Function;
 
+import org.springaicommunity.mcp.method.elicitation.AsyncElicitationSpecification;
+import org.springaicommunity.mcp.method.logging.AsyncLoggingSpecification;
+import org.springaicommunity.mcp.method.sampling.AsyncSamplingSpecification;
 import org.springaicommunity.mcp.provider.AsyncMcpElicitationProvider;
 import org.springaicommunity.mcp.provider.AsyncMcpLoggingConsumerProvider;
 import org.springaicommunity.mcp.provider.AsyncMcpSamplingProvider;
@@ -29,12 +31,6 @@ import org.springaicommunity.mcp.provider.AsyncStatelessMcpToolProvider;
 
 import io.modelcontextprotocol.server.McpServerFeatures.AsyncToolSpecification;
 import io.modelcontextprotocol.server.McpStatelessServerFeatures;
-import io.modelcontextprotocol.spec.McpSchema.CreateMessageRequest;
-import io.modelcontextprotocol.spec.McpSchema.CreateMessageResult;
-import io.modelcontextprotocol.spec.McpSchema.ElicitRequest;
-import io.modelcontextprotocol.spec.McpSchema.ElicitResult;
-import io.modelcontextprotocol.spec.McpSchema.LoggingMessageNotification;
-import reactor.core.publisher.Mono;
 
 /**
  * @author Christian Tzolov
@@ -132,19 +128,17 @@ public class AsyncMcpAnnotationProvider {
 
 	}
 
-	public static List<Function<LoggingMessageNotification, Mono<Void>>> createAsyncLoggingConsumers(
-			List<Object> loggingObjects) {
-		return new SpringAiAsyncMcpLoggingConsumerProvider(loggingObjects).getLoggingConsumers();
+	public static List<AsyncLoggingSpecification> createAsyncLoggingSpecifications(List<Object> loggingObjects) {
+		return new SpringAiAsyncMcpLoggingConsumerProvider(loggingObjects).getLoggingSpecifications();
 	}
 
-	public static Function<CreateMessageRequest, Mono<CreateMessageResult>> createAsyncSamplingHandler(
-			List<Object> samplingObjects) {
-		return new SpringAiAsyncMcpSamplingProvider(samplingObjects).getSamplingHandler();
+	public static List<AsyncSamplingSpecification> createAsyncSamplingSpecifications(List<Object> samplingObjects) {
+		return new SpringAiAsyncMcpSamplingProvider(samplingObjects).getSamplingSpecifictions();
 	}
 
-	public static Function<ElicitRequest, Mono<ElicitResult>> createAsyncElicitationHandler(
+	public static List<AsyncElicitationSpecification> createAsyncElicitationSpecifications(
 			List<Object> elicitationObjects) {
-		return new SpringAiAsyncMcpElicitationProvider(elicitationObjects).getElicitationHandler();
+		return new SpringAiAsyncMcpElicitationProvider(elicitationObjects).getElicitationSpecifications();
 	}
 
 	public static List<AsyncToolSpecification> createAsyncToolSpecifications(List<Object> toolObjects) {

@@ -11,7 +11,7 @@ import java.util.function.Function;
 
 import org.junit.jupiter.api.Test;
 import org.springaicommunity.mcp.annotation.McpLoggingConsumer;
-import org.springaicommunity.mcp.provider.AsyncMcpLoggingConsumerProvider;
+import org.springaicommunity.mcp.method.logging.AsyncLoggingSpecification;
 
 import io.modelcontextprotocol.spec.McpSchema.LoggingLevel;
 import io.modelcontextprotocol.spec.McpSchema.LoggingMessageNotification;
@@ -71,7 +71,10 @@ public class AsyncMcpLoggingConsumerProviderTests {
 		AsyncLoggingHandler loggingHandler = new AsyncLoggingHandler();
 		AsyncMcpLoggingConsumerProvider provider = new AsyncMcpLoggingConsumerProvider(List.of(loggingHandler));
 
-		List<Function<LoggingMessageNotification, Mono<Void>>> consumers = provider.getLoggingConsumers();
+		List<AsyncLoggingSpecification> specifications = provider.getLoggingSpecifications();
+		List<Function<LoggingMessageNotification, Mono<Void>>> consumers = specifications.stream()
+			.map(AsyncLoggingSpecification::loggingHandler)
+			.toList();
 
 		// Should find 3 annotated methods
 		assertThat(consumers).hasSize(3);
@@ -107,7 +110,11 @@ public class AsyncMcpLoggingConsumerProviderTests {
 	void testEmptyList() {
 		AsyncMcpLoggingConsumerProvider provider = new AsyncMcpLoggingConsumerProvider(List.of());
 
-		List<Function<LoggingMessageNotification, Mono<Void>>> consumers = provider.getLoggingConsumers();
+		List<AsyncLoggingSpecification> specifications = provider.getLoggingSpecifications();
+
+		List<Function<LoggingMessageNotification, Mono<Void>>> consumers = specifications.stream()
+			.map(AsyncLoggingSpecification::loggingHandler)
+			.toList();
 
 		assertThat(consumers).isEmpty();
 	}
@@ -118,7 +125,11 @@ public class AsyncMcpLoggingConsumerProviderTests {
 		AsyncLoggingHandler handler2 = new AsyncLoggingHandler();
 		AsyncMcpLoggingConsumerProvider provider = new AsyncMcpLoggingConsumerProvider(List.of(handler1, handler2));
 
-		List<Function<LoggingMessageNotification, Mono<Void>>> consumers = provider.getLoggingConsumers();
+		List<AsyncLoggingSpecification> specifications = provider.getLoggingSpecifications();
+
+		List<Function<LoggingMessageNotification, Mono<Void>>> consumers = specifications.stream()
+			.map(AsyncLoggingSpecification::loggingHandler)
+			.toList();
 
 		// Should find 6 annotated methods (3 from each handler)
 		assertThat(consumers).hasSize(6);

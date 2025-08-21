@@ -52,8 +52,6 @@ To use the Spring integration module, add the following dependency:
 </dependency>
 ```
 
-The Spring integration module also requires the Spring AI dependency.
-
 ### Snapshot repositories
 
 To use the mcp-annotations snapshot version you need to add the following repositories to your Maven POM:
@@ -587,6 +585,24 @@ public class LoggingHandler {
     public void handleLoggingMessageWithParams(LoggingLevel level, String logger, String data) {
         System.out.println("Received logging message with params: " + level + " - " + logger + " - " + data);
     }
+
+    /**
+     * Handle logging message notifications for a specific client.
+     * @param notification The logging message notification
+     */
+    @McpLoggingConsumer(clientId = "client-1")
+    public void handleClient1LoggingMessage(LoggingMessageNotification notification) {
+        System.out.println("Client-1 logging message: " + notification.level() + " - " + notification.data());
+    }
+
+    /**
+     * Handle logging message notifications for another specific client.
+     * @param notification The logging message notification
+     */
+    @McpLoggingConsumer(clientId = "client-2")
+    public void handleClient2LoggingMessage(LoggingMessageNotification notification) {
+        System.out.println("Client-2 logging message: " + notification.level() + " - " + notification.data());
+    }
 }
 
 public class MyMcpClient {
@@ -627,6 +643,20 @@ public class SamplingHandler {
             .model("test-model")
             .build();
     }
+
+    /**
+     * Handle sampling requests for a specific client.
+     * @param request The create message request
+     * @return The create message result
+     */
+    @McpSampling(clientId = "client-1")
+    public CreateMessageResult handleClient1SamplingRequest(CreateMessageRequest request) {
+        return CreateMessageResult.builder()
+            .role(Role.ASSISTANT)
+            .content(new TextContent("Client-1 specific sampling response"))
+            .model("client-1-model")
+            .build();
+    }
 }
 
 public class AsyncSamplingHandler {
@@ -644,13 +674,30 @@ public class AsyncSamplingHandler {
             .model("test-model")
             .build());
     }
+
+    /**
+     * Handle sampling requests for a specific client asynchronously.
+     * @param request The create message request
+     * @return A Mono containing the create message result
+     */
+    @McpSampling(clientId = "client-2")
+    public Mono<CreateMessageResult> handleClient2AsyncSamplingRequest(CreateMessageRequest request) {
+        return Mono.just(CreateMessageResult.builder()
+            .role(Role.ASSISTANT)
+            .content(new TextContent("Client-2 async sampling response"))
+            .model("client-2-model")
+            .build());
+    }
 }
 
 public class MyMcpClient {
 
     public static McpSyncClient createSyncClient(SamplingHandler samplingHandler) {
+        List<SyncSamplingSpecification> samplingSpecifications = 
+            new SyncMcpSamplingProvider(List.of(samplingHandler)).getSamplingSpecifications();
+
         Function<CreateMessageRequest, CreateMessageResult> samplingHandler = 
-            new SyncMcpSamplingProvider(List.of(samplingHandler)).getSamplingHandler();
+            samplingSpecifications.get(0).samplingHandler();
 
         McpSyncClient client = McpClient.sync(transport)
             .capabilities(ClientCapabilities.builder()
@@ -664,8 +711,11 @@ public class MyMcpClient {
     }
     
     public static McpAsyncClient createAsyncClient(AsyncSamplingHandler asyncSamplingHandler) {
+        List<AsyncSamplingSpecification> samplingSpecifications = 
+            new AsyncMcpSamplingProvider(List.of(asyncSamplingHandler)).getSamplingSpecifications();
+
         Function<CreateMessageRequest, Mono<CreateMessageResult>> samplingHandler = 
-            new AsyncMcpSamplingProvider(List.of(asyncSamplingHandler)).getSamplingHandler();
+            samplingSpecifications.get(0).samplingHandler();
 
         McpAsyncClient client = McpClient.async(transport)
             .capabilities(ClientCapabilities.builder()
@@ -732,6 +782,19 @@ public class ElicitationHandler {
         // Example of declining an elicitation request
         return new ElicitResult(ElicitResult.Action.DECLINE, null);
     }
+
+    /**
+     * Handle elicitation requests for a specific client.
+     * @param request The elicitation request
+     * @return The elicitation result
+     */
+    @McpElicitation(clientId = "client-1")
+    public ElicitResult handleClient1ElicitationRequest(ElicitRequest request) {
+        Map<String, Object> userData = new HashMap<>();
+        userData.put("client", "client-1");
+        userData.put("response", "Client-1 specific elicitation response");
+        return new ElicitResult(ElicitResult.Action.ACCEPT, userData);
+    }
 }
 
 public class AsyncElicitationHandler {
@@ -765,6 +828,22 @@ public class AsyncElicitationHandler {
     @McpElicitation
     public Mono<ElicitResult> handleCancelElicitationRequest(ElicitRequest request) {
         return Mono.just(new ElicitResult(ElicitResult.Action.CANCEL, null));
+    }
+
+    /**
+     * Handle elicitation requests for a specific client asynchronously.
+     * @param request The elicitation request
+     * @return A Mono containing the elicitation result
+     */
+    @McpElicitation(clientId = "client-2")
+    public Mono<ElicitResult> handleClient2AsyncElicitationRequest(ElicitRequest request) {
+        return Mono.fromCallable(() -> {
+            Map<String, Object> userData = new HashMap<>();
+            userData.put("client", "client-2");
+            userData.put("response", "Client-2 async elicitation response");
+            userData.put("timestamp", System.currentTimeMillis());
+            return new ElicitResult(ElicitResult.Action.ACCEPT, userData);
+        }).delayElement(Duration.ofMillis(50));
     }
 }
 
@@ -1022,33 +1101,39 @@ public class McpConfig {
     }
     
     @Bean
-    public List<Consumer<LoggingMessageNotification>> syncLoggingConsumers(
+    public List<SyncLoggingSpecification> syncLoggingSpecifications(
             List<LoggingHandler> loggingHandlers) {
-        return SpringAiMcpAnnotationProvider.createSyncLoggingConsumers(loggingHandlers);
+        return SpringAiMcpAnnotationProvider.createSyncLoggingSpecifications(loggingHandlers);
     }
     
     @Bean
-    public Function<CreateMessageRequest, CreateMessageResult> syncSamplingHandler(
+    public List<AsyncLoggingSpecification> asyncLoggingSpecifications(
+            List<AsyncLoggingHandler> asyncLoggingHandlers) {
+        return SpringAiMcpAnnotationProvider.createAsyncLoggingSpecifications(asyncLoggingHandlers);
+    }
+    
+    @Bean
+    public List<SyncSamplingSpecification> syncSamplingSpecifications(
             List<SamplingHandler> samplingHandlers) {
-        return SpringAiMcpAnnotationProvider.createSyncSamplingHandler(samplingHandlers);
+        return SpringAiMcpAnnotationProvider.createSyncSamplingSpecifications(samplingHandlers);
     }
     
     @Bean
-    public Function<CreateMessageRequest, Mono<CreateMessageResult>> asyncSamplingHandler(
+    public List<AsyncSamplingSpecification> asyncSamplingSpecifications(
             List<AsyncSamplingHandler> asyncSamplingHandlers) {
-        return SpringAiMcpAnnotationProvider.createAsyncSamplingHandler(asyncSamplingHandlers);
+        return SpringAiMcpAnnotationProvider.createAsyncSamplingSpecifications(asyncSamplingHandlers);
     }
     
     @Bean
-    public Function<ElicitRequest, ElicitResult> syncElicitationHandler(
+    public List<SyncElicitationSpecification> syncElicitationSpecifications(
             List<ElicitationHandler> elicitationHandlers) {
-        return SpringAiMcpAnnotationProvider.createSyncElicitationHandler(elicitationHandlers);
+        return SpringAiMcpAnnotationProvider.createSyncElicitationSpecifications(elicitationHandlers);
     }
     
     @Bean
-    public Function<ElicitRequest, Mono<ElicitResult>> asyncElicitationHandler(
+    public List<AsyncElicitationSpecification> asyncElicitationSpecifications(
             List<AsyncElicitationHandler> asyncElicitationHandlers) {
-        return SpringAiMcpAnnotationProvider.createAsyncElicitationHandler(asyncElicitationHandlers);
+        return SpringAiMcpAnnotationProvider.createAsyncElicitationSpecifications(asyncElicitationHandlers);
     }
     
     // Stateless Spring Integration Examples

@@ -14,6 +14,7 @@ import java.util.function.Function;
 
 import org.junit.jupiter.api.Test;
 import org.springaicommunity.mcp.annotation.McpElicitation;
+import org.springaicommunity.mcp.method.elicitation.SyncElicitationSpecification;
 
 import io.modelcontextprotocol.spec.McpSchema.ElicitRequest;
 import io.modelcontextprotocol.spec.McpSchema.ElicitResult;
@@ -28,7 +29,8 @@ public class SyncMcpElicitationProviderTests {
 	@Test
 	public void testGetElicitationHandler() {
 		var provider = new SyncMcpElicitationProvider(List.of(new TestElicitationHandler()));
-		Function<ElicitRequest, ElicitResult> handler = provider.getElicitationHandler();
+		SyncElicitationSpecification specification = provider.getElicitationSpecifications().get(0);
+		Function<ElicitRequest, ElicitResult> handler = specification.elicitationHandler();
 
 		assertNotNull(handler);
 
@@ -46,7 +48,7 @@ public class SyncMcpElicitationProviderTests {
 	public void testNoElicitationMethods() {
 		var provider = new SyncMcpElicitationProvider(List.of(new Object()));
 
-		assertThrows(IllegalStateException.class, () -> provider.getElicitationHandler(),
+		assertThrows(IllegalStateException.class, () -> provider.getElicitationSpecifications(),
 				"No elicitation methods found");
 	}
 
@@ -54,7 +56,7 @@ public class SyncMcpElicitationProviderTests {
 	public void testMultipleElicitationMethods() {
 		var provider = new SyncMcpElicitationProvider(List.of(new MultipleElicitationHandler()));
 
-		assertThrows(IllegalStateException.class, () -> provider.getElicitationHandler(),
+		assertThrows(IllegalStateException.class, () -> provider.getElicitationSpecifications(),
 				"Multiple elicitation methods found");
 	}
 

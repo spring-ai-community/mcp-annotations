@@ -22,6 +22,7 @@ import java.util.function.Function;
 import java.util.stream.Stream;
 
 import org.springaicommunity.mcp.annotation.McpElicitation;
+import org.springaicommunity.mcp.method.elicitation.SyncElicitationSpecification;
 import org.springaicommunity.mcp.method.elicitation.SyncMcpElicitationMethodCallback;
 
 import io.modelcontextprotocol.spec.McpSchema.ElicitRequest;
@@ -73,13 +74,13 @@ public class SyncMcpElicitationProvider {
 	}
 
 	/**
-	 * Get the elicitation handler.
-	 * @return the elicitation handler
+	 * Get the elicitation specifications.
+	 * @return the elicitation specifications
 	 * @throws IllegalStateException if no elicitation methods are found or if multiple
 	 * elicitation methods are found
 	 */
-	public Function<ElicitRequest, ElicitResult> getElicitationHandler() {
-		List<Function<ElicitRequest, ElicitResult>> elicitationHandlers = this.elicitationObjects.stream()
+	public List<SyncElicitationSpecification> getElicitationSpecifications() {
+		List<SyncElicitationSpecification> elicitationHandlers = this.elicitationObjects.stream()
 			.map(elicitationObject -> Stream.of(doGetClassMethods(elicitationObject))
 				.filter(method -> method.isAnnotationPresent(McpElicitation.class))
 				.filter(method -> !Mono.class.isAssignableFrom(method.getReturnType()))
@@ -95,7 +96,7 @@ public class SyncMcpElicitationProvider {
 						.elicitation(elicitationAnnotation)
 						.build();
 
-					return methodCallback;
+					return new SyncElicitationSpecification(elicitationAnnotation.clientId(), methodCallback);
 				})
 				.toList())
 			.flatMap(List::stream)
@@ -108,7 +109,7 @@ public class SyncMcpElicitationProvider {
 			throw new IllegalStateException("Multiple elicitation methods found: " + elicitationHandlers.size());
 		}
 
-		return elicitationHandlers.get(0);
+		return elicitationHandlers;
 	}
 
 	/**
