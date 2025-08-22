@@ -91,6 +91,7 @@ The core module provides a set of annotations and callback implementations for p
 5. **Logging Consumer** - For handling logging message notifications
 6. **Sampling** - For handling sampling requests
 7. **Elicitation** - For handling elicitation requests to gather additional information from users
+8. **Progress** - For handling progress notifications during long-running operations
 
 Each operation type has both synchronous and asynchronous implementations, allowing for flexible integration with different application architectures.
 
@@ -110,6 +111,7 @@ The Spring integration module provides seamless integration with Spring AI and S
 - **`@McpLoggingConsumer`** - Annotates methods that handle logging message notifications from MCP servers
 - **`@McpSampling`** - Annotates methods that handle sampling requests from MCP servers
 - **`@McpElicitation`** - Annotates methods that handle elicitation requests to gather additional information from users
+- **`@McpProgress`** - Annotates methods that handle progress notifications for long-running operations
 - **`@McpArg`** - Annotates method parameters as MCP arguments
 
 ### Method Callbacks
@@ -160,6 +162,11 @@ The modules provide callback implementations for each operation type:
 - `SyncMcpElicitationMethodCallback` - Synchronous implementation
 - `AsyncMcpElicitationMethodCallback` - Asynchronous implementation using Reactor's Mono
 
+#### Progress
+- `AbstractMcpProgressMethodCallback` - Base class for progress method callbacks
+- `SyncMcpProgressMethodCallback` - Synchronous implementation
+- `AsyncMcpProgressMethodCallback` - Asynchronous implementation using Reactor's Mono
+
 ### Providers
 
 The project includes provider classes that scan for annotated methods and create appropriate callbacks:
@@ -176,6 +183,8 @@ The project includes provider classes that scan for annotated methods and create
 - `AsyncMcpSamplingProvider` - Processes `@McpSampling` annotations for asynchronous operations
 - `SyncMcpElicitationProvider` - Processes `@McpElicitation` annotations for synchronous operations
 - `AsyncMcpElicitationProvider` - Processes `@McpElicitation` annotations for asynchronous operations
+- `SyncMcpProgressProvider` - Processes `@McpProgress` annotations for synchronous operations
+- `AsyncMcpProgressProvider` - Processes `@McpProgress` annotations for asynchronous operations
 
 #### Stateless Providers (using McpTransportContext)
 - `SyncStatelessMcpCompleteProvider` - Processes `@McpComplete` annotations for synchronous stateless operations
@@ -807,6 +816,126 @@ public class MyMcpClient {
 }
 ```
 
+### Mcp Client Progress Example
+
+```java
+public class ProgressHandler {
+
+    /**
+     * Handle progress notifications with a single parameter.
+     * @param notification The progress notification
+     */
+    @McpProgress
+    public void handleProgressNotification(ProgressNotification notification) {
+        System.out.println(String.format("Progress: %.2f%% - %s", 
+            notification.progress() * 100, 
+            notification.message()));
+    }
+
+    /**
+     * Handle progress notifications with individual parameters.
+     * @param progressToken The progress token identifying the operation
+     * @param progress The current progress (0.0 to 1.0)
+     * @param total Optional total value for the operation
+     * @param message Optional progress message
+     */
+    @McpProgress
+    public void handleProgressWithParams(String progressToken, double progress, Double total, String message) {
+        if (total != null) {
+            System.out.println(String.format("Progress [%s]: %.0f/%.0f - %s", 
+                progressToken, progress, total, message));
+        } else {
+            System.out.println(String.format("Progress [%s]: %.2f%% - %s", 
+                progressToken, progress * 100, message));
+        }
+    }
+
+    /**
+     * Handle progress notifications for a specific client.
+     * @param notification The progress notification
+     */
+    @McpProgress(clientId = "client-1")
+    public void handleClient1Progress(ProgressNotification notification) {
+        System.out.println(String.format("Client-1 Progress: %.2f%% - %s", 
+            notification.progress() * 100, 
+            notification.message()));
+    }
+}
+
+public class AsyncProgressHandler {
+
+    /**
+     * Handle progress notifications asynchronously.
+     * @param notification The progress notification
+     * @return A Mono that completes when the notification is handled
+     */
+    @McpProgress
+    public Mono<Void> handleAsyncProgress(ProgressNotification notification) {
+        return Mono.fromRunnable(() -> {
+            System.out.println(String.format("Async Progress: %.2f%% - %s", 
+                notification.progress() * 100, 
+                notification.message()));
+        });
+    }
+
+    /**
+     * Handle progress notifications for a specific client asynchronously.
+     * @param progressToken The progress token
+     * @param progress The current progress
+     * @param total Optional total value
+     * @param message Optional message
+     * @return A Mono that completes when the notification is handled
+     */
+    @McpProgress(clientId = "client-2")
+    public Mono<Void> handleClient2AsyncProgress(
+            String progressToken, 
+            double progress, 
+            Double total, 
+            String message) {
+        
+        return Mono.fromRunnable(() -> {
+            String progressText = total != null ? 
+                String.format("%.0f/%.0f", progress, total) : 
+                String.format("%.2f%%", progress * 100);
+            
+            System.out.println(String.format("Client-2 Progress [%s]: %s - %s", 
+                progressToken, progressText, message));
+        }).then();
+    }
+}
+
+public class MyMcpClient {
+
+    public static McpSyncClient createSyncClientWithProgress(ProgressHandler progressHandler) {
+        List<Consumer<ProgressNotification>> progressConsumers = 
+            new SyncMcpProgressProvider(List.of(progressHandler)).getProgressConsumers();
+
+        McpSyncClient client = McpClient.sync(transport)
+            .capabilities(ClientCapabilities.builder()
+                // Enable capabilities...
+                .build())
+            .progressConsumers(progressConsumers)
+            .build();
+
+        return client;
+    }
+    
+    public static McpAsyncClient createAsyncClientWithProgress(AsyncProgressHandler asyncProgressHandler) {
+        List<Function<ProgressNotification, Mono<Void>>> progressHandlers = 
+            new AsyncMcpProgressProvider(List.of(asyncProgressHandler)).getProgressHandlers();
+
+        McpAsyncClient client = McpClient.async(transport)
+            .capabilities(ClientCapabilities.builder()
+                // Enable capabilities...
+                .build())
+            .progressHandlers(progressHandlers)
+            .build();
+
+        return client;
+    }
+}
+```
+
 ### Mcp Client Elicitation Example
 
 ```java
@@ -1213,6 +1342,18 @@ public class McpConfig {
         return SpringAiMcpAnnotationProvider.createAsyncElicitationSpecifications(asyncElicitationHandlers);
     }
     
+    @Bean
+    public List<SyncProgressSpecification> syncProgressSpecifications(
+            List<ProgressHandler> progressHandlers) {
+        return SpringAiMcpAnnotationProvider.createSyncProgressSpecifications(progressHandlers);
+    }
+    
+    @Bean
+    public List<AsyncProgressSpecification> asyncProgressSpecifications(
+            List<AsyncProgressHandler> asyncProgressHandlers) {
+        return SpringAiMcpAnnotationProvider.createAsyncProgressSpecifications(asyncProgressHandlers);
+    }
+    
     // Stateless Spring Integration Examples
     
     @Bean
@@ -1248,6 +1389,7 @@ public class McpConfig {
 - **Dynamic schema support via CallToolRequest** - Tools can accept `CallToolRequest` parameters to handle dynamic schemas at runtime
 - **Logging consumer support** - Handle logging message notifications from MCP servers
 - **Sampling support** - Handle sampling requests from MCP servers
+- **Progress notification support** - Handle progress notifications for long-running operations
 - **Spring integration** - Seamless integration with Spring Framework and Spring AI, including support for both stateful and stateless operations
 - **AOP proxy support** - Proper handling of Spring AOP proxies when processing annotations
 

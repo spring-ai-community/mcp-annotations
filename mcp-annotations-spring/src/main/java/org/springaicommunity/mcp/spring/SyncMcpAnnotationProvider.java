@@ -20,10 +20,12 @@ import java.util.List;
 
 import org.springaicommunity.mcp.method.elicitation.SyncElicitationSpecification;
 import org.springaicommunity.mcp.method.logging.SyncLoggingSpecification;
+import org.springaicommunity.mcp.method.progress.SyncProgressSpecification;
 import org.springaicommunity.mcp.method.sampling.SyncSamplingSpecification;
 import org.springaicommunity.mcp.provider.SyncMcpCompletionProvider;
 import org.springaicommunity.mcp.provider.SyncMcpElicitationProvider;
 import org.springaicommunity.mcp.provider.SyncMcpLoggingConsumerProvider;
+import org.springaicommunity.mcp.provider.SyncMcpProgressProvider;
 import org.springaicommunity.mcp.provider.SyncMcpPromptProvider;
 import org.springaicommunity.mcp.provider.SyncMcpResourceProvider;
 import org.springaicommunity.mcp.provider.SyncMcpSamplingProvider;
@@ -173,6 +175,19 @@ public class SyncMcpAnnotationProvider {
 
 	}
 
+	private static class SpringAiSyncMcpProgressProvider extends SyncMcpProgressProvider {
+
+		public SpringAiSyncMcpProgressProvider(List<Object> progressObjects) {
+			super(progressObjects);
+		}
+
+		@Override
+		protected Method[] doGetClassMethods(Object bean) {
+			return AnnotationProviderUtil.beanMethods(bean);
+		}
+
+	}
+
 	public static List<SyncToolSpecification> createSyncToolSpecifications(List<Object> toolObjects) {
 		return new SpringAiSyncToolProvider(toolObjects).getToolSpecifications();
 	}
@@ -215,6 +230,10 @@ public class SyncMcpAnnotationProvider {
 	public static List<SyncElicitationSpecification> createSyncElicitationSpecifications(
 			List<Object> elicitationObjects) {
 		return new SpringAiSyncMcpElicitationProvider(elicitationObjects).getElicitationSpecifications();
+	}
+
+	public static List<SyncProgressSpecification> createSyncProgressSpecifications(List<Object> progressObjects) {
+		return new SpringAiSyncMcpProgressProvider(progressObjects).getProgressSpecifications();
 	}
 
 }

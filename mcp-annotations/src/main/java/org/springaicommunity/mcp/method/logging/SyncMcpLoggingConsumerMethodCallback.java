@@ -74,18 +74,6 @@ public final class SyncMcpLoggingConsumerMethodCallback extends AbstractMcpLoggi
 	}
 
 	/**
-	 * Checks if a parameter type is compatible with the exchange type.
-	 * @param paramType The parameter type to check
-	 * @return true if the parameter type is compatible with the exchange type, false
-	 * otherwise
-	 */
-	@Override
-	protected boolean isExchangeType(Class<?> paramType) {
-		// No exchange type for logging consumer methods
-		return false;
-	}
-
-	/**
 	 * Builder for creating SyncMcpLoggingConsumerMethodCallback instances.
 	 * <p>
 	 * This builder provides a fluent API for constructing
