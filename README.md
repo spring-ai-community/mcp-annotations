@@ -122,6 +122,9 @@ The Spring integration module provides seamless integration with Spring AI and S
 - **`@McpTool`** - Annotates methods that implement MCP tools with automatic JSON schema generation
   - **`@McpToolParam`** - Annotates tool method parameters with descriptions and requirement specifications
 
+#### Special Parameter Annotations
+- **`@McpProgressToken`** - Marks a method parameter to receive the progress token from the request. This parameter is automatically injected and excluded from the generated JSON schema
+
 ### Method Callbacks
 
 The modules provide callback implementations for each operation type:
@@ -526,6 +529,114 @@ This feature works with all tool callback types:
 - `AsyncMcpToolMethodCallback` - Asynchronous with server exchange
 - `SyncStatelessMcpToolMethodCallback` - Synchronous stateless
 - `AsyncStatelessMcpToolMethodCallback` - Asynchronous stateless
+
+#### @McpProgressToken Support
+
+The `@McpProgressToken` annotation allows methods to receive progress tokens from MCP requests. This is useful for tracking long-running operations and providing progress updates to clients.
+
+When a method parameter is annotated with `@McpProgressToken`:
+- The parameter automatically receives the progress token value from the request
+- The parameter is excluded from the generated JSON schema
+- The parameter type should be `String` to receive the token value
+- If no progress token is present in the request, `null` is injected
+
+Example usage with tools:
+
+```java
+@McpTool(name = "long-running-task", description = "Performs a long-running task with progress tracking")
+public String performLongTask(
+        @McpProgressToken String progressToken,
+        @McpToolParam(description = "Task name", required = true) String taskName,
+        @McpToolParam(description = "Duration in seconds", required = true) int duration) {
+    
+    // Use the progress token to send progress updates
+    if (progressToken != null) {
+        // Send progress notifications using the token
+        sendProgressUpdate(progressToken, 0.0, "Starting task: " + taskName);
+        
+        // Simulate work with progress updates
+        for (int i = 1; i <= duration; i++) {
+            Thread.sleep(1000);
+            double progress = (double) i / duration;
+            sendProgressUpdate(progressToken, progress, "Processing... " + (i * 100 / duration) + "%");
+        }
+    }
+    
+    return "Task " + taskName + " completed successfully";
+}
+
+// Tool with both CallToolRequest and progress token
+@McpTool(name = "flexible-task", description = "Flexible task with progress tracking")
+public CallToolResult flexibleTask(
+        @McpProgressToken String progressToken,
+        CallToolRequest request) {
+    
+    // Access progress token for tracking
+    if (progressToken != null) {
+        // Track progress for this operation
+        System.out.println("Progress token: " + progressToken);
+    }
+    
+    // Process the request
+    Map<String, Object> args = request.arguments();
+    return CallToolResult.success("Processed with token: " + progressToken);
+}
+```
+
+The `@McpProgressToken` annotation is also supported in other MCP callback types:
+
+**Resource callbacks:**
+```java
+@McpResource(uri = "data://{id}", name = "Data Resource", description = "Resource with progress tracking")
+public ReadResourceResult getDataWithProgress(
+        @McpProgressToken String progressToken,
+        String id) {
+    
+    if (progressToken != null) {
+        // Use progress token for tracking resource access
+        trackResourceAccess(progressToken, id);
+    }
+    
+    return new ReadResourceResult(List.of(
+        new TextResourceContents("data://" + id, "text/plain", "Data for " + id)
+    ));
+}
+```
+
+**Prompt callbacks:**
+```java
+@McpPrompt(name = "generate-content", description = "Generate content with progress tracking")
+public GetPromptResult generateContent(
+        @McpProgressToken String progressToken,
+        @McpArg(name = "topic", required = true) String topic) {
+    
+    if (progressToken != null) {
+        // Track prompt generation progress
+        System.out.println("Generating prompt with token: " + progressToken);
+    }
+    
+    return new GetPromptResult("Generated Content",
+        List.of(new PromptMessage(Role.ASSISTANT, new TextContent("Content about " + topic))));
+}
+```
+
+**Complete callbacks:**
+```java
+@McpComplete(prompt = "auto-complete")
+public List<String> completeWithProgress(
+        @McpProgressToken String progressToken,
+        String prefix) {
+    
+    if (progressToken != null) {
+        // Track completion progress
+        System.out.println("Completion with token: " + progressToken);
+    }
+    
+    return generateCompletions(prefix);
+}
+```
+
+This feature enables better tracking and monitoring of MCP operations, especially for long-running tasks that need to report progress back to clients.
 
 ### Async Tool Example
 

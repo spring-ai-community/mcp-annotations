@@ -18,6 +18,7 @@ import io.modelcontextprotocol.spec.McpSchema.TextResourceContents;
 import io.modelcontextprotocol.util.McpUriTemplateManager;
 import io.modelcontextprotocol.util.McpUriTemplateManagerFactory;
 import org.junit.jupiter.api.Test;
+import org.springaicommunity.mcp.annotation.McpProgressToken;
 import org.springaicommunity.mcp.annotation.McpResource;
 import org.springaicommunity.mcp.annotation.ResourceAdaptor;
 
@@ -27,6 +28,7 @@ import reactor.test.StepVerifier;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 /**
  * Tests for {@link AsyncMcpResourceMethodCallback}.
@@ -41,6 +43,49 @@ public class AsyncMcpResourceMethodCallbackTests {
 		public ReadResourceResult getResourceWithRequest(ReadResourceRequest request) {
 			return new ReadResourceResult(
 					List.of(new TextResourceContents(request.uri(), "text/plain", "Content for " + request.uri())));
+		}
+
+		// Methods for testing @McpProgressToken
+		public ReadResourceResult getResourceWithProgressToken(@McpProgressToken String progressToken,
+				ReadResourceRequest request) {
+			String content = "Content with progress token: " + progressToken + " for " + request.uri();
+			return new ReadResourceResult(List.of(new TextResourceContents(request.uri(), "text/plain", content)));
+		}
+
+		public Mono<ReadResourceResult> getResourceWithProgressTokenAsync(@McpProgressToken String progressToken,
+				ReadResourceRequest request) {
+			String content = "Async content with progress token: " + progressToken + " for " + request.uri();
+			return Mono
+				.just(new ReadResourceResult(List.of(new TextResourceContents(request.uri(), "text/plain", content))));
+		}
+
+		public ReadResourceResult getResourceWithProgressTokenOnly(@McpProgressToken String progressToken) {
+			String content = "Content with only progress token: " + progressToken;
+			return new ReadResourceResult(List.of(new TextResourceContents("test://resource", "text/plain", content)));
+		}
+
+		@McpResource(uri = "users/{userId}/posts/{postId}")
+		public ReadResourceResult getResourceWithProgressTokenAndUriVariables(@McpProgressToken String progressToken,
+				String userId, String postId) {
+			String content = "User: " + userId + ", Post: " + postId + ", Progress: " + progressToken;
+			return new ReadResourceResult(
+					List.of(new TextResourceContents("users/" + userId + "/posts/" + postId, "text/plain", content)));
+		}
+
+		public Mono<ReadResourceResult> getResourceWithExchangeAndProgressToken(McpAsyncServerExchange exchange,
+				@McpProgressToken String progressToken, ReadResourceRequest request) {
+			String content = "Async content with exchange and progress token: " + progressToken + " for "
+					+ request.uri();
+			return Mono
+				.just(new ReadResourceResult(List.of(new TextResourceContents(request.uri(), "text/plain", content))));
+		}
+
+		public ReadResourceResult getResourceWithMultipleProgressTokens(@McpProgressToken String progressToken1,
+				@McpProgressToken String progressToken2, ReadResourceRequest request) {
+			// This should only use the first progress token
+			String content = "Content with progress tokens: " + progressToken1 + " and " + progressToken2 + " for "
+					+ request.uri();
+			return new ReadResourceResult(List.of(new TextResourceContents(request.uri(), "text/plain", content)));
 		}
 
 		public ReadResourceResult getResourceWithExchange(McpAsyncServerExchange exchange,
@@ -567,6 +612,214 @@ public class AsyncMcpResourceMethodCallbackTests {
 					throwable -> throwable instanceof AsyncMcpResourceMethodCallback.McpResourceMethodException
 							&& throwable.getMessage().contains("Error invoking resource method"))
 			.verify();
+	}
+
+	// Tests for @McpProgressToken functionality
+	@Test
+	public void testCallbackWithProgressToken() throws Exception {
+		TestAsyncResourceProvider provider = new TestAsyncResourceProvider();
+		Method method = TestAsyncResourceProvider.class.getMethod("getResourceWithProgressToken", String.class,
+				ReadResourceRequest.class);
+
+		BiFunction<McpAsyncServerExchange, ReadResourceRequest, Mono<ReadResourceResult>> callback = AsyncMcpResourceMethodCallback
+			.builder()
+			.method(method)
+			.bean(provider)
+			.resource(ResourceAdaptor.asResource(createMockMcpResource()))
+			.build();
+
+		McpAsyncServerExchange exchange = mock(McpAsyncServerExchange.class);
+		ReadResourceRequest request = mock(ReadResourceRequest.class);
+		when(request.uri()).thenReturn("test/resource");
+		when(request.progressToken()).thenReturn("progress-123");
+
+		Mono<ReadResourceResult> resultMono = callback.apply(exchange, request);
+
+		StepVerifier.create(resultMono).assertNext(result -> {
+			assertThat(result).isNotNull();
+			assertThat(result.contents()).hasSize(1);
+			assertThat(result.contents().get(0)).isInstanceOf(TextResourceContents.class);
+			TextResourceContents textContent = (TextResourceContents) result.contents().get(0);
+			assertThat(textContent.text()).isEqualTo("Content with progress token: progress-123 for test/resource");
+		}).verifyComplete();
+	}
+
+	@Test
+	public void testCallbackWithProgressTokenAsync() throws Exception {
+		TestAsyncResourceProvider provider = new TestAsyncResourceProvider();
+		Method method = TestAsyncResourceProvider.class.getMethod("getResourceWithProgressTokenAsync", String.class,
+				ReadResourceRequest.class);
+
+		BiFunction<McpAsyncServerExchange, ReadResourceRequest, Mono<ReadResourceResult>> callback = AsyncMcpResourceMethodCallback
+			.builder()
+			.method(method)
+			.bean(provider)
+			.resource(ResourceAdaptor.asResource(createMockMcpResource()))
+			.build();
+
+		McpAsyncServerExchange exchange = mock(McpAsyncServerExchange.class);
+		ReadResourceRequest request = mock(ReadResourceRequest.class);
+		when(request.uri()).thenReturn("test/resource");
+		when(request.progressToken()).thenReturn("progress-456");
+
+		Mono<ReadResourceResult> resultMono = callback.apply(exchange, request);
+
+		StepVerifier.create(resultMono).assertNext(result -> {
+			assertThat(result).isNotNull();
+			assertThat(result.contents()).hasSize(1);
+			assertThat(result.contents().get(0)).isInstanceOf(TextResourceContents.class);
+			TextResourceContents textContent = (TextResourceContents) result.contents().get(0);
+			assertThat(textContent.text())
+				.isEqualTo("Async content with progress token: progress-456 for test/resource");
+		}).verifyComplete();
+	}
+
+	@Test
+	public void testCallbackWithProgressTokenNull() throws Exception {
+		TestAsyncResourceProvider provider = new TestAsyncResourceProvider();
+		Method method = TestAsyncResourceProvider.class.getMethod("getResourceWithProgressToken", String.class,
+				ReadResourceRequest.class);
+
+		BiFunction<McpAsyncServerExchange, ReadResourceRequest, Mono<ReadResourceResult>> callback = AsyncMcpResourceMethodCallback
+			.builder()
+			.method(method)
+			.bean(provider)
+			.resource(ResourceAdaptor.asResource(createMockMcpResource()))
+			.build();
+
+		McpAsyncServerExchange exchange = mock(McpAsyncServerExchange.class);
+		ReadResourceRequest request = mock(ReadResourceRequest.class);
+		when(request.uri()).thenReturn("test/resource");
+		when(request.progressToken()).thenReturn(null);
+
+		Mono<ReadResourceResult> resultMono = callback.apply(exchange, request);
+
+		StepVerifier.create(resultMono).assertNext(result -> {
+			assertThat(result).isNotNull();
+			assertThat(result.contents()).hasSize(1);
+			assertThat(result.contents().get(0)).isInstanceOf(TextResourceContents.class);
+			TextResourceContents textContent = (TextResourceContents) result.contents().get(0);
+			assertThat(textContent.text()).isEqualTo("Content with progress token: null for test/resource");
+		}).verifyComplete();
+	}
+
+	@Test
+	public void testCallbackWithProgressTokenOnly() throws Exception {
+		TestAsyncResourceProvider provider = new TestAsyncResourceProvider();
+		Method method = TestAsyncResourceProvider.class.getMethod("getResourceWithProgressTokenOnly", String.class);
+
+		BiFunction<McpAsyncServerExchange, ReadResourceRequest, Mono<ReadResourceResult>> callback = AsyncMcpResourceMethodCallback
+			.builder()
+			.method(method)
+			.bean(provider)
+			.resource(ResourceAdaptor.asResource(createMockMcpResource()))
+			.build();
+
+		McpAsyncServerExchange exchange = mock(McpAsyncServerExchange.class);
+		ReadResourceRequest request = mock(ReadResourceRequest.class);
+		when(request.uri()).thenReturn("test/resource");
+		when(request.progressToken()).thenReturn("progress-789");
+
+		Mono<ReadResourceResult> resultMono = callback.apply(exchange, request);
+
+		StepVerifier.create(resultMono).assertNext(result -> {
+			assertThat(result).isNotNull();
+			assertThat(result.contents()).hasSize(1);
+			assertThat(result.contents().get(0)).isInstanceOf(TextResourceContents.class);
+			TextResourceContents textContent = (TextResourceContents) result.contents().get(0);
+			assertThat(textContent.text()).isEqualTo("Content with only progress token: progress-789");
+		}).verifyComplete();
+	}
+
+	@Test
+	public void testCallbackWithProgressTokenAndUriVariables() throws Exception {
+		TestAsyncResourceProvider provider = new TestAsyncResourceProvider();
+		Method method = TestAsyncResourceProvider.class.getMethod("getResourceWithProgressTokenAndUriVariables",
+				String.class, String.class, String.class);
+		McpResource resourceAnnotation = method.getAnnotation(McpResource.class);
+
+		BiFunction<McpAsyncServerExchange, ReadResourceRequest, Mono<ReadResourceResult>> callback = AsyncMcpResourceMethodCallback
+			.builder()
+			.method(method)
+			.bean(provider)
+			.resource(ResourceAdaptor.asResource(resourceAnnotation))
+			.build();
+
+		McpAsyncServerExchange exchange = mock(McpAsyncServerExchange.class);
+		ReadResourceRequest request = mock(ReadResourceRequest.class);
+		when(request.uri()).thenReturn("users/123/posts/456");
+		when(request.progressToken()).thenReturn("progress-abc");
+
+		Mono<ReadResourceResult> resultMono = callback.apply(exchange, request);
+
+		StepVerifier.create(resultMono).assertNext(result -> {
+			assertThat(result).isNotNull();
+			assertThat(result.contents()).hasSize(1);
+			assertThat(result.contents().get(0)).isInstanceOf(TextResourceContents.class);
+			TextResourceContents textContent = (TextResourceContents) result.contents().get(0);
+			assertThat(textContent.text()).isEqualTo("User: 123, Post: 456, Progress: progress-abc");
+		}).verifyComplete();
+	}
+
+	@Test
+	public void testCallbackWithExchangeAndProgressToken() throws Exception {
+		TestAsyncResourceProvider provider = new TestAsyncResourceProvider();
+		Method method = TestAsyncResourceProvider.class.getMethod("getResourceWithExchangeAndProgressToken",
+				McpAsyncServerExchange.class, String.class, ReadResourceRequest.class);
+
+		BiFunction<McpAsyncServerExchange, ReadResourceRequest, Mono<ReadResourceResult>> callback = AsyncMcpResourceMethodCallback
+			.builder()
+			.method(method)
+			.bean(provider)
+			.resource(ResourceAdaptor.asResource(createMockMcpResource()))
+			.build();
+
+		McpAsyncServerExchange exchange = mock(McpAsyncServerExchange.class);
+		ReadResourceRequest request = mock(ReadResourceRequest.class);
+		when(request.uri()).thenReturn("test/resource");
+		when(request.progressToken()).thenReturn("progress-def");
+
+		Mono<ReadResourceResult> resultMono = callback.apply(exchange, request);
+
+		StepVerifier.create(resultMono).assertNext(result -> {
+			assertThat(result).isNotNull();
+			assertThat(result.contents()).hasSize(1);
+			assertThat(result.contents().get(0)).isInstanceOf(TextResourceContents.class);
+			TextResourceContents textContent = (TextResourceContents) result.contents().get(0);
+			assertThat(textContent.text())
+				.isEqualTo("Async content with exchange and progress token: progress-def for test/resource");
+		}).verifyComplete();
+	}
+
+	@Test
+	public void testCallbackWithMultipleProgressTokens() throws Exception {
+		TestAsyncResourceProvider provider = new TestAsyncResourceProvider();
+		Method method = TestAsyncResourceProvider.class.getMethod("getResourceWithMultipleProgressTokens", String.class,
+				String.class, ReadResourceRequest.class);
+
+		BiFunction<McpAsyncServerExchange, ReadResourceRequest, Mono<ReadResourceResult>> callback = AsyncMcpResourceMethodCallback
+			.builder()
+			.method(method)
+			.bean(provider)
+			.resource(ResourceAdaptor.asResource(createMockMcpResource()))
+			.build();
+
+		McpAsyncServerExchange exchange = mock(McpAsyncServerExchange.class);
+		ReadResourceRequest request = mock(ReadResourceRequest.class);
+		when(request.uri()).thenReturn("test/resource");
+		when(request.progressToken()).thenReturn("progress-first");
+
+		Mono<ReadResourceResult> resultMono = callback.apply(exchange, request);
+
+		StepVerifier.create(resultMono).assertNext(result -> {
+			assertThat(result).isNotNull();
+			assertThat(result.contents()).hasSize(1);
+			assertThat(result.contents().get(0)).isInstanceOf(TextResourceContents.class);
+			TextResourceContents textContent = (TextResourceContents) result.contents().get(0);
+			// Both progress tokens should receive the same value from the request
+			assertThat(textContent.text())
+				.isEqualTo("Content with progress tokens: progress-first and progress-first for test/resource");
+		}).verifyComplete();
 	}
 
 }

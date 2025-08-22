@@ -22,6 +22,7 @@ import java.lang.reflect.Type;
 import java.util.Map;
 import java.util.stream.Stream;
 
+import org.springaicommunity.mcp.annotation.McpProgressToken;
 import org.springaicommunity.mcp.annotation.McpTool;
 import org.springaicommunity.mcp.method.tool.utils.JsonParser;
 
@@ -82,17 +83,6 @@ public abstract class AbstractSyncMcpToolMethodCallback<T> {
 	}
 
 	/**
-	 * Builds the method arguments from the context and tool input arguments.
-	 * @param exchangeOrContext The exchange or context object (e.g.,
-	 * McpSyncServerExchange or McpTransportContext)
-	 * @param toolInputArguments The input arguments from the tool request
-	 * @return An array of method arguments
-	 */
-	protected Object[] buildMethodArguments(T exchangeOrContext, Map<String, Object> toolInputArguments) {
-		return buildMethodArguments(exchangeOrContext, toolInputArguments, null);
-	}
-
-	/**
 	 * Builds the method arguments from the context, tool input arguments, and optionally
 	 * the full request.
 	 * @param exchangeOrContext The exchange or context object (e.g.,
@@ -104,6 +94,12 @@ public abstract class AbstractSyncMcpToolMethodCallback<T> {
 	protected Object[] buildMethodArguments(T exchangeOrContext, Map<String, Object> toolInputArguments,
 			CallToolRequest request) {
 		return Stream.of(this.toolMethod.getParameters()).map(parameter -> {
+			// Check if parameter is annotated with @McpProgressToken
+			if (parameter.isAnnotationPresent(McpProgressToken.class)) {
+				// Return the progress token from the request
+				return request != null ? request.progressToken() : null;
+			}
+
 			// Check if parameter is CallToolRequest type
 			if (CallToolRequest.class.isAssignableFrom(parameter.getType())) {
 				return request;

@@ -16,20 +16,19 @@ import java.lang.annotation.Target;
  *
  * <p>
  * Methods annotated with this annotation can be used to consume progress messages from
- * MCP servers. The methods takes a single parameter of type
- * {@code ProgressMessageNotification}
+ * MCP servers. The methods takes a single parameter of type {@code ProgressNotification}
  *
  *
  * <p>
  * Example usage: <pre>{@code
  * &#64;McpProgress
- * public void handleProgressMessage(ProgressMessageNotification notification) {
+ * public void handleProgressMessage(ProgressNotification notification) {
  *     // Handle the notification *
  * }</pre>
  *
  * @author Christian Tzolov
  *
- * @see io.modelcontextprotocol.spec.McpSchema.ProgressMessageNotification
+ * @see io.modelcontextprotocol.spec.McpSchema.ProgressNotification
  */
 @Target({ ElementType.METHOD, ElementType.ANNOTATION_TYPE })
 @Retention(RetentionPolicy.RUNTIME)

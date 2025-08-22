@@ -16,7 +16,7 @@ import io.modelcontextprotocol.spec.McpSchema.PromptReference;
 import io.modelcontextprotocol.spec.McpSchema.ResourceReference;
 import org.junit.jupiter.api.Test;
 import org.springaicommunity.mcp.annotation.McpComplete;
-import org.springaicommunity.mcp.method.complete.SyncMcpCompleteMethodCallback;
+import org.springaicommunity.mcp.annotation.McpProgressToken;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -103,6 +103,25 @@ public class SyncMcpCompleteMethodCallbackTests {
 
 		public CompleteResult duplicateArgumentParameters(CompleteRequest.CompleteArgument arg1,
 				CompleteRequest.CompleteArgument arg2) {
+			return new CompleteResult(new CompleteCompletion(List.of(), 0, false));
+		}
+
+		public CompleteResult getCompletionWithProgressToken(@McpProgressToken String progressToken,
+				CompleteRequest request) {
+			String tokenInfo = progressToken != null ? " (token: " + progressToken + ")" : " (no token)";
+			return new CompleteResult(new CompleteCompletion(
+					List.of("Completion with progress" + tokenInfo + " for: " + request.argument().value()), 1, false));
+		}
+
+		public CompleteResult getCompletionWithMixedAndProgress(McpSyncServerExchange exchange,
+				@McpProgressToken String progressToken, String value, CompleteRequest request) {
+			String tokenInfo = progressToken != null ? " (token: " + progressToken + ")" : " (no token)";
+			return new CompleteResult(new CompleteCompletion(List.of("Mixed completion" + tokenInfo + " with value: "
+					+ value + " and request: " + request.argument().value()), 1, false));
+		}
+
+		public CompleteResult duplicateProgressTokenParameters(@McpProgressToken String token1,
+				@McpProgressToken String token2) {
 			return new CompleteResult(new CompleteCompletion(List.of(), 0, false));
 		}
 
@@ -485,6 +504,73 @@ public class SyncMcpCompleteMethodCallbackTests {
 
 		assertThatThrownBy(() -> callback.apply(exchange, null)).isInstanceOf(IllegalArgumentException.class)
 			.hasMessageContaining("Request must not be null");
+	}
+
+	@Test
+	public void testCallbackWithProgressToken() throws Exception {
+		TestCompleteProvider provider = new TestCompleteProvider();
+		Method method = TestCompleteProvider.class.getMethod("getCompletionWithProgressToken", String.class,
+				CompleteRequest.class);
+
+		BiFunction<McpSyncServerExchange, CompleteRequest, CompleteResult> callback = SyncMcpCompleteMethodCallback
+			.builder()
+			.method(method)
+			.bean(provider)
+			.prompt("test-prompt")
+			.build();
+
+		McpSyncServerExchange exchange = mock(McpSyncServerExchange.class);
+		CompleteRequest request = new CompleteRequest(new PromptReference("test-prompt"),
+				new CompleteRequest.CompleteArgument("test", "value"));
+
+		CompleteResult result = callback.apply(exchange, request);
+
+		assertThat(result).isNotNull();
+		assertThat(result.completion()).isNotNull();
+		assertThat(result.completion().values()).hasSize(1);
+		// Since CompleteRequest doesn't have progressToken, it should be null
+		assertThat(result.completion().values().get(0)).isEqualTo("Completion with progress (no token) for: value");
+	}
+
+	@Test
+	public void testCallbackWithMixedAndProgressToken() throws Exception {
+		TestCompleteProvider provider = new TestCompleteProvider();
+		Method method = TestCompleteProvider.class.getMethod("getCompletionWithMixedAndProgress",
+				McpSyncServerExchange.class, String.class, String.class, CompleteRequest.class);
+
+		BiFunction<McpSyncServerExchange, CompleteRequest, CompleteResult> callback = SyncMcpCompleteMethodCallback
+			.builder()
+			.method(method)
+			.bean(provider)
+			.prompt("test-prompt")
+			.build();
+
+		McpSyncServerExchange exchange = mock(McpSyncServerExchange.class);
+		CompleteRequest request = new CompleteRequest(new PromptReference("test-prompt"),
+				new CompleteRequest.CompleteArgument("test", "value"));
+
+		CompleteResult result = callback.apply(exchange, request);
+
+		assertThat(result).isNotNull();
+		assertThat(result.completion()).isNotNull();
+		assertThat(result.completion().values()).hasSize(1);
+		// Since CompleteRequest doesn't have progressToken, it should be null
+		assertThat(result.completion().values().get(0))
+			.isEqualTo("Mixed completion (no token) with value: value and request: value");
+	}
+
+	@Test
+	public void testDuplicateProgressTokenParameters() throws Exception {
+		TestCompleteProvider provider = new TestCompleteProvider();
+		Method method = TestCompleteProvider.class.getMethod("duplicateProgressTokenParameters", String.class,
+				String.class);
+
+		assertThatThrownBy(() -> SyncMcpCompleteMethodCallback.builder()
+			.method(method)
+			.bean(provider)
+			.prompt("test-prompt")
+			.build()).isInstanceOf(IllegalArgumentException.class)
+			.hasMessageContaining("Method cannot have more than one @McpProgressToken parameter");
 	}
 
 }
