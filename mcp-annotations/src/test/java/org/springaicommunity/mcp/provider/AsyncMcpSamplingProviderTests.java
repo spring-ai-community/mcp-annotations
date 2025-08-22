@@ -73,36 +73,6 @@ public class AsyncMcpSamplingProviderTests {
 	}
 
 	@Test
-	void testEmptySamplingObjects() {
-		AsyncMcpSamplingProvider provider = new AsyncMcpSamplingProvider(Collections.emptyList());
-
-		assertThatThrownBy(() -> provider.getSamplingSpecifictions()).isInstanceOf(IllegalStateException.class)
-			.hasMessageContaining("No sampling methods found");
-	}
-
-	@Test
-	void testMultipleSamplingMethods() {
-		// Create a class with multiple valid sampling methods
-		class MultipleSamplingMethods extends AsyncMcpSamplingMethodCallbackExample {
-
-			// This class already has multiple valid sampling methods
-
-		}
-
-		MultipleSamplingMethods example = new MultipleSamplingMethods();
-		AsyncMcpSamplingProvider provider = new AsyncMcpSamplingProvider(List.of(example)) {
-			@Override
-			protected java.lang.reflect.Method[] doGetClassMethods(Object bean) {
-				// Override to include methods from both the class and its parent
-				return bean.getClass().getMethods();
-			}
-		};
-
-		assertThatThrownBy(() -> provider.getSamplingSpecifictions()).isInstanceOf(IllegalStateException.class)
-			.hasMessageContaining("Multiple sampling methods found");
-	}
-
-	@Test
 	void testDirectResultMethod() {
 		// Create a class with only the direct result method
 		class DirectResultOnly {

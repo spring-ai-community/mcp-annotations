@@ -24,7 +24,6 @@ import java.util.stream.Stream;
 import org.springaicommunity.mcp.annotation.McpLoggingConsumer;
 import org.springaicommunity.mcp.method.logging.AsyncLoggingSpecification;
 import org.springaicommunity.mcp.method.logging.AsyncMcpLoggingConsumerMethodCallback;
-import org.springaicommunity.mcp.method.logging.SyncLoggingSpecification;
 
 import io.modelcontextprotocol.spec.McpSchema.LoggingMessageNotification;
 import io.modelcontextprotocol.util.Assert;

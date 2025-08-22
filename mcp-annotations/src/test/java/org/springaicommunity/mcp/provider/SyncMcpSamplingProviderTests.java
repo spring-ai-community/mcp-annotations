@@ -66,44 +66,4 @@ public class SyncMcpSamplingProviderTests {
 			.hasMessageContaining("samplingObjects cannot be null");
 	}
 
-	@Test
-	void testEmptySamplingObjects() {
-		SyncMcpSamplingProvider provider = new SyncMcpSamplingProvider(Collections.emptyList());
-
-		assertThatThrownBy(() -> provider.getSamplingSpecifications()).isInstanceOf(IllegalStateException.class)
-			.hasMessageContaining("No sampling methods found");
-	}
-
-	@Test
-	void testMultipleSamplingMethods() {
-		// Create a class with multiple valid sampling methods
-		class MultipleSamplingMethods {
-
-			@McpSampling
-			public CreateMessageResult handleSamplingRequest1(CreateMessageRequest request) {
-				return CreateMessageResult.builder()
-					.role(io.modelcontextprotocol.spec.McpSchema.Role.ASSISTANT)
-					.content(new TextContent("This is a response to the sampling request 1"))
-					.model("test-model")
-					.build();
-			}
-
-			@McpSampling
-			public CreateMessageResult handleSamplingRequest2(CreateMessageRequest request) {
-				return CreateMessageResult.builder()
-					.role(io.modelcontextprotocol.spec.McpSchema.Role.ASSISTANT)
-					.content(new TextContent("This is a response to the sampling request 2"))
-					.model("test-model")
-					.build();
-			}
-
-		}
-
-		MultipleSamplingMethods example = new MultipleSamplingMethods();
-		SyncMcpSamplingProvider provider = new SyncMcpSamplingProvider(List.of(example));
-
-		assertThatThrownBy(() -> provider.getSamplingSpecifications()).isInstanceOf(IllegalStateException.class)
-			.hasMessageContaining("Multiple sampling methods found");
-	}
-
 }

@@ -21,6 +21,8 @@ import java.util.List;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springaicommunity.mcp.annotation.McpElicitation;
 import org.springaicommunity.mcp.method.elicitation.AsyncElicitationSpecification;
 import org.springaicommunity.mcp.method.elicitation.AsyncMcpElicitationMethodCallback;
@@ -60,6 +62,8 @@ import reactor.core.publisher.Mono;
  * @see ElicitResult
  */
 public class AsyncMcpElicitationProvider {
+
+	private static final Logger logger = LoggerFactory.getLogger(AsyncMcpElicitationProvider.class);
 
 	private final List<Object> elicitationObjects;
 
@@ -104,10 +108,10 @@ public class AsyncMcpElicitationProvider {
 			.toList();
 
 		if (elicitationHandlers.isEmpty()) {
-			throw new IllegalStateException("No elicitation methods found");
+			logger.warn("No elicitation methods found");
 		}
 		if (elicitationHandlers.size() > 1) {
-			throw new IllegalStateException("Multiple elicitation methods found: " + elicitationHandlers.size());
+			logger.warn("Multiple elicitation methods found: " + elicitationHandlers.size());
 		}
 
 		return elicitationHandlers;

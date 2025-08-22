@@ -71,18 +71,18 @@ public class SyncMcpToolProvider {
 				.filter(method -> !Mono.class.isAssignableFrom(method.getReturnType()))
 				.map(mcpToolMethod -> {
 
-					var toolAnnotation = doGetMcpToolAnnotation(mcpToolMethod);
+					McpTool toolAnnotation = doGetMcpToolAnnotation(mcpToolMethod);
 
 					String toolName = Utils.hasText(toolAnnotation.name()) ? toolAnnotation.name()
 							: mcpToolMethod.getName();
 
-					String toolDescrption = toolAnnotation.description();
+					String toolDescription = toolAnnotation.description();
 
 					String inputSchema = JsonSchemaGenerator.generateForMethodInput(mcpToolMethod);
 
 					var toolBuilder = McpSchema.Tool.builder()
 						.name(toolName)
-						.description(toolDescrption)
+						.description(toolDescription)
 						.inputSchema(inputSchema);
 
 					// Tool annotations
@@ -93,7 +93,8 @@ public class SyncMcpToolProvider {
 								toolAnnotations.idempotentHint(), toolAnnotations.openWorldHint(), null));
 					}
 
-					ReactiveUtils.isReactiveReturnTypeOfCallToolResult(mcpToolMethod);
+					// ReactiveUtils.isReactiveReturnTypeOfCallToolResult(mcpToolMethod);
+
 					// Generate Output Schema from the method return type.
 					// Output schema is not generated for primitive types, void,
 					// CallToolResult, simple value types (String, etc.)

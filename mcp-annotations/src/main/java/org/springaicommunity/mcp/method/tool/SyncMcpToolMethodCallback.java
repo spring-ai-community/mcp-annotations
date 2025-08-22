@@ -45,16 +45,6 @@ public final class SyncMcpToolMethodCallback extends AbstractSyncMcpToolMethodCa
 	}
 
 	/**
-	 * Public method for backward compatibility with tests. Delegates to the protected
-	 * isExchangeOrContextType method.
-	 * @param paramType The parameter type to check
-	 * @return true if the parameter type is an exchange type, false otherwise
-	 */
-	public boolean isExchangeType(Class<?> paramType) {
-		return isExchangeOrContextType(paramType);
-	}
-
-	/**
 	 * Apply the callback to the given request.
 	 * <p>
 	 * This method builds the arguments for the method call, invokes the method, and

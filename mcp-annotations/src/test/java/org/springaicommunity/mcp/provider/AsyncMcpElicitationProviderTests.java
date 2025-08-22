@@ -67,22 +67,6 @@ public class AsyncMcpElicitationProviderTests {
 		}).verifyComplete();
 	}
 
-	@Test
-	public void testNoElicitationMethods() {
-		var provider = new AsyncMcpElicitationProvider(List.of(new Object()));
-
-		assertThrows(IllegalStateException.class, () -> provider.getElicitationSpecifications(),
-				"No elicitation methods found");
-	}
-
-	@Test
-	public void testMultipleElicitationMethods() {
-		var provider = new AsyncMcpElicitationProvider(List.of(new MultipleElicitationHandler()));
-
-		assertThrows(IllegalStateException.class, () -> provider.getElicitationSpecifications(),
-				"Multiple elicitation methods found");
-	}
-
 	public static class TestElicitationHandler {
 
 		@McpElicitation

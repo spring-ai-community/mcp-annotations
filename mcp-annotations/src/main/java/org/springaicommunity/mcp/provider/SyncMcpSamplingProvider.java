@@ -21,6 +21,8 @@ import java.util.List;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springaicommunity.mcp.annotation.McpSampling;
 import org.springaicommunity.mcp.method.sampling.SyncMcpSamplingMethodCallback;
 import org.springaicommunity.mcp.method.sampling.SyncSamplingSpecification;
@@ -60,6 +62,8 @@ import reactor.core.publisher.Mono;
  * @see CreateMessageResult
  */
 public class SyncMcpSamplingProvider {
+
+	private static final Logger logger = LoggerFactory.getLogger(SyncMcpSamplingProvider.class);
 
 	private final List<Object> samplingObjects;
 
@@ -104,10 +108,10 @@ public class SyncMcpSamplingProvider {
 			.toList();
 
 		if (samplingHandlers.isEmpty()) {
-			throw new IllegalStateException("No sampling methods found");
+			logger.warn("No sampling methods found");
 		}
 		if (samplingHandlers.size() > 1) {
-			throw new IllegalStateException("Multiple sampling methods found: " + samplingHandlers.size());
+			logger.warn("Multiple sampling methods found: " + samplingHandlers.size());
 		}
 
 		return samplingHandlers;
