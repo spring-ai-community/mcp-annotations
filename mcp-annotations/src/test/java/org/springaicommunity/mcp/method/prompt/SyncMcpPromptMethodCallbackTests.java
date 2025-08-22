@@ -16,6 +16,7 @@ import java.util.function.BiFunction;
 
 import org.junit.jupiter.api.Test;
 import org.springaicommunity.mcp.annotation.McpArg;
+import org.springaicommunity.mcp.annotation.McpProgressToken;
 import org.springaicommunity.mcp.annotation.McpPrompt;
 
 import io.modelcontextprotocol.server.McpSyncServerExchange;
@@ -107,6 +108,29 @@ public class SyncMcpPromptMethodCallbackTests {
 		}
 
 		public GetPromptResult duplicateMapParameters(Map<String, Object> args1, Map<String, Object> args2) {
+			return new GetPromptResult("Invalid", List.of());
+		}
+
+		@McpPrompt(name = "progress-token", description = "A prompt with progress token")
+		public GetPromptResult getPromptWithProgressToken(@McpProgressToken String progressToken,
+				@McpArg(name = "name", description = "The user's name", required = true) String name) {
+			String tokenInfo = progressToken != null ? " (token: " + progressToken + ")" : " (no token)";
+			return new GetPromptResult("Progress token prompt",
+					List.of(new PromptMessage(Role.ASSISTANT, new TextContent("Hello " + name + tokenInfo))));
+		}
+
+		@McpPrompt(name = "mixed-with-progress", description = "A prompt with mixed args and progress token")
+		public GetPromptResult getPromptWithMixedAndProgress(McpSyncServerExchange exchange,
+				@McpProgressToken String progressToken,
+				@McpArg(name = "name", description = "The user's name", required = true) String name,
+				GetPromptRequest request) {
+			String tokenInfo = progressToken != null ? " (token: " + progressToken + ")" : " (no token)";
+			return new GetPromptResult("Mixed with progress prompt", List.of(new PromptMessage(Role.ASSISTANT,
+					new TextContent("Hello " + name + " from " + request.name() + tokenInfo))));
+		}
+
+		public GetPromptResult duplicateProgressTokenParameters(@McpProgressToken String token1,
+				@McpProgressToken String token2) {
 			return new GetPromptResult("Invalid", List.of());
 		}
 
@@ -466,6 +490,84 @@ public class SyncMcpPromptMethodCallbackTests {
 
 		assertThatThrownBy(() -> callback.apply(exchange, null)).isInstanceOf(IllegalArgumentException.class)
 			.hasMessageContaining("Request must not be null");
+	}
+
+	@Test
+	public void testCallbackWithProgressToken() throws Exception {
+		TestPromptProvider provider = new TestPromptProvider();
+		Method method = TestPromptProvider.class.getMethod("getPromptWithProgressToken", String.class, String.class);
+
+		Prompt prompt = createTestPrompt("progress-token", "A prompt with progress token");
+
+		BiFunction<McpSyncServerExchange, GetPromptRequest, GetPromptResult> callback = SyncMcpPromptMethodCallback
+			.builder()
+			.method(method)
+			.bean(provider)
+			.prompt(prompt)
+			.build();
+
+		McpSyncServerExchange exchange = mock(McpSyncServerExchange.class);
+		Map<String, Object> args = new HashMap<>();
+		args.put("name", "John");
+		// Note: GetPromptRequest doesn't have progressToken in current spec, so it will
+		// be null
+		GetPromptRequest request = new GetPromptRequest("progress-token", args);
+
+		GetPromptResult result = callback.apply(exchange, request);
+
+		assertThat(result).isNotNull();
+		assertThat(result.description()).isEqualTo("Progress token prompt");
+		assertThat(result.messages()).hasSize(1);
+		PromptMessage message = result.messages().get(0);
+		assertThat(message.role()).isEqualTo(Role.ASSISTANT);
+		// Since GetPromptRequest doesn't have progressToken, it should be null
+		assertThat(((TextContent) message.content()).text()).isEqualTo("Hello John (no token)");
+	}
+
+	@Test
+	public void testCallbackWithMixedAndProgressToken() throws Exception {
+		TestPromptProvider provider = new TestPromptProvider();
+		Method method = TestPromptProvider.class.getMethod("getPromptWithMixedAndProgress", McpSyncServerExchange.class,
+				String.class, String.class, GetPromptRequest.class);
+
+		Prompt prompt = createTestPrompt("mixed-with-progress", "A prompt with mixed args and progress token");
+
+		BiFunction<McpSyncServerExchange, GetPromptRequest, GetPromptResult> callback = SyncMcpPromptMethodCallback
+			.builder()
+			.method(method)
+			.bean(provider)
+			.prompt(prompt)
+			.build();
+
+		McpSyncServerExchange exchange = mock(McpSyncServerExchange.class);
+		Map<String, Object> args = new HashMap<>();
+		args.put("name", "John");
+		GetPromptRequest request = new GetPromptRequest("mixed-with-progress", args);
+
+		GetPromptResult result = callback.apply(exchange, request);
+
+		assertThat(result).isNotNull();
+		assertThat(result.description()).isEqualTo("Mixed with progress prompt");
+		assertThat(result.messages()).hasSize(1);
+		PromptMessage message = result.messages().get(0);
+		assertThat(message.role()).isEqualTo(Role.ASSISTANT);
+		// Since GetPromptRequest doesn't have progressToken, it should be null
+		assertThat(((TextContent) message.content()).text())
+			.isEqualTo("Hello John from mixed-with-progress (no token)");
+	}
+
+	@Test
+	public void testDuplicateProgressTokenParameters() throws Exception {
+		TestPromptProvider provider = new TestPromptProvider();
+		Method method = TestPromptProvider.class.getMethod("duplicateProgressTokenParameters", String.class,
+				String.class);
+
+		Prompt prompt = createTestPrompt("invalid", "Invalid parameters");
+
+		assertThatThrownBy(
+				() -> SyncMcpPromptMethodCallback.builder().method(method).bean(provider).prompt(prompt).build())
+			.isInstanceOf(IllegalArgumentException.class)
+			.hasMessageContaining("Method cannot have more than one @McpProgressToken parameter");
 	}
 
 }

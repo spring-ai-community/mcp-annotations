@@ -24,6 +24,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
+import org.springaicommunity.mcp.annotation.McpProgressToken;
 import org.springaicommunity.mcp.annotation.McpToolParam;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -101,13 +102,15 @@ public class JsonSchemaGenerator {
 
 		// If method has CallToolRequest, return minimal schema
 		if (hasCallToolRequestParam) {
-			// Check if there are other parameters besides CallToolRequest and exchange
-			// types
+			// Check if there are other parameters besides CallToolRequest, exchange
+			// types,
+			// and @McpProgressToken annotated parameters
 			boolean hasOtherParams = Arrays.stream(method.getParameters()).anyMatch(param -> {
 				Class<?> type = param.getType();
 				return !CallToolRequest.class.isAssignableFrom(type)
 						&& !McpSyncServerExchange.class.isAssignableFrom(type)
-						&& !McpAsyncServerExchange.class.isAssignableFrom(type);
+						&& !McpAsyncServerExchange.class.isAssignableFrom(type)
+						&& !param.isAnnotationPresent(McpProgressToken.class);
 			});
 
 			// If only CallToolRequest (and possibly exchange), return empty schema
@@ -128,8 +131,14 @@ public class JsonSchemaGenerator {
 		List<String> required = new ArrayList<>();
 
 		for (int i = 0; i < method.getParameterCount(); i++) {
-			String parameterName = method.getParameters()[i].getName();
+			Parameter parameter = method.getParameters()[i];
+			String parameterName = parameter.getName();
 			Type parameterType = method.getGenericParameterTypes()[i];
+
+			// Skip parameters annotated with @McpProgressToken
+			if (parameter.isAnnotationPresent(McpProgressToken.class)) {
+				continue;
+			}
 
 			// Skip special parameter types
 			if (parameterType instanceof Class<?> parameterClass

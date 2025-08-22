@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.springaicommunity.mcp.annotation.McpArg;
+import org.springaicommunity.mcp.annotation.McpProgressToken;
 
 import io.modelcontextprotocol.spec.McpSchema.GetPromptRequest;
 import io.modelcontextprotocol.spec.McpSchema.GetPromptResult;
@@ -87,9 +88,20 @@ public abstract class AbstractMcpPromptMethodCallback {
 		boolean hasExchangeParam = false;
 		boolean hasRequestParam = false;
 		boolean hasMapParam = false;
+		boolean hasProgressTokenParam = false;
 
 		for (java.lang.reflect.Parameter param : parameters) {
 			Class<?> paramType = param.getType();
+
+			// Skip @McpProgressToken annotated parameters from validation
+			if (param.isAnnotationPresent(McpProgressToken.class)) {
+				if (hasProgressTokenParam) {
+					throw new IllegalArgumentException("Method cannot have more than one @McpProgressToken parameter: "
+							+ method.getName() + " in " + method.getDeclaringClass().getName());
+				}
+				hasProgressTokenParam = true;
+				continue;
+			}
 
 			if (isExchangeOrContextType(paramType)) {
 				if (hasExchangeParam) {
@@ -130,7 +142,23 @@ public abstract class AbstractMcpPromptMethodCallback {
 		java.lang.reflect.Parameter[] parameters = method.getParameters();
 		Object[] args = new Object[parameters.length];
 
+		// First, handle @McpProgressToken annotated parameters
 		for (int i = 0; i < parameters.length; i++) {
+			if (parameters[i].isAnnotationPresent(McpProgressToken.class)) {
+				// GetPromptRequest doesn't have a progressToken method in the current
+				// spec
+				// Set to null for now - this would need to be updated when the spec
+				// supports it
+				args[i] = null;
+			}
+		}
+
+		for (int i = 0; i < parameters.length; i++) {
+			// Skip if already set (e.g., @McpProgressToken)
+			if (args[i] != null || parameters[i].isAnnotationPresent(McpProgressToken.class)) {
+				continue;
+			}
+
 			java.lang.reflect.Parameter param = parameters[i];
 			Class<?> paramType = param.getType();
 

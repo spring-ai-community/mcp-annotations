@@ -25,6 +25,7 @@ import io.modelcontextprotocol.spec.McpSchema.CallToolRequest;
 import io.modelcontextprotocol.spec.McpSchema.CallToolResult;
 import io.modelcontextprotocol.spec.McpSchema.TextContent;
 import org.junit.jupiter.api.Test;
+import org.springaicommunity.mcp.annotation.McpProgressToken;
 import org.springaicommunity.mcp.annotation.McpTool;
 import org.springaicommunity.mcp.annotation.McpToolParam;
 import org.springaicommunity.mcp.method.tool.utils.JsonSchemaGenerator;
@@ -118,6 +119,33 @@ public class CallToolRequestSupportTests {
 
 			return CallToolResult.builder()
 				.addTextContent("Schema validation successful for: " + request.name())
+				.build();
+		}
+
+		/**
+		 * Tool with @McpProgressToken parameter
+		 */
+		@McpTool(name = "progress-token-tool", description = "Tool with progress token")
+		public CallToolResult progressTokenTool(
+				@McpToolParam(description = "Input parameter", required = true) String input,
+				@McpProgressToken String progressToken) {
+			return CallToolResult.builder()
+				.addTextContent("Input: " + input + ", Progress Token: " + progressToken)
+				.build();
+		}
+
+		/**
+		 * Tool with mixed special parameters including @McpProgressToken
+		 */
+		@McpTool(name = "mixed-special-params-tool", description = "Tool with all special parameters")
+		public CallToolResult mixedSpecialParamsTool(McpSyncServerExchange exchange, CallToolRequest request,
+				@McpProgressToken String progressToken,
+				@McpToolParam(description = "Regular parameter", required = true) String regularParam) {
+
+			return CallToolResult.builder()
+				.addTextContent(String.format("Exchange: %s, Request: %s, Token: %s, Param: %s",
+						exchange != null ? "present" : "null", request != null ? request.name() : "null",
+						progressToken != null ? progressToken : "null", regularParam))
 				.build();
 		}
 
@@ -359,7 +387,7 @@ public class CallToolRequestSupportTests {
 		var toolSpecs = toolProvider.getToolSpecifications();
 
 		// Should have all tools registered
-		assertThat(toolSpecs).hasSize(6); // All 6 tools from the provider
+		assertThat(toolSpecs).hasSize(8); // All 8 tools from the provider
 
 		// Find the dynamic tool
 		var dynamicToolSpec = toolSpecs.stream()
@@ -428,6 +456,146 @@ public class CallToolRequestSupportTests {
 		assertThat(result.isError()).isFalse();
 		// The tool should have access to the full request including the tool name
 		assertThat(((TextContent) result.content().get(0)).text()).contains("tool: dynamic-tool");
+	}
+
+	@Test
+	public void testProgressTokenParameterInjection() throws Exception {
+		// Test that @McpProgressToken parameter receives the progress token from request
+		CallToolRequestTestProvider provider = new CallToolRequestTestProvider();
+		Method method = CallToolRequestTestProvider.class.getMethod("progressTokenTool", String.class, String.class);
+		SyncMcpToolMethodCallback callback = new SyncMcpToolMethodCallback(ReturnMode.TEXT, method, provider);
+
+		McpSyncServerExchange exchange = mock(McpSyncServerExchange.class);
+
+		// Create request with progress token
+		CallToolRequest request = CallToolRequest.builder()
+			.name("progress-token-tool")
+			.arguments(Map.of("input", "test-input"))
+			.progressToken("test-progress-token-123")
+			.build();
+
+		CallToolResult result = callback.apply(exchange, request);
+
+		assertThat(result).isNotNull();
+		assertThat(result.isError()).isFalse();
+		assertThat(((TextContent) result.content().get(0)).text())
+			.isEqualTo("Input: test-input, Progress Token: test-progress-token-123");
+	}
+
+	@Test
+	public void testProgressTokenParameterWithNullToken() throws Exception {
+		// Test that @McpProgressToken parameter handles null progress token
+		CallToolRequestTestProvider provider = new CallToolRequestTestProvider();
+		Method method = CallToolRequestTestProvider.class.getMethod("progressTokenTool", String.class, String.class);
+		SyncMcpToolMethodCallback callback = new SyncMcpToolMethodCallback(ReturnMode.TEXT, method, provider);
+
+		McpSyncServerExchange exchange = mock(McpSyncServerExchange.class);
+
+		// Create request without progress token
+		CallToolRequest request = new CallToolRequest("progress-token-tool", Map.of("input", "test-input"));
+
+		CallToolResult result = callback.apply(exchange, request);
+
+		assertThat(result).isNotNull();
+		assertThat(result.isError()).isFalse();
+		assertThat(((TextContent) result.content().get(0)).text()).isEqualTo("Input: test-input, Progress Token: null");
+	}
+
+	@Test
+	public void testMixedSpecialParameters() throws Exception {
+		// Test tool with all types of special parameters
+		CallToolRequestTestProvider provider = new CallToolRequestTestProvider();
+		Method method = CallToolRequestTestProvider.class.getMethod("mixedSpecialParamsTool",
+				McpSyncServerExchange.class, CallToolRequest.class, String.class, String.class);
+		SyncMcpToolMethodCallback callback = new SyncMcpToolMethodCallback(ReturnMode.TEXT, method, provider);
+
+		McpSyncServerExchange exchange = mock(McpSyncServerExchange.class);
+
+		CallToolRequest request = CallToolRequest.builder()
+			.name("mixed-special-params-tool")
+			.arguments(Map.of("regularParam", "test-value"))
+			.progressToken("progress-123")
+			.build();
+
+		CallToolResult result = callback.apply(exchange, request);
+
+		assertThat(result).isNotNull();
+		assertThat(result.isError()).isFalse();
+		assertThat(((TextContent) result.content().get(0)).text())
+			.isEqualTo("Exchange: present, Request: mixed-special-params-tool, Token: progress-123, Param: test-value");
+	}
+
+	@Test
+	public void testJsonSchemaGenerationExcludesProgressToken() throws Exception {
+		// Test that schema generation excludes @McpProgressToken parameters
+		Method progressTokenMethod = CallToolRequestTestProvider.class.getMethod("progressTokenTool", String.class,
+				String.class);
+		String progressTokenSchema = JsonSchemaGenerator.generateForMethodInput(progressTokenMethod);
+
+		// Parse the schema
+		JsonNode schemaNode = objectMapper.readTree(progressTokenSchema);
+
+		// Should only have the 'input' parameter, not the progressToken
+		assertThat(schemaNode.has("properties")).isTrue();
+		JsonNode properties = schemaNode.get("properties");
+		assertThat(properties.has("input")).isTrue();
+		assertThat(properties.has("progressToken")).isFalse();
+		assertThat(properties.size()).isEqualTo(1);
+
+		// Check required array
+		assertThat(schemaNode.has("required")).isTrue();
+		JsonNode required = schemaNode.get("required");
+		assertThat(required.size()).isEqualTo(1);
+		assertThat(required.get(0).asText()).isEqualTo("input");
+	}
+
+	@Test
+	public void testJsonSchemaGenerationForMixedSpecialParameters() throws Exception {
+		// Test schema generation for method with all special parameters
+		Method mixedMethod = CallToolRequestTestProvider.class.getMethod("mixedSpecialParamsTool",
+				McpSyncServerExchange.class, CallToolRequest.class, String.class, String.class);
+		String mixedSchema = JsonSchemaGenerator.generateForMethodInput(mixedMethod);
+
+		// Parse the schema
+		JsonNode schemaNode = objectMapper.readTree(mixedSchema);
+
+		// Should only have the 'regularParam' parameter
+		assertThat(schemaNode.has("properties")).isTrue();
+		JsonNode properties = schemaNode.get("properties");
+		assertThat(properties.has("regularParam")).isTrue();
+		assertThat(properties.has("progressToken")).isFalse();
+		assertThat(properties.size()).isEqualTo(1);
+
+		// Check required array
+		assertThat(schemaNode.has("required")).isTrue();
+		JsonNode required = schemaNode.get("required");
+		assertThat(required.size()).isEqualTo(1);
+		assertThat(required.get(0).asText()).isEqualTo("regularParam");
+	}
+
+	@Test
+	public void testSyncMcpToolProviderWithProgressToken() {
+		// Test that SyncMcpToolProvider handles @McpProgressToken tools correctly
+		CallToolRequestTestProvider provider = new CallToolRequestTestProvider();
+		SyncMcpToolProvider toolProvider = new SyncMcpToolProvider(List.of(provider));
+
+		var toolSpecs = toolProvider.getToolSpecifications();
+
+		// Find the progress token tool
+		var progressTokenToolSpec = toolSpecs.stream()
+			.filter(spec -> spec.tool().name().equals("progress-token-tool"))
+			.findFirst()
+			.orElse(null);
+
+		assertThat(progressTokenToolSpec).isNotNull();
+		assertThat(progressTokenToolSpec.tool().description()).isEqualTo("Tool with progress token");
+
+		// The input schema should only contain the regular parameter
+		var inputSchema = progressTokenToolSpec.tool().inputSchema();
+		assertThat(inputSchema).isNotNull();
+		String schemaStr = inputSchema.toString();
+		assertThat(schemaStr).contains("input");
+		assertThat(schemaStr).doesNotContain("progressToken");
 	}
 
 }
