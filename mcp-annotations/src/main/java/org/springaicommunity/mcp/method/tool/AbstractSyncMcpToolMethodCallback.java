@@ -89,12 +89,31 @@ public abstract class AbstractSyncMcpToolMethodCallback<T> {
 	 * @return An array of method arguments
 	 */
 	protected Object[] buildMethodArguments(T exchangeOrContext, Map<String, Object> toolInputArguments) {
+		return buildMethodArguments(exchangeOrContext, toolInputArguments, null);
+	}
+
+	/**
+	 * Builds the method arguments from the context, tool input arguments, and optionally
+	 * the full request.
+	 * @param exchangeOrContext The exchange or context object (e.g.,
+	 * McpSyncServerExchange or McpTransportContext)
+	 * @param toolInputArguments The input arguments from the tool request
+	 * @param request The full CallToolRequest (optional, can be null)
+	 * @return An array of method arguments
+	 */
+	protected Object[] buildMethodArguments(T exchangeOrContext, Map<String, Object> toolInputArguments,
+			CallToolRequest request) {
 		return Stream.of(this.toolMethod.getParameters()).map(parameter -> {
-			Object rawArgument = toolInputArguments.get(parameter.getName());
+			// Check if parameter is CallToolRequest type
+			if (CallToolRequest.class.isAssignableFrom(parameter.getType())) {
+				return request;
+			}
 
 			if (isExchangeOrContextType(parameter.getType())) {
 				return exchangeOrContext;
 			}
+
+			Object rawArgument = toolInputArguments.get(parameter.getName());
 			return buildTypedArgument(rawArgument, parameter.getParameterizedType());
 		}).toArray();
 	}

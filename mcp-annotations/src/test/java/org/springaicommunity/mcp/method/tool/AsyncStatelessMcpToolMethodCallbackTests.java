@@ -153,6 +153,21 @@ public class AsyncStatelessMcpToolMethodCallbackTests {
 			return "Non-reactive: " + input;
 		}
 
+		@McpTool(name = "call-tool-request-mono-tool", description = "Mono tool with CallToolRequest parameter")
+		public Mono<String> monoToolWithCallToolRequest(CallToolRequest request) {
+			return Mono.just("Received tool: " + request.name() + " with " + request.arguments().size() + " arguments");
+		}
+
+		@McpTool(name = "mixed-params-mono-tool", description = "Mono tool with mixed parameters")
+		public Mono<String> monoToolWithMixedParams(String action, CallToolRequest request) {
+			return Mono.just("Action: " + action + ", Tool: " + request.name());
+		}
+
+		@McpTool(name = "context-and-request-mono-tool", description = "Mono tool with context and request")
+		public Mono<String> monoToolWithContextAndRequest(McpTransportContext context, CallToolRequest request) {
+			return Mono.just("Context present, Tool: " + request.name());
+		}
+
 	}
 
 	public static class TestObject {
@@ -764,6 +779,70 @@ public class AsyncStatelessMcpToolMethodCallbackTests {
 			assertThat(result.content()).hasSize(1);
 			assertThat(result.content().get(0)).isInstanceOf(TextContent.class);
 			assertThat(((TextContent) result.content().get(0)).text()).isEqualTo("Name: Alice, Age: 25, Active: false");
+		}).verifyComplete();
+	}
+
+	@Test
+	public void testMonoToolWithCallToolRequest() throws Exception {
+		TestAsyncStatelessToolProvider provider = new TestAsyncStatelessToolProvider();
+		Method method = TestAsyncStatelessToolProvider.class.getMethod("monoToolWithCallToolRequest",
+				CallToolRequest.class);
+		AsyncStatelessMcpToolMethodCallback callback = new AsyncStatelessMcpToolMethodCallback(ReturnMode.TEXT, method,
+				provider);
+
+		McpTransportContext context = mock(McpTransportContext.class);
+		CallToolRequest request = new CallToolRequest("call-tool-request-mono-tool",
+				Map.of("param1", "value1", "param2", "value2"));
+
+		StepVerifier.create(callback.apply(context, request)).assertNext(result -> {
+			assertThat(result).isNotNull();
+			assertThat(result.isError()).isFalse();
+			assertThat(result.content()).hasSize(1);
+			assertThat(result.content().get(0)).isInstanceOf(TextContent.class);
+			assertThat(((TextContent) result.content().get(0)).text())
+				.isEqualTo("Received tool: call-tool-request-mono-tool with 2 arguments");
+		}).verifyComplete();
+	}
+
+	@Test
+	public void testMonoToolWithMixedParams() throws Exception {
+		TestAsyncStatelessToolProvider provider = new TestAsyncStatelessToolProvider();
+		Method method = TestAsyncStatelessToolProvider.class.getMethod("monoToolWithMixedParams", String.class,
+				CallToolRequest.class);
+		AsyncStatelessMcpToolMethodCallback callback = new AsyncStatelessMcpToolMethodCallback(ReturnMode.TEXT, method,
+				provider);
+
+		McpTransportContext context = mock(McpTransportContext.class);
+		CallToolRequest request = new CallToolRequest("mixed-params-mono-tool", Map.of("action", "process"));
+
+		StepVerifier.create(callback.apply(context, request)).assertNext(result -> {
+			assertThat(result).isNotNull();
+			assertThat(result.isError()).isFalse();
+			assertThat(result.content()).hasSize(1);
+			assertThat(result.content().get(0)).isInstanceOf(TextContent.class);
+			assertThat(((TextContent) result.content().get(0)).text())
+				.isEqualTo("Action: process, Tool: mixed-params-mono-tool");
+		}).verifyComplete();
+	}
+
+	@Test
+	public void testMonoToolWithContextAndRequest() throws Exception {
+		TestAsyncStatelessToolProvider provider = new TestAsyncStatelessToolProvider();
+		Method method = TestAsyncStatelessToolProvider.class.getMethod("monoToolWithContextAndRequest",
+				McpTransportContext.class, CallToolRequest.class);
+		AsyncStatelessMcpToolMethodCallback callback = new AsyncStatelessMcpToolMethodCallback(ReturnMode.TEXT, method,
+				provider);
+
+		McpTransportContext context = mock(McpTransportContext.class);
+		CallToolRequest request = new CallToolRequest("context-and-request-mono-tool", Map.of());
+
+		StepVerifier.create(callback.apply(context, request)).assertNext(result -> {
+			assertThat(result).isNotNull();
+			assertThat(result.isError()).isFalse();
+			assertThat(result.content()).hasSize(1);
+			assertThat(result.content().get(0)).isInstanceOf(TextContent.class);
+			assertThat(((TextContent) result.content().get(0)).text())
+				.isEqualTo("Context present, Tool: context-and-request-mono-tool");
 		}).verifyComplete();
 	}
 
