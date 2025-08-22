@@ -421,6 +421,35 @@ public class CalculatorToolProvider {
         }).subscribeOn(Schedulers.boundedElastic());
     }
 
+    // Tool with CallToolRequest parameter for dynamic schema support
+    @McpTool(name = "dynamic-processor", description = "Process data with dynamic schema")
+    public CallToolResult processDynamic(CallToolRequest request) {
+        // Access the full request including dynamic schema
+        Map<String, Object> args = request.arguments();
+        
+        // Process based on runtime schema
+        String result = "Processed " + args.size() + " arguments dynamically";
+        
+        return CallToolResult.builder()
+            .addTextContent(result)
+            .build();
+    }
+
+    // Tool with mixed parameters - typed and CallToolRequest
+    @McpTool(name = "hybrid-processor", description = "Process with both typed and dynamic parameters")
+    public String processHybrid(
+            @McpToolParam(description = "Action to perform", required = true) String action,
+            CallToolRequest request) {
+        
+        // Use typed parameter
+        String actionResult = "Action: " + action;
+        
+        // Also access additional dynamic arguments
+        Map<String, Object> additionalArgs = request.arguments();
+        
+        return actionResult + " with " + (additionalArgs.size() - 1) + " additional parameters";
+    }
+
     public static class AreaResult {
         public double area;
         public String unit;
@@ -432,6 +461,54 @@ public class CalculatorToolProvider {
     }
 }
 ```
+
+#### CallToolRequest Support
+
+The library supports special `CallToolRequest` parameters in tool methods, enabling dynamic schema handling at runtime. This is useful when you need to:
+
+- Accept tools with schemas defined at runtime
+- Process requests where the input structure isn't known at compile time
+- Build flexible tools that adapt to different input schemas
+
+When a tool method includes a `CallToolRequest` parameter:
+- The parameter receives the complete tool request including all arguments
+- For methods with only `CallToolRequest`, a minimal schema is generated
+- For methods with mixed parameters, only non-`CallToolRequest` parameters are included in the schema
+- The `CallToolRequest` parameter is automatically injected and doesn't appear in the tool's input schema
+
+Example usage:
+
+```java
+// Tool that accepts any schema at runtime
+@McpTool(name = "flexible-tool")
+public CallToolResult processAnySchema(CallToolRequest request) {
+    Map<String, Object> args = request.arguments();
+    // Process based on whatever schema was provided at runtime
+    return CallToolResult.success(processedResult);
+}
+
+// Tool with both typed and dynamic parameters
+@McpTool(name = "mixed-tool")
+public String processMixed(
+        @McpToolParam("operation") String operation,
+        @McpToolParam("count") int count,
+        CallToolRequest request) {
+    
+    // Use typed parameters for known fields
+    String result = operation + " x " + count;
+    
+    // Access any additional fields from the request
+    Map<String, Object> allArgs = request.arguments();
+    
+    return result;
+}
+```
+
+This feature works with all tool callback types:
+- `SyncMcpToolMethodCallback` - Synchronous with server exchange
+- `AsyncMcpToolMethodCallback` - Asynchronous with server exchange
+- `SyncStatelessMcpToolMethodCallback` - Synchronous stateless
+- `AsyncStatelessMcpToolMethodCallback` - Asynchronous stateless
 
 ### Async Tool Example
 
@@ -1168,6 +1245,7 @@ public class McpConfig {
 - **Comprehensive validation** - Ensures method signatures are compatible with MCP operations
 - **URI template support** - Powerful URI template handling for resource and completion operations
 - **Tool support with automatic JSON schema generation** - Create MCP tools with automatic input/output schema generation from method signatures
+- **Dynamic schema support via CallToolRequest** - Tools can accept `CallToolRequest` parameters to handle dynamic schemas at runtime
 - **Logging consumer support** - Handle logging message notifications from MCP servers
 - **Sampling support** - Handle sampling requests from MCP servers
 - **Spring integration** - Seamless integration with Spring Framework and Spring AI, including support for both stateful and stateless operations

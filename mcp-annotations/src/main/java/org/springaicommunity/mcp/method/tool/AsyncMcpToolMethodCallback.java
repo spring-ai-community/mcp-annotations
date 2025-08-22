@@ -60,8 +60,9 @@ public final class AsyncMcpToolMethodCallback extends AbstractAsyncMcpToolMethod
 
 		return validateRequest(request).then(Mono.defer(() -> {
 			try {
-				// Build arguments for the method call
-				Object[] args = this.buildMethodArguments(exchange, request.arguments());
+				// Build arguments for the method call, passing the full request for
+				// CallToolRequest parameter support
+				Object[] args = this.buildMethodArguments(exchange, request.arguments(), request);
 
 				// Invoke the method
 				Object result = this.callMethod(args);

@@ -62,7 +62,7 @@ public final class AsyncStatelessMcpToolMethodCallback extends AbstractAsyncMcpT
 		return validateRequest(request).then(Mono.defer(() -> {
 			try {
 				// Build arguments for the method call
-				Object[] args = this.buildMethodArguments(mcpTransportContext, request.arguments());
+				Object[] args = this.buildMethodArguments(mcpTransportContext, request.arguments(), request);
 
 				// Invoke the method
 				Object result = this.callMethod(args);

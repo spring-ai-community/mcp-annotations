@@ -17,6 +17,7 @@
 package org.springaicommunity.mcp.provider;
 
 import java.lang.reflect.Method;
+import java.util.Arrays;
 import java.util.List;
 import java.util.function.BiFunction;
 import java.util.stream.Stream;
@@ -78,7 +79,21 @@ public class SyncMcpToolProvider {
 
 					String toolDescription = toolAnnotation.description();
 
-					String inputSchema = JsonSchemaGenerator.generateForMethodInput(mcpToolMethod);
+					// Check if method has CallToolRequest parameter
+					boolean hasCallToolRequestParam = Arrays.stream(mcpToolMethod.getParameterTypes())
+						.anyMatch(type -> CallToolRequest.class.isAssignableFrom(type));
+
+					String inputSchema;
+					if (hasCallToolRequestParam) {
+						// For methods with CallToolRequest, generate minimal schema or
+						// use the one from the request
+						// The schema generation will handle this appropriately
+						inputSchema = JsonSchemaGenerator.generateForMethodInput(mcpToolMethod);
+						logger.debug("Tool method '{}' uses CallToolRequest parameter, using minimal schema", toolName);
+					}
+					else {
+						inputSchema = JsonSchemaGenerator.generateForMethodInput(mcpToolMethod);
+					}
 
 					var toolBuilder = McpSchema.Tool.builder()
 						.name(toolName)

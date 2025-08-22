@@ -20,6 +20,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -41,6 +42,7 @@ import com.github.victools.jsonschema.module.swagger2.Swagger2Module;
 
 import io.modelcontextprotocol.server.McpAsyncServerExchange;
 import io.modelcontextprotocol.server.McpSyncServerExchange;
+import io.modelcontextprotocol.spec.McpSchema.CallToolRequest;
 import io.modelcontextprotocol.util.Assert;
 import io.modelcontextprotocol.util.Utils;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -93,6 +95,30 @@ public class JsonSchemaGenerator {
 	}
 
 	private static String internalGenerateFromMethodArguments(Method method) {
+		// Check if method has CallToolRequest parameter
+		boolean hasCallToolRequestParam = Arrays.stream(method.getParameterTypes())
+			.anyMatch(type -> CallToolRequest.class.isAssignableFrom(type));
+
+		// If method has CallToolRequest, return minimal schema
+		if (hasCallToolRequestParam) {
+			// Check if there are other parameters besides CallToolRequest and exchange
+			// types
+			boolean hasOtherParams = Arrays.stream(method.getParameters()).anyMatch(param -> {
+				Class<?> type = param.getType();
+				return !CallToolRequest.class.isAssignableFrom(type)
+						&& !McpSyncServerExchange.class.isAssignableFrom(type)
+						&& !McpAsyncServerExchange.class.isAssignableFrom(type);
+			});
+
+			// If only CallToolRequest (and possibly exchange), return empty schema
+			if (!hasOtherParams) {
+				ObjectNode schema = JsonParser.getObjectMapper().createObjectNode();
+				schema.put("type", "object");
+				schema.putObject("properties");
+				schema.putArray("required");
+				return schema.toPrettyString();
+			}
+		}
 
 		ObjectNode schema = JsonParser.getObjectMapper().createObjectNode();
 		schema.put("$schema", SchemaVersion.DRAFT_2020_12.getIdentifier());
@@ -104,11 +130,15 @@ public class JsonSchemaGenerator {
 		for (int i = 0; i < method.getParameterCount(); i++) {
 			String parameterName = method.getParameters()[i].getName();
 			Type parameterType = method.getGenericParameterTypes()[i];
+
+			// Skip special parameter types
 			if (parameterType instanceof Class<?> parameterClass
 					&& (ClassUtils.isAssignable(McpSyncServerExchange.class, parameterClass)
-							|| ClassUtils.isAssignable(McpAsyncServerExchange.class, parameterClass))) {
+							|| ClassUtils.isAssignable(McpAsyncServerExchange.class, parameterClass)
+							|| ClassUtils.isAssignable(CallToolRequest.class, parameterClass))) {
 				continue;
 			}
+
 			if (isMethodParameterRequired(method, i)) {
 				required.add(parameterName);
 			}
@@ -141,6 +171,15 @@ public class JsonSchemaGenerator {
 		SchemaGenerator generator = new SchemaGenerator(config);
 		JsonNode jsonSchema = generator.generateSchema(clazz);
 		return jsonSchema.toPrettyString();
+	}
+
+	/**
+	 * Check if a method has a CallToolRequest parameter.
+	 * @param method The method to check
+	 * @return true if the method has a CallToolRequest parameter, false otherwise
+	 */
+	public static boolean hasCallToolRequestParameter(Method method) {
+		return Arrays.stream(method.getParameterTypes()).anyMatch(type -> CallToolRequest.class.isAssignableFrom(type));
 	}
 
 	private static boolean isMethodParameterRequired(Method method, int index) {

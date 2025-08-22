@@ -111,6 +111,21 @@ public class SyncStatelessMcpToolMethodCallbackTests {
 			// Do nothing
 		}
 
+		@McpTool(name = "call-tool-request-tool", description = "Tool with CallToolRequest parameter")
+		public String toolWithCallToolRequest(CallToolRequest request) {
+			return "Received tool: " + request.name() + " with " + request.arguments().size() + " arguments";
+		}
+
+		@McpTool(name = "mixed-params-tool", description = "Tool with mixed parameters")
+		public String toolWithMixedParams(String action, CallToolRequest request) {
+			return "Action: " + action + ", Tool: " + request.name();
+		}
+
+		@McpTool(name = "context-and-request-tool", description = "Tool with context and request")
+		public String toolWithContextAndRequest(McpTransportContext context, CallToolRequest request) {
+			return "Context present, Tool: " + request.name();
+		}
+
 	}
 
 	public static class TestObject {
@@ -533,6 +548,68 @@ public class SyncStatelessMcpToolMethodCallbackTests {
 		assertThat(result.content()).hasSize(1);
 		assertThat(result.content().get(0)).isInstanceOf(TextContent.class);
 		assertThat(((TextContent) result.content().get(0)).text()).isEqualTo("\"Done\"");
+	}
+
+	@Test
+	public void testToolWithCallToolRequest() throws Exception {
+		TestToolProvider provider = new TestToolProvider();
+		Method method = TestToolProvider.class.getMethod("toolWithCallToolRequest", CallToolRequest.class);
+		SyncStatelessMcpToolMethodCallback callback = new SyncStatelessMcpToolMethodCallback(ReturnMode.TEXT, method,
+				provider);
+
+		McpTransportContext context = mock(McpTransportContext.class);
+		CallToolRequest request = new CallToolRequest("call-tool-request-tool",
+				Map.of("param1", "value1", "param2", "value2"));
+
+		CallToolResult result = callback.apply(context, request);
+
+		assertThat(result).isNotNull();
+		assertThat(result.isError()).isFalse();
+		assertThat(result.content()).hasSize(1);
+		assertThat(result.content().get(0)).isInstanceOf(TextContent.class);
+		assertThat(((TextContent) result.content().get(0)).text())
+			.isEqualTo("Received tool: call-tool-request-tool with 2 arguments");
+	}
+
+	@Test
+	public void testToolWithMixedParams() throws Exception {
+		TestToolProvider provider = new TestToolProvider();
+		Method method = TestToolProvider.class.getMethod("toolWithMixedParams", String.class, CallToolRequest.class);
+		SyncStatelessMcpToolMethodCallback callback = new SyncStatelessMcpToolMethodCallback(ReturnMode.TEXT, method,
+				provider);
+
+		McpTransportContext context = mock(McpTransportContext.class);
+		CallToolRequest request = new CallToolRequest("mixed-params-tool", Map.of("action", "process"));
+
+		CallToolResult result = callback.apply(context, request);
+
+		assertThat(result).isNotNull();
+		assertThat(result.isError()).isFalse();
+		assertThat(result.content()).hasSize(1);
+		assertThat(result.content().get(0)).isInstanceOf(TextContent.class);
+		assertThat(((TextContent) result.content().get(0)).text())
+			.isEqualTo("Action: process, Tool: mixed-params-tool");
+	}
+
+	@Test
+	public void testToolWithContextAndRequest() throws Exception {
+		TestToolProvider provider = new TestToolProvider();
+		Method method = TestToolProvider.class.getMethod("toolWithContextAndRequest", McpTransportContext.class,
+				CallToolRequest.class);
+		SyncStatelessMcpToolMethodCallback callback = new SyncStatelessMcpToolMethodCallback(ReturnMode.TEXT, method,
+				provider);
+
+		McpTransportContext context = mock(McpTransportContext.class);
+		CallToolRequest request = new CallToolRequest("context-and-request-tool", Map.of());
+
+		CallToolResult result = callback.apply(context, request);
+
+		assertThat(result).isNotNull();
+		assertThat(result.isError()).isFalse();
+		assertThat(result.content()).hasSize(1);
+		assertThat(result.content().get(0)).isInstanceOf(TextContent.class);
+		assertThat(((TextContent) result.content().get(0)).text())
+			.isEqualTo("Context present, Tool: context-and-request-tool");
 	}
 
 }
