@@ -20,9 +20,11 @@ import java.util.List;
 
 import org.springaicommunity.mcp.method.elicitation.AsyncElicitationSpecification;
 import org.springaicommunity.mcp.method.logging.AsyncLoggingSpecification;
+import org.springaicommunity.mcp.method.progress.AsyncProgressSpecification;
 import org.springaicommunity.mcp.method.sampling.AsyncSamplingSpecification;
 import org.springaicommunity.mcp.provider.AsyncMcpElicitationProvider;
 import org.springaicommunity.mcp.provider.AsyncMcpLoggingConsumerProvider;
+import org.springaicommunity.mcp.provider.AsyncMcpProgressProvider;
 import org.springaicommunity.mcp.provider.AsyncMcpSamplingProvider;
 import org.springaicommunity.mcp.provider.AsyncMcpToolProvider;
 import org.springaicommunity.mcp.provider.AsyncStatelessMcpPromptProvider;
@@ -128,6 +130,19 @@ public class AsyncMcpAnnotationProvider {
 
 	}
 
+	private static class SpringAiAsyncMcpProgressProvider extends AsyncMcpProgressProvider {
+
+		public SpringAiAsyncMcpProgressProvider(List<Object> progressObjects) {
+			super(progressObjects);
+		}
+
+		@Override
+		protected Method[] doGetClassMethods(Object bean) {
+			return AnnotationProviderUtil.beanMethods(bean);
+		}
+
+	}
+
 	public static List<AsyncLoggingSpecification> createAsyncLoggingSpecifications(List<Object> loggingObjects) {
 		return new SpringAiAsyncMcpLoggingConsumerProvider(loggingObjects).getLoggingSpecifications();
 	}
@@ -158,6 +173,10 @@ public class AsyncMcpAnnotationProvider {
 	public static List<McpStatelessServerFeatures.AsyncResourceSpecification> createAsyncStatelessResourceSpecifications(
 			List<Object> resourceObjects) {
 		return new SpringAiAsyncStatelessResourceProvider(resourceObjects).getResourceSpecifications();
+	}
+
+	public static List<AsyncProgressSpecification> createAsyncProgressSpecifications(List<Object> progressObjects) {
+		return new SpringAiAsyncMcpProgressProvider(progressObjects).getProgressSpecifications();
 	}
 
 }
