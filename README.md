@@ -82,16 +82,21 @@ To use the mcp-annotations snapshot version you need to add the following reposi
 
 ### Core Module (mcp-annotations)
 
-The core module provides a set of annotations and callback implementations for primary MCP operations:
+The core module provides a set of annotations and callback implementations for primary MCP operations.
+
+#### For MCP Servers: 
 
 1. **Complete** - For auto-completion functionality in prompts and URI templates
 2. **Prompt** - For generating prompt messages
 3. **Resource** - For accessing resources via URI templates
 4. **Tool** - For implementing MCP tools with automatic JSON schema generation
-5. **Logging Consumer** - For handling logging message notifications
-6. **Sampling** - For handling sampling requests
-7. **Elicitation** - For handling elicitation requests to gather additional information from users
-8. **Progress** - For handling progress notifications during long-running operations
+
+#### For MCP Clients:
+
+1. **Logging Consumer** - For handling logging message notifications
+2. **Sampling** - For handling sampling requests
+3. **Elicitation** - For handling elicitation requests to gather additional information from users
+4. **Progress** - For handling progress notifications during long-running operations
 
 Each operation type has both synchronous and asynchronous implementations, allowing for flexible integration with different application architectures.
 
@@ -103,16 +108,19 @@ The Spring integration module provides seamless integration with Spring AI and S
 
 ### Annotations
 
-- **`@McpComplete`** - Annotates methods that provide completion functionality for prompts or URI templates
-- **`@McpPrompt`** - Annotates methods that generate prompt messages
-- **`@McpResource`** - Annotates methods that provide access to resources
-- **`@McpTool`** - Annotates methods that implement MCP tools with automatic JSON schema generation
-- **`@McpToolParam`** - Annotates tool method parameters with descriptions and requirement specifications
+#### Client
 - **`@McpLoggingConsumer`** - Annotates methods that handle logging message notifications from MCP servers
 - **`@McpSampling`** - Annotates methods that handle sampling requests from MCP servers
 - **`@McpElicitation`** - Annotates methods that handle elicitation requests to gather additional information from users
 - **`@McpProgress`** - Annotates methods that handle progress notifications for long-running operations
-- **`@McpArg`** - Annotates method parameters as MCP arguments
+
+#### Server
+- **`@McpComplete`** - Annotates methods that provide completion functionality for prompts or URI templates
+- **`@McpPrompt`** - Annotates methods that generate prompt messages
+  - **`@McpArg`** - Annotates method parameters as MCP arguments
+- **`@McpResource`** - Annotates methods that provide access to resources
+- **`@McpTool`** - Annotates methods that implement MCP tools with automatic JSON schema generation
+  - **`@McpToolParam`** - Annotates tool method parameters with descriptions and requirement specifications
 
 ### Method Callbacks
 
