@@ -11,7 +11,8 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Annotation for methods that handle elicitation requests from MCP servers.
+ * Annotation for methods that handle elicitation requests from MCP servers. This
+ * annotation is applicable only for MCP clients.
  *
  * <p>
  * Methods annotated with this annotation can be used to process elicitation requests from
@@ -50,5 +51,11 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
 public @interface McpElicitation {
+
+	/**
+	 * Used as connection or client identifier to select the MCP client, the elicitation
+	 * method is associated with. If not specified, is applied to all clients.
+	 */
+	String clientId() default "";
 
 }

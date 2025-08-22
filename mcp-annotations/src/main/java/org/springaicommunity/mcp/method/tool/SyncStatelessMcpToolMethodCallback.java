@@ -52,7 +52,8 @@ public final class SyncStatelessMcpToolMethodCallback extends AbstractSyncMcpToo
 
 		try {
 			// Build arguments for the method call
-			Object[] args = this.buildMethodArguments(mcpTransportContext, callToolRequest.arguments());
+			Object[] args = this.buildMethodArguments(mcpTransportContext, callToolRequest.arguments(),
+					callToolRequest);
 
 			// Invoke the method
 			Object result = this.callMethod(args);

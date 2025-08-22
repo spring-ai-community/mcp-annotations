@@ -7,12 +7,14 @@ package org.springaicommunity.mcp.method.resource;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import java.lang.reflect.Method;
 import java.util.List;
 import java.util.function.BiFunction;
 
 import org.junit.jupiter.api.Test;
+import org.springaicommunity.mcp.annotation.McpProgressToken;
 import org.springaicommunity.mcp.annotation.McpResource;
 import org.springaicommunity.mcp.annotation.ResourceAdaptor;
 
@@ -35,6 +37,47 @@ public class SyncMcpResourceMethodCallbackTests {
 		public ReadResourceResult getResourceWithRequest(ReadResourceRequest request) {
 			return new ReadResourceResult(
 					List.of(new TextResourceContents(request.uri(), "text/plain", "Content for " + request.uri())));
+		}
+
+		// Methods for testing @McpProgressToken
+		public ReadResourceResult getResourceWithProgressToken(@McpProgressToken String progressToken,
+				ReadResourceRequest request) {
+			String content = "Content with progress token: " + progressToken + " for " + request.uri();
+			return new ReadResourceResult(List.of(new TextResourceContents(request.uri(), "text/plain", content)));
+		}
+
+		public ReadResourceResult getResourceWithProgressTokenOnly(@McpProgressToken String progressToken) {
+			String content = "Content with only progress token: " + progressToken;
+			return new ReadResourceResult(List.of(new TextResourceContents("test://resource", "text/plain", content)));
+		}
+
+		@McpResource(uri = "users/{userId}/posts/{postId}")
+		public ReadResourceResult getResourceWithProgressTokenAndUriVariables(@McpProgressToken String progressToken,
+				String userId, String postId) {
+			String content = "User: " + userId + ", Post: " + postId + ", Progress: " + progressToken;
+			return new ReadResourceResult(
+					List.of(new TextResourceContents("users/" + userId + "/posts/" + postId, "text/plain", content)));
+		}
+
+		public ReadResourceResult getResourceWithExchangeAndProgressToken(McpSyncServerExchange exchange,
+				@McpProgressToken String progressToken, ReadResourceRequest request) {
+			String content = "Content with exchange and progress token: " + progressToken + " for " + request.uri();
+			return new ReadResourceResult(List.of(new TextResourceContents(request.uri(), "text/plain", content)));
+		}
+
+		public ReadResourceResult getResourceWithMultipleProgressTokens(@McpProgressToken String progressToken1,
+				@McpProgressToken String progressToken2, ReadResourceRequest request) {
+			// This should only use the first progress token
+			String content = "Content with progress tokens: " + progressToken1 + " and " + progressToken2 + " for "
+					+ request.uri();
+			return new ReadResourceResult(List.of(new TextResourceContents(request.uri(), "text/plain", content)));
+		}
+
+		@McpResource(uri = "users/{userId}")
+		public ReadResourceResult getResourceWithProgressTokenAndMixedParams(@McpProgressToken String progressToken,
+				String userId) {
+			String content = "User: " + userId + ", Progress: " + progressToken;
+			return new ReadResourceResult(List.of(new TextResourceContents("users/" + userId, "text/plain", content)));
 		}
 
 		public ReadResourceResult getResourceWithExchange(McpSyncServerExchange exchange, ReadResourceRequest request) {
@@ -608,6 +651,200 @@ public class SyncMcpResourceMethodCallbackTests {
 		assertThatThrownBy(() -> SyncMcpResourceMethodCallback.builder().method(method).bean(provider).build())
 			.isInstanceOf(IllegalArgumentException.class)
 			.hasMessageContaining("URI must not be null or empty");
+	}
+
+	// Tests for @McpProgressToken functionality
+	@Test
+	public void testCallbackWithProgressToken() throws Exception {
+		TestResourceProvider provider = new TestResourceProvider();
+		Method method = TestResourceProvider.class.getMethod("getResourceWithProgressToken", String.class,
+				ReadResourceRequest.class);
+
+		BiFunction<McpSyncServerExchange, ReadResourceRequest, ReadResourceResult> callback = SyncMcpResourceMethodCallback
+			.builder()
+			.method(method)
+			.bean(provider)
+			.resource(ResourceAdaptor.asResource(createMockMcpResource()))
+			.build();
+
+		McpSyncServerExchange exchange = mock(McpSyncServerExchange.class);
+		ReadResourceRequest request = mock(ReadResourceRequest.class);
+		when(request.uri()).thenReturn("test/resource");
+		when(request.progressToken()).thenReturn("progress-123");
+
+		ReadResourceResult result = callback.apply(exchange, request);
+
+		assertThat(result).isNotNull();
+		assertThat(result.contents()).hasSize(1);
+		assertThat(result.contents().get(0)).isInstanceOf(TextResourceContents.class);
+		TextResourceContents textContent = (TextResourceContents) result.contents().get(0);
+		assertThat(textContent.text()).isEqualTo("Content with progress token: progress-123 for test/resource");
+	}
+
+	@Test
+	public void testCallbackWithProgressTokenNull() throws Exception {
+		TestResourceProvider provider = new TestResourceProvider();
+		Method method = TestResourceProvider.class.getMethod("getResourceWithProgressToken", String.class,
+				ReadResourceRequest.class);
+
+		BiFunction<McpSyncServerExchange, ReadResourceRequest, ReadResourceResult> callback = SyncMcpResourceMethodCallback
+			.builder()
+			.method(method)
+			.bean(provider)
+			.resource(ResourceAdaptor.asResource(createMockMcpResource()))
+			.build();
+
+		McpSyncServerExchange exchange = mock(McpSyncServerExchange.class);
+		ReadResourceRequest request = mock(ReadResourceRequest.class);
+		when(request.uri()).thenReturn("test/resource");
+		when(request.progressToken()).thenReturn(null);
+
+		ReadResourceResult result = callback.apply(exchange, request);
+
+		assertThat(result).isNotNull();
+		assertThat(result.contents()).hasSize(1);
+		assertThat(result.contents().get(0)).isInstanceOf(TextResourceContents.class);
+		TextResourceContents textContent = (TextResourceContents) result.contents().get(0);
+		assertThat(textContent.text()).isEqualTo("Content with progress token: null for test/resource");
+	}
+
+	@Test
+	public void testCallbackWithProgressTokenOnly() throws Exception {
+		TestResourceProvider provider = new TestResourceProvider();
+		Method method = TestResourceProvider.class.getMethod("getResourceWithProgressTokenOnly", String.class);
+
+		BiFunction<McpSyncServerExchange, ReadResourceRequest, ReadResourceResult> callback = SyncMcpResourceMethodCallback
+			.builder()
+			.method(method)
+			.bean(provider)
+			.resource(ResourceAdaptor.asResource(createMockMcpResource()))
+			.build();
+
+		McpSyncServerExchange exchange = mock(McpSyncServerExchange.class);
+		ReadResourceRequest request = mock(ReadResourceRequest.class);
+		when(request.uri()).thenReturn("test/resource");
+		when(request.progressToken()).thenReturn("progress-456");
+
+		ReadResourceResult result = callback.apply(exchange, request);
+
+		assertThat(result).isNotNull();
+		assertThat(result.contents()).hasSize(1);
+		assertThat(result.contents().get(0)).isInstanceOf(TextResourceContents.class);
+		TextResourceContents textContent = (TextResourceContents) result.contents().get(0);
+		assertThat(textContent.text()).isEqualTo("Content with only progress token: progress-456");
+	}
+
+	@Test
+	public void testCallbackWithProgressTokenAndUriVariables() throws Exception {
+		TestResourceProvider provider = new TestResourceProvider();
+		Method method = TestResourceProvider.class.getMethod("getResourceWithProgressTokenAndUriVariables",
+				String.class, String.class, String.class);
+		McpResource resourceAnnotation = method.getAnnotation(McpResource.class);
+
+		BiFunction<McpSyncServerExchange, ReadResourceRequest, ReadResourceResult> callback = SyncMcpResourceMethodCallback
+			.builder()
+			.method(method)
+			.bean(provider)
+			.resource(ResourceAdaptor.asResource(resourceAnnotation))
+			.build();
+
+		McpSyncServerExchange exchange = mock(McpSyncServerExchange.class);
+		ReadResourceRequest request = mock(ReadResourceRequest.class);
+		when(request.uri()).thenReturn("users/123/posts/456");
+		when(request.progressToken()).thenReturn("progress-789");
+
+		ReadResourceResult result = callback.apply(exchange, request);
+
+		assertThat(result).isNotNull();
+		assertThat(result.contents()).hasSize(1);
+		assertThat(result.contents().get(0)).isInstanceOf(TextResourceContents.class);
+		TextResourceContents textContent = (TextResourceContents) result.contents().get(0);
+		assertThat(textContent.text()).isEqualTo("User: 123, Post: 456, Progress: progress-789");
+	}
+
+	@Test
+	public void testCallbackWithExchangeAndProgressToken() throws Exception {
+		TestResourceProvider provider = new TestResourceProvider();
+		Method method = TestResourceProvider.class.getMethod("getResourceWithExchangeAndProgressToken",
+				McpSyncServerExchange.class, String.class, ReadResourceRequest.class);
+
+		BiFunction<McpSyncServerExchange, ReadResourceRequest, ReadResourceResult> callback = SyncMcpResourceMethodCallback
+			.builder()
+			.method(method)
+			.bean(provider)
+			.resource(ResourceAdaptor.asResource(createMockMcpResource()))
+			.build();
+
+		McpSyncServerExchange exchange = mock(McpSyncServerExchange.class);
+		ReadResourceRequest request = mock(ReadResourceRequest.class);
+		when(request.uri()).thenReturn("test/resource");
+		when(request.progressToken()).thenReturn("progress-abc");
+
+		ReadResourceResult result = callback.apply(exchange, request);
+
+		assertThat(result).isNotNull();
+		assertThat(result.contents()).hasSize(1);
+		assertThat(result.contents().get(0)).isInstanceOf(TextResourceContents.class);
+		TextResourceContents textContent = (TextResourceContents) result.contents().get(0);
+		assertThat(textContent.text())
+			.isEqualTo("Content with exchange and progress token: progress-abc for test/resource");
+	}
+
+	@Test
+	public void testCallbackWithMultipleProgressTokens() throws Exception {
+		TestResourceProvider provider = new TestResourceProvider();
+		Method method = TestResourceProvider.class.getMethod("getResourceWithMultipleProgressTokens", String.class,
+				String.class, ReadResourceRequest.class);
+
+		BiFunction<McpSyncServerExchange, ReadResourceRequest, ReadResourceResult> callback = SyncMcpResourceMethodCallback
+			.builder()
+			.method(method)
+			.bean(provider)
+			.resource(ResourceAdaptor.asResource(createMockMcpResource()))
+			.build();
+
+		McpSyncServerExchange exchange = mock(McpSyncServerExchange.class);
+		ReadResourceRequest request = mock(ReadResourceRequest.class);
+		when(request.uri()).thenReturn("test/resource");
+		when(request.progressToken()).thenReturn("progress-first");
+
+		ReadResourceResult result = callback.apply(exchange, request);
+
+		assertThat(result).isNotNull();
+		assertThat(result.contents()).hasSize(1);
+		assertThat(result.contents().get(0)).isInstanceOf(TextResourceContents.class);
+		TextResourceContents textContent = (TextResourceContents) result.contents().get(0);
+		// Both progress tokens should receive the same value from the request
+		assertThat(textContent.text())
+			.isEqualTo("Content with progress tokens: progress-first and progress-first for test/resource");
+	}
+
+	@Test
+	public void testCallbackWithProgressTokenAndMixedParams() throws Exception {
+		TestResourceProvider provider = new TestResourceProvider();
+		Method method = TestResourceProvider.class.getMethod("getResourceWithProgressTokenAndMixedParams", String.class,
+				String.class);
+		McpResource resourceAnnotation = method.getAnnotation(McpResource.class);
+
+		BiFunction<McpSyncServerExchange, ReadResourceRequest, ReadResourceResult> callback = SyncMcpResourceMethodCallback
+			.builder()
+			.method(method)
+			.bean(provider)
+			.resource(ResourceAdaptor.asResource(resourceAnnotation))
+			.build();
+
+		McpSyncServerExchange exchange = mock(McpSyncServerExchange.class);
+		ReadResourceRequest request = mock(ReadResourceRequest.class);
+		when(request.uri()).thenReturn("users/john");
+		when(request.progressToken()).thenReturn("progress-xyz");
+
+		ReadResourceResult result = callback.apply(exchange, request);
+
+		assertThat(result).isNotNull();
+		assertThat(result.contents()).hasSize(1);
+		assertThat(result.contents().get(0)).isInstanceOf(TextResourceContents.class);
+		TextResourceContents textContent = (TextResourceContents) result.contents().get(0);
+		assertThat(textContent.text()).isEqualTo("User: john, Progress: progress-xyz");
 	}
 
 }

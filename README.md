@@ -52,8 +52,6 @@ To use the Spring integration module, add the following dependency:
 </dependency>
 ```
 
-The Spring integration module also requires the Spring AI dependency.
-
 ### Snapshot repositories
 
 To use the mcp-annotations snapshot version you need to add the following repositories to your Maven POM:
@@ -84,15 +82,21 @@ To use the mcp-annotations snapshot version you need to add the following reposi
 
 ### Core Module (mcp-annotations)
 
-The core module provides a set of annotations and callback implementations for primary MCP operations:
+The core module provides a set of annotations and callback implementations for primary MCP operations.
+
+#### For MCP Servers: 
 
 1. **Complete** - For auto-completion functionality in prompts and URI templates
 2. **Prompt** - For generating prompt messages
 3. **Resource** - For accessing resources via URI templates
 4. **Tool** - For implementing MCP tools with automatic JSON schema generation
-5. **Logging Consumer** - For handling logging message notifications
-6. **Sampling** - For handling sampling requests
-7. **Elicitation** - For handling elicitation requests to gather additional information from users
+
+#### For MCP Clients:
+
+1. **Logging Consumer** - For handling logging message notifications
+2. **Sampling** - For handling sampling requests
+3. **Elicitation** - For handling elicitation requests to gather additional information from users
+4. **Progress** - For handling progress notifications during long-running operations
 
 Each operation type has both synchronous and asynchronous implementations, allowing for flexible integration with different application architectures.
 
@@ -104,15 +108,22 @@ The Spring integration module provides seamless integration with Spring AI and S
 
 ### Annotations
 
-- **`@McpComplete`** - Annotates methods that provide completion functionality for prompts or URI templates
-- **`@McpPrompt`** - Annotates methods that generate prompt messages
-- **`@McpResource`** - Annotates methods that provide access to resources
-- **`@McpTool`** - Annotates methods that implement MCP tools with automatic JSON schema generation
-- **`@McpToolParam`** - Annotates tool method parameters with descriptions and requirement specifications
-- **`@McpLoggingConsumer`** - Annotates methods that handle logging message notifications from MCP servers
+#### Client
+- **`@McpLogging`** - Annotates methods that handle logging message notifications from MCP servers
 - **`@McpSampling`** - Annotates methods that handle sampling requests from MCP servers
 - **`@McpElicitation`** - Annotates methods that handle elicitation requests to gather additional information from users
-- **`@McpArg`** - Annotates method parameters as MCP arguments
+- **`@McpProgress`** - Annotates methods that handle progress notifications for long-running operations
+
+#### Server
+- **`@McpComplete`** - Annotates methods that provide completion functionality for prompts or URI templates
+- **`@McpPrompt`** - Annotates methods that generate prompt messages
+  - **`@McpArg`** - Annotates method parameters as MCP arguments
+- **`@McpResource`** - Annotates methods that provide access to resources
+- **`@McpTool`** - Annotates methods that implement MCP tools with automatic JSON schema generation
+  - **`@McpToolParam`** - Annotates tool method parameters with descriptions and requirement specifications
+
+#### Special Parameter Annotations
+- **`@McpProgressToken`** - Marks a method parameter to receive the progress token from the request. This parameter is automatically injected and excluded from the generated JSON schema
 
 ### Method Callbacks
 
@@ -140,9 +151,9 @@ The modules provide callback implementations for each operation type:
 - `AsyncStatelessMcpResourceMethodCallback` - Asynchronous stateless implementation using `McpTransportContext`
 
 #### Logging Consumer
-- `AbstractMcpLoggingConsumerMethodCallback` - Base class for logging consumer method callbacks
-- `SyncMcpLoggingConsumerMethodCallback` - Synchronous implementation
-- `AsyncMcpLoggingConsumerMethodCallback` - Asynchronous implementation using Reactor's Mono
+- `AbstractMcpLoggingMethodCallback` - Base class for logging consumer method callbacks
+- `SyncMcpLoggingMethodCallback` - Synchronous implementation
+- `AsyncMcpLoggingMethodCallback` - Asynchronous implementation using Reactor's Mono
 
 #### Tool
 - `AbstractSyncMcpToolMethodCallback` - Base class for synchronous tool method callbacks
@@ -162,6 +173,11 @@ The modules provide callback implementations for each operation type:
 - `SyncMcpElicitationMethodCallback` - Synchronous implementation
 - `AsyncMcpElicitationMethodCallback` - Asynchronous implementation using Reactor's Mono
 
+#### Progress
+- `AbstractMcpProgressMethodCallback` - Base class for progress method callbacks
+- `SyncMcpProgressMethodCallback` - Synchronous implementation
+- `AsyncMcpProgressMethodCallback` - Asynchronous implementation using Reactor's Mono
+
 ### Providers
 
 The project includes provider classes that scan for annotated methods and create appropriate callbacks:
@@ -172,12 +188,14 @@ The project includes provider classes that scan for annotated methods and create
 - `SyncMcpResourceProvider` - Processes `@McpResource` annotations for synchronous operations
 - `SyncMcpToolProvider` - Processes `@McpTool` annotations for synchronous operations
 - `AsyncMcpToolProvider` - Processes `@McpTool` annotations for asynchronous operations
-- `SyncMcpLoggingConsumerProvider` - Processes `@McpLoggingConsumer` annotations for synchronous operations
-- `AsyncMcpLoggingConsumerProvider` - Processes `@McpLoggingConsumer` annotations for asynchronous operations
+- `SyncMcpLoggingProvider` - Processes `@McpLogging` annotations for synchronous operations
+- `AsyncMcpLoggingProvider` - Processes `@McpLogging` annotations for asynchronous operations
 - `SyncMcpSamplingProvider` - Processes `@McpSampling` annotations for synchronous operations
 - `AsyncMcpSamplingProvider` - Processes `@McpSampling` annotations for asynchronous operations
 - `SyncMcpElicitationProvider` - Processes `@McpElicitation` annotations for synchronous operations
 - `AsyncMcpElicitationProvider` - Processes `@McpElicitation` annotations for asynchronous operations
+- `SyncMcpProgressProvider` - Processes `@McpProgress` annotations for synchronous operations
+- `AsyncMcpProgressProvider` - Processes `@McpProgress` annotations for asynchronous operations
 
 #### Stateless Providers (using McpTransportContext)
 - `SyncStatelessMcpCompleteProvider` - Processes `@McpComplete` annotations for synchronous stateless operations
@@ -423,6 +441,35 @@ public class CalculatorToolProvider {
         }).subscribeOn(Schedulers.boundedElastic());
     }
 
+    // Tool with CallToolRequest parameter for dynamic schema support
+    @McpTool(name = "dynamic-processor", description = "Process data with dynamic schema")
+    public CallToolResult processDynamic(CallToolRequest request) {
+        // Access the full request including dynamic schema
+        Map<String, Object> args = request.arguments();
+        
+        // Process based on runtime schema
+        String result = "Processed " + args.size() + " arguments dynamically";
+        
+        return CallToolResult.builder()
+            .addTextContent(result)
+            .build();
+    }
+
+    // Tool with mixed parameters - typed and CallToolRequest
+    @McpTool(name = "hybrid-processor", description = "Process with both typed and dynamic parameters")
+    public String processHybrid(
+            @McpToolParam(description = "Action to perform", required = true) String action,
+            CallToolRequest request) {
+        
+        // Use typed parameter
+        String actionResult = "Action: " + action;
+        
+        // Also access additional dynamic arguments
+        Map<String, Object> additionalArgs = request.arguments();
+        
+        return actionResult + " with " + (additionalArgs.size() - 1) + " additional parameters";
+    }
+
     public static class AreaResult {
         public double area;
         public String unit;
@@ -434,6 +481,162 @@ public class CalculatorToolProvider {
     }
 }
 ```
+
+#### CallToolRequest Support
+
+The library supports special `CallToolRequest` parameters in tool methods, enabling dynamic schema handling at runtime. This is useful when you need to:
+
+- Accept tools with schemas defined at runtime
+- Process requests where the input structure isn't known at compile time
+- Build flexible tools that adapt to different input schemas
+
+When a tool method includes a `CallToolRequest` parameter:
+- The parameter receives the complete tool request including all arguments
+- For methods with only `CallToolRequest`, a minimal schema is generated
+- For methods with mixed parameters, only non-`CallToolRequest` parameters are included in the schema
+- The `CallToolRequest` parameter is automatically injected and doesn't appear in the tool's input schema
+
+Example usage:
+
+```java
+// Tool that accepts any schema at runtime
+@McpTool(name = "flexible-tool")
+public CallToolResult processAnySchema(CallToolRequest request) {
+    Map<String, Object> args = request.arguments();
+    // Process based on whatever schema was provided at runtime
+    return CallToolResult.success(processedResult);
+}
+
+// Tool with both typed and dynamic parameters
+@McpTool(name = "mixed-tool")
+public String processMixed(
+        @McpToolParam("operation") String operation,
+        @McpToolParam("count") int count,
+        CallToolRequest request) {
+    
+    // Use typed parameters for known fields
+    String result = operation + " x " + count;
+    
+    // Access any additional fields from the request
+    Map<String, Object> allArgs = request.arguments();
+    
+    return result;
+}
+```
+
+This feature works with all tool callback types:
+- `SyncMcpToolMethodCallback` - Synchronous with server exchange
+- `AsyncMcpToolMethodCallback` - Asynchronous with server exchange
+- `SyncStatelessMcpToolMethodCallback` - Synchronous stateless
+- `AsyncStatelessMcpToolMethodCallback` - Asynchronous stateless
+
+#### @McpProgressToken Support
+
+The `@McpProgressToken` annotation allows methods to receive progress tokens from MCP requests. This is useful for tracking long-running operations and providing progress updates to clients.
+
+When a method parameter is annotated with `@McpProgressToken`:
+- The parameter automatically receives the progress token value from the request
+- The parameter is excluded from the generated JSON schema
+- The parameter type should be `String` to receive the token value
+- If no progress token is present in the request, `null` is injected
+
+Example usage with tools:
+
+```java
+@McpTool(name = "long-running-task", description = "Performs a long-running task with progress tracking")
+public String performLongTask(
+        @McpProgressToken String progressToken,
+        @McpToolParam(description = "Task name", required = true) String taskName,
+        @McpToolParam(description = "Duration in seconds", required = true) int duration) {
+    
+    // Use the progress token to send progress updates
+    if (progressToken != null) {
+        // Send progress notifications using the token
+        sendProgressUpdate(progressToken, 0.0, "Starting task: " + taskName);
+        
+        // Simulate work with progress updates
+        for (int i = 1; i <= duration; i++) {
+            Thread.sleep(1000);
+            double progress = (double) i / duration;
+            sendProgressUpdate(progressToken, progress, "Processing... " + (i * 100 / duration) + "%");
+        }
+    }
+    
+    return "Task " + taskName + " completed successfully";
+}
+
+// Tool with both CallToolRequest and progress token
+@McpTool(name = "flexible-task", description = "Flexible task with progress tracking")
+public CallToolResult flexibleTask(
+        @McpProgressToken String progressToken,
+        CallToolRequest request) {
+    
+    // Access progress token for tracking
+    if (progressToken != null) {
+        // Track progress for this operation
+        System.out.println("Progress token: " + progressToken);
+    }
+    
+    // Process the request
+    Map<String, Object> args = request.arguments();
+    return CallToolResult.success("Processed with token: " + progressToken);
+}
+```
+
+The `@McpProgressToken` annotation is also supported in other MCP callback types:
+
+**Resource callbacks:**
+```java
+@McpResource(uri = "data://{id}", name = "Data Resource", description = "Resource with progress tracking")
+public ReadResourceResult getDataWithProgress(
+        @McpProgressToken String progressToken,
+        String id) {
+    
+    if (progressToken != null) {
+        // Use progress token for tracking resource access
+        trackResourceAccess(progressToken, id);
+    }
+    
+    return new ReadResourceResult(List.of(
+        new TextResourceContents("data://" + id, "text/plain", "Data for " + id)
+    ));
+}
+```
+
+**Prompt callbacks:**
+```java
+@McpPrompt(name = "generate-content", description = "Generate content with progress tracking")
+public GetPromptResult generateContent(
+        @McpProgressToken String progressToken,
+        @McpArg(name = "topic", required = true) String topic) {
+    
+    if (progressToken != null) {
+        // Track prompt generation progress
+        System.out.println("Generating prompt with token: " + progressToken);
+    }
+    
+    return new GetPromptResult("Generated Content",
+        List.of(new PromptMessage(Role.ASSISTANT, new TextContent("Content about " + topic))));
+}
+```
+
+**Complete callbacks:**
+```java
+@McpComplete(prompt = "auto-complete")
+public List<String> completeWithProgress(
+        @McpProgressToken String progressToken,
+        String prefix) {
+    
+    if (progressToken != null) {
+        // Track completion progress
+        System.out.println("Completion with token: " + progressToken);
+    }
+    
+    return generateCompletions(prefix);
+}
+```
+
+This feature enables better tracking and monitoring of MCP operations, especially for long-running tasks that need to report progress back to clients.
 
 ### Async Tool Example
 
@@ -571,7 +774,7 @@ public class LoggingHandler {
      * Handle logging message notifications with a single parameter.
      * @param notification The logging message notification
      */
-    @McpLoggingConsumer
+    @McpLogging
     public void handleLoggingMessage(LoggingMessageNotification notification) {
         System.out.println("Received logging message: " + notification.level() + " - " + notification.logger() + " - "
                 + notification.data());
@@ -583,9 +786,27 @@ public class LoggingHandler {
      * @param logger The logger name
      * @param data The log message data
      */
-    @McpLoggingConsumer
+    @McpLogging
     public void handleLoggingMessageWithParams(LoggingLevel level, String logger, String data) {
         System.out.println("Received logging message with params: " + level + " - " + logger + " - " + data);
+    }
+
+    /**
+     * Handle logging message notifications for a specific client.
+     * @param notification The logging message notification
+     */
+    @McpLogging(clientId = "client-1")
+    public void handleClient1LoggingMessage(LoggingMessageNotification notification) {
+        System.out.println("Client-1 logging message: " + notification.level() + " - " + notification.data());
+    }
+
+    /**
+     * Handle logging message notifications for another specific client.
+     * @param notification The logging message notification
+     */
+    @McpLogging(clientId = "client-2")
+    public void handleClient2LoggingMessage(LoggingMessageNotification notification) {
+        System.out.println("Client-2 logging message: " + notification.level() + " - " + notification.data());
     }
 }
 
@@ -594,7 +815,7 @@ public class MyMcpClient {
     public static McpSyncClient createClient(LoggingHandler loggingHandler) {
 
         List<Consumer<LoggingMessageNotification>> loggingCOnsummers = 
-            new SyncMcpLoggingConsumerProvider(List.of(loggingHandler)).getLoggingConsumers();
+            new SyncMcpLoggingProvider(List.of(loggingHandler)).getLoggingConsumers();
 
         McpSyncClient client = McpClient.sync(transport)
             .capabilities(ClientCapabilities.builder()
@@ -627,6 +848,20 @@ public class SamplingHandler {
             .model("test-model")
             .build();
     }
+
+    /**
+     * Handle sampling requests for a specific client.
+     * @param request The create message request
+     * @return The create message result
+     */
+    @McpSampling(clientId = "client-1")
+    public CreateMessageResult handleClient1SamplingRequest(CreateMessageRequest request) {
+        return CreateMessageResult.builder()
+            .role(Role.ASSISTANT)
+            .content(new TextContent("Client-1 specific sampling response"))
+            .model("client-1-model")
+            .build();
+    }
 }
 
 public class AsyncSamplingHandler {
@@ -644,13 +879,30 @@ public class AsyncSamplingHandler {
             .model("test-model")
             .build());
     }
+
+    /**
+     * Handle sampling requests for a specific client asynchronously.
+     * @param request The create message request
+     * @return A Mono containing the create message result
+     */
+    @McpSampling(clientId = "client-2")
+    public Mono<CreateMessageResult> handleClient2AsyncSamplingRequest(CreateMessageRequest request) {
+        return Mono.just(CreateMessageResult.builder()
+            .role(Role.ASSISTANT)
+            .content(new TextContent("Client-2 async sampling response"))
+            .model("client-2-model")
+            .build());
+    }
 }
 
 public class MyMcpClient {
 
     public static McpSyncClient createSyncClient(SamplingHandler samplingHandler) {
+        List<SyncSamplingSpecification> samplingSpecifications = 
+            new SyncMcpSamplingProvider(List.of(samplingHandler)).getSamplingSpecifications();
+
         Function<CreateMessageRequest, CreateMessageResult> samplingHandler = 
-            new SyncMcpSamplingProvider(List.of(samplingHandler)).getSamplingHandler();
+            samplingSpecifications.get(0).samplingHandler();
 
         McpSyncClient client = McpClient.sync(transport)
             .capabilities(ClientCapabilities.builder()
@@ -664,8 +916,11 @@ public class MyMcpClient {
     }
     
     public static McpAsyncClient createAsyncClient(AsyncSamplingHandler asyncSamplingHandler) {
+        List<AsyncSamplingSpecification> samplingSpecifications = 
+            new AsyncMcpSamplingProvider(List.of(asyncSamplingHandler)).getSamplingSpecifications();
+
         Function<CreateMessageRequest, Mono<CreateMessageResult>> samplingHandler = 
-            new AsyncMcpSamplingProvider(List.of(asyncSamplingHandler)).getSamplingHandler();
+            samplingSpecifications.get(0).samplingHandler();
 
         McpAsyncClient client = McpClient.async(transport)
             .capabilities(ClientCapabilities.builder()
@@ -673,6 +928,126 @@ public class MyMcpClient {
                 // Other capabilities...
                 .build())
             .samplingHandler(samplingHandler)
+            .build();
+
+        return client;
+    }
+}
+```
+
+### Mcp Client Progress Example
+
+```java
+public class ProgressHandler {
+
+    /**
+     * Handle progress notifications with a single parameter.
+     * @param notification The progress notification
+     */
+    @McpProgress
+    public void handleProgressNotification(ProgressNotification notification) {
+        System.out.println(String.format("Progress: %.2f%% - %s", 
+            notification.progress() * 100, 
+            notification.message()));
+    }
+
+    /**
+     * Handle progress notifications with individual parameters.
+     * @param progressToken The progress token identifying the operation
+     * @param progress The current progress (0.0 to 1.0)
+     * @param total Optional total value for the operation
+     * @param message Optional progress message
+     */
+    @McpProgress
+    public void handleProgressWithParams(String progressToken, double progress, Double total, String message) {
+        if (total != null) {
+            System.out.println(String.format("Progress [%s]: %.0f/%.0f - %s", 
+                progressToken, progress, total, message));
+        } else {
+            System.out.println(String.format("Progress [%s]: %.2f%% - %s", 
+                progressToken, progress * 100, message));
+        }
+    }
+
+    /**
+     * Handle progress notifications for a specific client.
+     * @param notification The progress notification
+     */
+    @McpProgress(clientId = "client-1")
+    public void handleClient1Progress(ProgressNotification notification) {
+        System.out.println(String.format("Client-1 Progress: %.2f%% - %s", 
+            notification.progress() * 100, 
+            notification.message()));
+    }
+}
+
+public class AsyncProgressHandler {
+
+    /**
+     * Handle progress notifications asynchronously.
+     * @param notification The progress notification
+     * @return A Mono that completes when the notification is handled
+     */
+    @McpProgress
+    public Mono<Void> handleAsyncProgress(ProgressNotification notification) {
+        return Mono.fromRunnable(() -> {
+            System.out.println(String.format("Async Progress: %.2f%% - %s", 
+                notification.progress() * 100, 
+                notification.message()));
+        });
+    }
+
+    /**
+     * Handle progress notifications for a specific client asynchronously.
+     * @param progressToken The progress token
+     * @param progress The current progress
+     * @param total Optional total value
+     * @param message Optional message
+     * @return A Mono that completes when the notification is handled
+     */
+    @McpProgress(clientId = "client-2")
+    public Mono<Void> handleClient2AsyncProgress(
+            String progressToken, 
+            double progress, 
+            Double total, 
+            String message) {
+        
+        return Mono.fromRunnable(() -> {
+            String progressText = total != null ? 
+                String.format("%.0f/%.0f", progress, total) : 
+                String.format("%.2f%%", progress * 100);
+            
+            System.out.println(String.format("Client-2 Progress [%s]: %s - %s", 
+                progressToken, progressText, message));
+        }).then();
+    }
+}
+
+public class MyMcpClient {
+
+    public static McpSyncClient createSyncClientWithProgress(ProgressHandler progressHandler) {
+        List<Consumer<ProgressNotification>> progressConsumers = 
+            new SyncMcpProgressProvider(List.of(progressHandler)).getProgressConsumers();
+
+        McpSyncClient client = McpClient.sync(transport)
+            .capabilities(ClientCapabilities.builder()
+                // Enable capabilities...
+                .build())
+            .progressConsumers(progressConsumers)
+            .build();
+
+        return client;
+    }
+    
+    public static McpAsyncClient createAsyncClientWithProgress(AsyncProgressHandler asyncProgressHandler) {
+        List<Function<ProgressNotification, Mono<Void>>> progressHandlers = 
+            new AsyncMcpProgressProvider(List.of(asyncProgressHandler)).getProgressHandlers();
+
+        McpAsyncClient client = McpClient.async(transport)
+            .capabilities(ClientCapabilities.builder()
+                // Enable capabilities...
+                .build())
+            .progressHandlers(progressHandlers)
             .build();
 
         return client;
@@ -732,6 +1107,19 @@ public class ElicitationHandler {
         // Example of declining an elicitation request
         return new ElicitResult(ElicitResult.Action.DECLINE, null);
     }
+
+    /**
+     * Handle elicitation requests for a specific client.
+     * @param request The elicitation request
+     * @return The elicitation result
+     */
+    @McpElicitation(clientId = "client-1")
+    public ElicitResult handleClient1ElicitationRequest(ElicitRequest request) {
+        Map<String, Object> userData = new HashMap<>();
+        userData.put("client", "client-1");
+        userData.put("response", "Client-1 specific elicitation response");
+        return new ElicitResult(ElicitResult.Action.ACCEPT, userData);
+    }
 }
 
 public class AsyncElicitationHandler {
@@ -765,6 +1153,22 @@ public class AsyncElicitationHandler {
     @McpElicitation
     public Mono<ElicitResult> handleCancelElicitationRequest(ElicitRequest request) {
         return Mono.just(new ElicitResult(ElicitResult.Action.CANCEL, null));
+    }
+
+    /**
+     * Handle elicitation requests for a specific client asynchronously.
+     * @param request The elicitation request
+     * @return A Mono containing the elicitation result
+     */
+    @McpElicitation(clientId = "client-2")
+    public Mono<ElicitResult> handleClient2AsyncElicitationRequest(ElicitRequest request) {
+        return Mono.fromCallable(() -> {
+            Map<String, Object> userData = new HashMap<>();
+            userData.put("client", "client-2");
+            userData.put("response", "Client-2 async elicitation response");
+            userData.put("timestamp", System.currentTimeMillis());
+            return new ElicitResult(ElicitResult.Action.ACCEPT, userData);
+        }).delayElement(Duration.ofMillis(50));
     }
 }
 
@@ -1022,33 +1426,51 @@ public class McpConfig {
     }
     
     @Bean
-    public List<Consumer<LoggingMessageNotification>> syncLoggingConsumers(
+    public List<SyncLoggingSpecification> syncLoggingSpecifications(
             List<LoggingHandler> loggingHandlers) {
-        return SpringAiMcpAnnotationProvider.createSyncLoggingConsumers(loggingHandlers);
+        return SpringAiMcpAnnotationProvider.createSyncLoggingSpecifications(loggingHandlers);
     }
     
     @Bean
-    public Function<CreateMessageRequest, CreateMessageResult> syncSamplingHandler(
+    public List<AsyncLoggingSpecification> asyncLoggingSpecifications(
+            List<AsyncLoggingHandler> asyncLoggingHandlers) {
+        return SpringAiMcpAnnotationProvider.createAsyncLoggingSpecifications(asyncLoggingHandlers);
+    }
+    
+    @Bean
+    public List<SyncSamplingSpecification> syncSamplingSpecifications(
             List<SamplingHandler> samplingHandlers) {
-        return SpringAiMcpAnnotationProvider.createSyncSamplingHandler(samplingHandlers);
+        return SpringAiMcpAnnotationProvider.createSyncSamplingSpecifications(samplingHandlers);
     }
     
     @Bean
-    public Function<CreateMessageRequest, Mono<CreateMessageResult>> asyncSamplingHandler(
+    public List<AsyncSamplingSpecification> asyncSamplingSpecifications(
             List<AsyncSamplingHandler> asyncSamplingHandlers) {
-        return SpringAiMcpAnnotationProvider.createAsyncSamplingHandler(asyncSamplingHandlers);
+        return SpringAiMcpAnnotationProvider.createAsyncSamplingSpecifications(asyncSamplingHandlers);
     }
     
     @Bean
-    public Function<ElicitRequest, ElicitResult> syncElicitationHandler(
+    public List<SyncElicitationSpecification> syncElicitationSpecifications(
             List<ElicitationHandler> elicitationHandlers) {
-        return SpringAiMcpAnnotationProvider.createSyncElicitationHandler(elicitationHandlers);
+        return SpringAiMcpAnnotationProvider.createSyncElicitationSpecifications(elicitationHandlers);
     }
     
     @Bean
-    public Function<ElicitRequest, Mono<ElicitResult>> asyncElicitationHandler(
+    public List<AsyncElicitationSpecification> asyncElicitationSpecifications(
             List<AsyncElicitationHandler> asyncElicitationHandlers) {
-        return SpringAiMcpAnnotationProvider.createAsyncElicitationHandler(asyncElicitationHandlers);
+        return SpringAiMcpAnnotationProvider.createAsyncElicitationSpecifications(asyncElicitationHandlers);
+    }
+    
+    @Bean
+    public List<SyncProgressSpecification> syncProgressSpecifications(
+            List<ProgressHandler> progressHandlers) {
+        return SpringAiMcpAnnotationProvider.createSyncProgressSpecifications(progressHandlers);
+    }
+    
+    @Bean
+    public List<AsyncProgressSpecification> asyncProgressSpecifications(
+            List<AsyncProgressHandler> asyncProgressHandlers) {
+        return SpringAiMcpAnnotationProvider.createAsyncProgressSpecifications(asyncProgressHandlers);
     }
     
     // Stateless Spring Integration Examples
@@ -1083,8 +1505,10 @@ public class McpConfig {
 - **Comprehensive validation** - Ensures method signatures are compatible with MCP operations
 - **URI template support** - Powerful URI template handling for resource and completion operations
 - **Tool support with automatic JSON schema generation** - Create MCP tools with automatic input/output schema generation from method signatures
+- **Dynamic schema support via CallToolRequest** - Tools can accept `CallToolRequest` parameters to handle dynamic schemas at runtime
 - **Logging consumer support** - Handle logging message notifications from MCP servers
 - **Sampling support** - Handle sampling requests from MCP servers
+- **Progress notification support** - Handle progress notifications for long-running operations
 - **Spring integration** - Seamless integration with Spring Framework and Spring AI, including support for both stateful and stateless operations
 - **AOP proxy support** - Proper handling of Spring AOP proxies when processing annotations
 

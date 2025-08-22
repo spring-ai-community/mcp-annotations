@@ -648,12 +648,12 @@ public class AsyncMcpToolMethodCallbackTests {
 		AsyncMcpToolMethodCallback callback = new AsyncMcpToolMethodCallback(ReturnMode.TEXT, method, provider);
 
 		// Test that McpAsyncServerExchange is recognized as exchange type
-		assertThat(callback.isExchangeType(McpAsyncServerExchange.class)).isTrue();
+		assertThat(callback.isExchangeOrContextType(McpAsyncServerExchange.class)).isTrue();
 
 		// Test that other types are not recognized as exchange type
-		assertThat(callback.isExchangeType(String.class)).isFalse();
-		assertThat(callback.isExchangeType(Integer.class)).isFalse();
-		assertThat(callback.isExchangeType(Object.class)).isFalse();
+		assertThat(callback.isExchangeOrContextType(String.class)).isFalse();
+		assertThat(callback.isExchangeOrContextType(Integer.class)).isFalse();
+		assertThat(callback.isExchangeOrContextType(Object.class)).isFalse();
 	}
 
 	@Test

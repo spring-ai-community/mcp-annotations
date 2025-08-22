@@ -11,6 +11,7 @@ import java.util.List;
 
 import org.springaicommunity.mcp.annotation.CompleteAdapter;
 import org.springaicommunity.mcp.annotation.McpComplete;
+import org.springaicommunity.mcp.annotation.McpProgressToken;
 
 import io.modelcontextprotocol.spec.McpSchema;
 import io.modelcontextprotocol.spec.McpSchema.CompleteReference;
@@ -126,19 +127,40 @@ public abstract class AbstractMcpCompleteMethodCallback {
 	protected void validateParameters(Method method) {
 		Parameter[] parameters = method.getParameters();
 
-		// Check parameter count - must have at most 3 parameters
-		if (parameters.length > 3) {
-			throw new IllegalArgumentException("Method can have at most 3 input parameters: " + method.getName()
-					+ " in " + method.getDeclaringClass().getName() + " has " + parameters.length + " parameters");
+		// Count non-progress-token parameters
+		int nonProgressTokenParamCount = 0;
+		for (Parameter param : parameters) {
+			if (!param.isAnnotationPresent(McpProgressToken.class)) {
+				nonProgressTokenParamCount++;
+			}
+		}
+
+		// Check parameter count - must have at most 3 non-progress-token parameters
+		if (nonProgressTokenParamCount > 3) {
+			throw new IllegalArgumentException(
+					"Method can have at most 3 input parameters (excluding @McpProgressToken): " + method.getName()
+							+ " in " + method.getDeclaringClass().getName() + " has " + nonProgressTokenParamCount
+							+ " parameters");
 		}
 
 		// Check parameter types
 		boolean hasExchangeParam = false;
 		boolean hasRequestParam = false;
 		boolean hasArgumentParam = false;
+		boolean hasProgressTokenParam = false;
 
 		for (Parameter param : parameters) {
 			Class<?> paramType = param.getType();
+
+			// Skip @McpProgressToken annotated parameters from validation
+			if (param.isAnnotationPresent(McpProgressToken.class)) {
+				if (hasProgressTokenParam) {
+					throw new IllegalArgumentException("Method cannot have more than one @McpProgressToken parameter: "
+							+ method.getName() + " in " + method.getDeclaringClass().getName());
+				}
+				hasProgressTokenParam = true;
+				continue;
+			}
 
 			if (isExchangeType(paramType)) {
 				if (hasExchangeParam) {
@@ -184,7 +206,22 @@ public abstract class AbstractMcpCompleteMethodCallback {
 		Parameter[] parameters = method.getParameters();
 		Object[] args = new Object[parameters.length];
 
+		// First, handle @McpProgressToken annotated parameters
 		for (int i = 0; i < parameters.length; i++) {
+			if (parameters[i].isAnnotationPresent(McpProgressToken.class)) {
+				// CompleteRequest doesn't have a progressToken method in the current spec
+				// Set to null for now - this would need to be updated when the spec
+				// supports it
+				args[i] = null;
+			}
+		}
+
+		for (int i = 0; i < parameters.length; i++) {
+			// Skip if already set (e.g., @McpProgressToken)
+			if (args[i] != null || parameters[i].isAnnotationPresent(McpProgressToken.class)) {
+				continue;
+			}
+
 			Parameter param = parameters[i];
 			Class<?> paramType = param.getType();
 

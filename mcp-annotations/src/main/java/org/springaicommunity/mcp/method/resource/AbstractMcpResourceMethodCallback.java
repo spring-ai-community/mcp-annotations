@@ -10,6 +10,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import org.springaicommunity.mcp.annotation.McpProgressToken;
+
 import io.modelcontextprotocol.spec.McpSchema;
 import io.modelcontextprotocol.spec.McpSchema.ReadResourceRequest;
 import io.modelcontextprotocol.util.Assert;
@@ -142,12 +144,20 @@ public abstract class AbstractMcpResourceMethodCallback {
 	protected void validateParametersWithoutUriVariables(Method method) {
 		Parameter[] parameters = method.getParameters();
 
-		// Check parameter count - must have at most 2 parameters
-		if (parameters.length > 2) {
+		// Count parameters excluding @McpProgressToken annotated ones
+		int nonProgressTokenParamCount = 0;
+		for (Parameter param : parameters) {
+			if (!param.isAnnotationPresent(McpProgressToken.class)) {
+				nonProgressTokenParamCount++;
+			}
+		}
+
+		// Check parameter count - must have at most 2 non-progress-token parameters
+		if (nonProgressTokenParamCount > 2) {
 			throw new IllegalArgumentException(
-					"Method can have at most 2 input parameters when no URI variables are present: " + method.getName()
-							+ " in " + method.getDeclaringClass().getName() + " has " + parameters.length
-							+ " parameters");
+					"Method can have at most 2 input parameters (excluding @McpProgressToken) when no URI variables are present: "
+							+ method.getName() + " in " + method.getDeclaringClass().getName() + " has "
+							+ nonProgressTokenParamCount + " non-progress-token parameters");
 		}
 
 		// Check parameter types
@@ -156,6 +166,11 @@ public abstract class AbstractMcpResourceMethodCallback {
 		boolean hasRequestOrUriParam = false;
 
 		for (Parameter param : parameters) {
+			// Skip @McpProgressToken annotated parameters
+			if (param.isAnnotationPresent(McpProgressToken.class)) {
+				continue;
+			}
+
 			Class<?> paramType = param.getType();
 
 			if (isExchangeOrContextType(paramType)) {
@@ -177,13 +192,13 @@ public abstract class AbstractMcpResourceMethodCallback {
 			}
 			else {
 				throw new IllegalArgumentException(
-						"Method parameters must be exchange, ReadResourceRequest, or String when no URI variables are present: "
+						"Method parameters must be exchange, ReadResourceRequest, String, or @McpProgressToken when no URI variables are present: "
 								+ method.getName() + " in " + method.getDeclaringClass().getName()
 								+ " has parameter of type " + paramType.getName());
 			}
 		}
 
-		if (!hasValidParams && parameters.length > 0) {
+		if (!hasValidParams && nonProgressTokenParamCount > 0) {
 			throw new IllegalArgumentException(
 					"Method must have either ReadResourceRequest or String parameter when no URI variables are present: "
 							+ method.getName() + " in " + method.getDeclaringClass().getName());
@@ -199,17 +214,23 @@ public abstract class AbstractMcpResourceMethodCallback {
 	protected void validateParametersWithUriVariables(Method method) {
 		Parameter[] parameters = method.getParameters();
 
-		// Count special parameters (exchange and request)
+		// Count special parameters (exchange, request, and progress token)
 		int exchangeParamCount = 0;
 		int requestParamCount = 0;
+		int progressTokenParamCount = 0;
 
 		for (Parameter param : parameters) {
-			Class<?> paramType = param.getType();
-			if (isExchangeOrContextType(paramType)) {
-				exchangeParamCount++;
+			if (param.isAnnotationPresent(McpProgressToken.class)) {
+				progressTokenParamCount++;
 			}
-			else if (ReadResourceRequest.class.isAssignableFrom(paramType)) {
-				requestParamCount++;
+			else {
+				Class<?> paramType = param.getType();
+				if (isExchangeOrContextType(paramType)) {
+					exchangeParamCount++;
+				}
+				else if (ReadResourceRequest.class.isAssignableFrom(paramType)) {
+					requestParamCount++;
+				}
 			}
 		}
 
@@ -226,7 +247,7 @@ public abstract class AbstractMcpResourceMethodCallback {
 		}
 
 		// Calculate how many parameters should be for URI variables
-		int specialParamCount = exchangeParamCount + requestParamCount;
+		int specialParamCount = exchangeParamCount + requestParamCount + progressTokenParamCount;
 		int uriVarParamCount = parameters.length - specialParamCount;
 
 		// Check if we have the right number of parameters for URI variables
@@ -239,6 +260,11 @@ public abstract class AbstractMcpResourceMethodCallback {
 
 		// Check that all non-special parameters are String type (for URI variables)
 		for (Parameter param : parameters) {
+			// Skip @McpProgressToken annotated parameters
+			if (param.isAnnotationPresent(McpProgressToken.class)) {
+				continue;
+			}
+
 			Class<?> paramType = param.getType();
 			if (!isExchangeOrContextType(paramType) && !ReadResourceRequest.class.isAssignableFrom(paramType)
 					&& !String.class.isAssignableFrom(paramType)) {
@@ -253,7 +279,7 @@ public abstract class AbstractMcpResourceMethodCallback {
 	 * Builds the arguments array for invoking the method.
 	 * <p>
 	 * This method constructs an array of arguments based on the method's parameter types
-	 * and the available values (exchange, request, URI variables).
+	 * and the available values (exchange, request, URI variables, progress token).
 	 * @param method The method to build arguments for
 	 * @param exchange The server exchange
 	 * @param request The resource request
@@ -264,6 +290,14 @@ public abstract class AbstractMcpResourceMethodCallback {
 			Map<String, String> uriVariableValues) {
 		Parameter[] parameters = method.getParameters();
 		Object[] args = new Object[parameters.length];
+
+		// First, handle @McpProgressToken annotated parameters
+		for (int i = 0; i < parameters.length; i++) {
+			if (parameters[i].isAnnotationPresent(McpProgressToken.class)) {
+				// Get progress token from request
+				args[i] = request != null ? request.progressToken() : null;
+			}
+		}
 
 		if (!this.uriVariables.isEmpty()) {
 			this.buildArgsWithUriVariables(parameters, args, exchange, request, uriVariableValues);
@@ -290,8 +324,14 @@ public abstract class AbstractMcpResourceMethodCallback {
 		// Track which URI variables have been assigned
 		List<String> assignedVariables = new ArrayList<>();
 
-		// First pass: assign special parameters (exchange and request)
+		// First pass: assign special parameters (exchange, request, and skip progress
+		// token)
 		for (int i = 0; i < parameters.length; i++) {
+			// Skip if parameter is annotated with @McpProgressToken (already handled)
+			if (parameters[i].isAnnotationPresent(McpProgressToken.class)) {
+				continue;
+			}
+
 			Class<?> paramType = parameters[i].getType();
 			if (isExchangeOrContextType(paramType)) {
 				args[i] = exchange;
@@ -304,8 +344,9 @@ public abstract class AbstractMcpResourceMethodCallback {
 		// Second pass: assign URI variables to the remaining parameters
 		int variableIndex = 0;
 		for (int i = 0; i < parameters.length; i++) {
-			// Skip parameters that already have values (exchange or request)
-			if (args[i] != null) {
+			// Skip if parameter is annotated with @McpProgressToken (already handled)
+			// or if it's already assigned (exchange or request)
+			if (parameters[i].isAnnotationPresent(McpProgressToken.class) || args[i] != null) {
 				continue;
 			}
 
@@ -336,6 +377,11 @@ public abstract class AbstractMcpResourceMethodCallback {
 	protected void buildArgsWithoutUriVariables(Parameter[] parameters, Object[] args, Object exchange,
 			ReadResourceRequest request) {
 		for (int i = 0; i < parameters.length; i++) {
+			// Skip if parameter is annotated with @McpProgressToken (already handled)
+			if (parameters[i].isAnnotationPresent(McpProgressToken.class)) {
+				continue;
+			}
+
 			Parameter param = parameters[i];
 			Class<?> paramType = param.getType();
 

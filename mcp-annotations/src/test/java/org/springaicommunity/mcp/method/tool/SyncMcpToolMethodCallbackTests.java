@@ -429,12 +429,12 @@ public class SyncMcpToolMethodCallbackTests {
 		SyncMcpToolMethodCallback callback = new SyncMcpToolMethodCallback(ReturnMode.TEXT, method, provider);
 
 		// Test that McpSyncServerExchange is recognized as exchange type
-		assertThat(callback.isExchangeType(McpSyncServerExchange.class)).isTrue();
+		assertThat(callback.isExchangeOrContextType(McpSyncServerExchange.class)).isTrue();
 
 		// Test that other types are not recognized as exchange type
-		assertThat(callback.isExchangeType(String.class)).isFalse();
-		assertThat(callback.isExchangeType(Integer.class)).isFalse();
-		assertThat(callback.isExchangeType(Object.class)).isFalse();
+		assertThat(callback.isExchangeOrContextType(String.class)).isFalse();
+		assertThat(callback.isExchangeOrContextType(Integer.class)).isFalse();
+		assertThat(callback.isExchangeOrContextType(Object.class)).isFalse();
 	}
 
 	@Test
