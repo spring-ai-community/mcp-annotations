@@ -109,7 +109,7 @@ The Spring integration module provides seamless integration with Spring AI and S
 ### Annotations
 
 #### Client
-- **`@McpLoggingConsumer`** - Annotates methods that handle logging message notifications from MCP servers
+- **`@McpLogging`** - Annotates methods that handle logging message notifications from MCP servers
 - **`@McpSampling`** - Annotates methods that handle sampling requests from MCP servers
 - **`@McpElicitation`** - Annotates methods that handle elicitation requests to gather additional information from users
 - **`@McpProgress`** - Annotates methods that handle progress notifications for long-running operations
@@ -148,9 +148,9 @@ The modules provide callback implementations for each operation type:
 - `AsyncStatelessMcpResourceMethodCallback` - Asynchronous stateless implementation using `McpTransportContext`
 
 #### Logging Consumer
-- `AbstractMcpLoggingConsumerMethodCallback` - Base class for logging consumer method callbacks
-- `SyncMcpLoggingConsumerMethodCallback` - Synchronous implementation
-- `AsyncMcpLoggingConsumerMethodCallback` - Asynchronous implementation using Reactor's Mono
+- `AbstractMcpLoggingMethodCallback` - Base class for logging consumer method callbacks
+- `SyncMcpLoggingMethodCallback` - Synchronous implementation
+- `AsyncMcpLoggingMethodCallback` - Asynchronous implementation using Reactor's Mono
 
 #### Tool
 - `AbstractSyncMcpToolMethodCallback` - Base class for synchronous tool method callbacks
@@ -185,8 +185,8 @@ The project includes provider classes that scan for annotated methods and create
 - `SyncMcpResourceProvider` - Processes `@McpResource` annotations for synchronous operations
 - `SyncMcpToolProvider` - Processes `@McpTool` annotations for synchronous operations
 - `AsyncMcpToolProvider` - Processes `@McpTool` annotations for asynchronous operations
-- `SyncMcpLoggingConsumerProvider` - Processes `@McpLoggingConsumer` annotations for synchronous operations
-- `AsyncMcpLoggingConsumerProvider` - Processes `@McpLoggingConsumer` annotations for asynchronous operations
+- `SyncMcpLoggingProvider` - Processes `@McpLogging` annotations for synchronous operations
+- `AsyncMcpLoggingProvider` - Processes `@McpLogging` annotations for asynchronous operations
 - `SyncMcpSamplingProvider` - Processes `@McpSampling` annotations for synchronous operations
 - `AsyncMcpSamplingProvider` - Processes `@McpSampling` annotations for asynchronous operations
 - `SyncMcpElicitationProvider` - Processes `@McpElicitation` annotations for synchronous operations
@@ -663,7 +663,7 @@ public class LoggingHandler {
      * Handle logging message notifications with a single parameter.
      * @param notification The logging message notification
      */
-    @McpLoggingConsumer
+    @McpLogging
     public void handleLoggingMessage(LoggingMessageNotification notification) {
         System.out.println("Received logging message: " + notification.level() + " - " + notification.logger() + " - "
                 + notification.data());
@@ -675,7 +675,7 @@ public class LoggingHandler {
      * @param logger The logger name
      * @param data The log message data
      */
-    @McpLoggingConsumer
+    @McpLogging
     public void handleLoggingMessageWithParams(LoggingLevel level, String logger, String data) {
         System.out.println("Received logging message with params: " + level + " - " + logger + " - " + data);
     }
@@ -684,7 +684,7 @@ public class LoggingHandler {
      * Handle logging message notifications for a specific client.
      * @param notification The logging message notification
      */
-    @McpLoggingConsumer(clientId = "client-1")
+    @McpLogging(clientId = "client-1")
     public void handleClient1LoggingMessage(LoggingMessageNotification notification) {
         System.out.println("Client-1 logging message: " + notification.level() + " - " + notification.data());
     }
@@ -693,7 +693,7 @@ public class LoggingHandler {
      * Handle logging message notifications for another specific client.
      * @param notification The logging message notification
      */
-    @McpLoggingConsumer(clientId = "client-2")
+    @McpLogging(clientId = "client-2")
     public void handleClient2LoggingMessage(LoggingMessageNotification notification) {
         System.out.println("Client-2 logging message: " + notification.level() + " - " + notification.data());
     }
@@ -704,7 +704,7 @@ public class MyMcpClient {
     public static McpSyncClient createClient(LoggingHandler loggingHandler) {
 
         List<Consumer<LoggingMessageNotification>> loggingCOnsummers = 
-            new SyncMcpLoggingConsumerProvider(List.of(loggingHandler)).getLoggingConsumers();
+            new SyncMcpLoggingProvider(List.of(loggingHandler)).getLoggingConsumers();
 
         McpSyncClient client = McpClient.sync(transport)
             .capabilities(ClientCapabilities.builder()

@@ -22,17 +22,17 @@ import org.springaicommunity.mcp.method.elicitation.SyncElicitationSpecification
 import org.springaicommunity.mcp.method.logging.SyncLoggingSpecification;
 import org.springaicommunity.mcp.method.progress.SyncProgressSpecification;
 import org.springaicommunity.mcp.method.sampling.SyncSamplingSpecification;
-import org.springaicommunity.mcp.provider.SyncMcpCompletionProvider;
-import org.springaicommunity.mcp.provider.SyncMcpElicitationProvider;
-import org.springaicommunity.mcp.provider.SyncMcpLoggingConsumerProvider;
-import org.springaicommunity.mcp.provider.SyncMcpProgressProvider;
-import org.springaicommunity.mcp.provider.SyncMcpPromptProvider;
-import org.springaicommunity.mcp.provider.SyncMcpResourceProvider;
-import org.springaicommunity.mcp.provider.SyncMcpSamplingProvider;
-import org.springaicommunity.mcp.provider.SyncMcpToolProvider;
-import org.springaicommunity.mcp.provider.SyncStatelessMcpPromptProvider;
-import org.springaicommunity.mcp.provider.SyncStatelessMcpResourceProvider;
-import org.springaicommunity.mcp.provider.SyncStatelessMcpToolProvider;
+import org.springaicommunity.mcp.provider.complete.SyncMcpCompletionProvider;
+import org.springaicommunity.mcp.provider.elicitation.SyncMcpElicitationProvider;
+import org.springaicommunity.mcp.provider.logging.SyncMcpLogginProvider;
+import org.springaicommunity.mcp.provider.progress.SyncMcpProgressProvider;
+import org.springaicommunity.mcp.provider.prompt.SyncMcpPromptProvider;
+import org.springaicommunity.mcp.provider.prompt.SyncStatelessMcpPromptProvider;
+import org.springaicommunity.mcp.provider.resource.SyncMcpResourceProvider;
+import org.springaicommunity.mcp.provider.resource.SyncStatelessMcpResourceProvider;
+import org.springaicommunity.mcp.provider.sampling.SyncMcpSamplingProvider;
+import org.springaicommunity.mcp.provider.tool.SyncMcpToolProvider;
+import org.springaicommunity.mcp.provider.tool.SyncStatelessMcpToolProvider;
 
 import io.modelcontextprotocol.server.McpServerFeatures.SyncCompletionSpecification;
 import io.modelcontextprotocol.server.McpServerFeatures.SyncPromptSpecification;
@@ -136,9 +136,9 @@ public class SyncMcpAnnotationProvider {
 
 	}
 
-	private static class SpringAiSyncMcpLoggingConsumerProvider extends SyncMcpLoggingConsumerProvider {
+	private static class SpringAiSyncMcpLoggingProvider extends SyncMcpLogginProvider {
 
-		public SpringAiSyncMcpLoggingConsumerProvider(List<Object> loggingObjects) {
+		public SpringAiSyncMcpLoggingProvider(List<Object> loggingObjects) {
 			super(loggingObjects);
 		}
 
@@ -220,7 +220,7 @@ public class SyncMcpAnnotationProvider {
 	}
 
 	public static List<SyncLoggingSpecification> createSyncLoggingSpecifications(List<Object> loggingObjects) {
-		return new SpringAiSyncMcpLoggingConsumerProvider(loggingObjects).getLoggingSpecifications();
+		return new SpringAiSyncMcpLoggingProvider(loggingObjects).getLoggingSpecifications();
 	}
 
 	public static List<SyncSamplingSpecification> createSyncSamplingSpecifications(List<Object> samplingObjects) {

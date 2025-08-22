@@ -22,14 +22,14 @@ import org.springaicommunity.mcp.method.elicitation.AsyncElicitationSpecificatio
 import org.springaicommunity.mcp.method.logging.AsyncLoggingSpecification;
 import org.springaicommunity.mcp.method.progress.AsyncProgressSpecification;
 import org.springaicommunity.mcp.method.sampling.AsyncSamplingSpecification;
-import org.springaicommunity.mcp.provider.AsyncMcpElicitationProvider;
-import org.springaicommunity.mcp.provider.AsyncMcpLoggingConsumerProvider;
-import org.springaicommunity.mcp.provider.AsyncMcpProgressProvider;
-import org.springaicommunity.mcp.provider.AsyncMcpSamplingProvider;
-import org.springaicommunity.mcp.provider.AsyncMcpToolProvider;
-import org.springaicommunity.mcp.provider.AsyncStatelessMcpPromptProvider;
-import org.springaicommunity.mcp.provider.AsyncStatelessMcpResourceProvider;
-import org.springaicommunity.mcp.provider.AsyncStatelessMcpToolProvider;
+import org.springaicommunity.mcp.provider.elicitation.AsyncMcpElicitationProvider;
+import org.springaicommunity.mcp.provider.logging.AsyncMcpLoggingProvider;
+import org.springaicommunity.mcp.provider.progress.AsyncMcpProgressProvider;
+import org.springaicommunity.mcp.provider.prompt.AsyncStatelessMcpPromptProvider;
+import org.springaicommunity.mcp.provider.resource.AsyncStatelessMcpResourceProvider;
+import org.springaicommunity.mcp.provider.sampling.AsyncMcpSamplingProvider;
+import org.springaicommunity.mcp.provider.tool.AsyncMcpToolProvider;
+import org.springaicommunity.mcp.provider.tool.AsyncStatelessMcpToolProvider;
 
 import io.modelcontextprotocol.server.McpServerFeatures.AsyncToolSpecification;
 import io.modelcontextprotocol.server.McpStatelessServerFeatures;
@@ -39,9 +39,9 @@ import io.modelcontextprotocol.server.McpStatelessServerFeatures;
  */
 public class AsyncMcpAnnotationProvider {
 
-	private static class SpringAiAsyncMcpLoggingConsumerProvider extends AsyncMcpLoggingConsumerProvider {
+	private static class SpringAiAsyncMcpLoggingProvider extends AsyncMcpLoggingProvider {
 
-		public SpringAiAsyncMcpLoggingConsumerProvider(List<Object> loggingObjects) {
+		public SpringAiAsyncMcpLoggingProvider(List<Object> loggingObjects) {
 			super(loggingObjects);
 		}
 
@@ -144,7 +144,7 @@ public class AsyncMcpAnnotationProvider {
 	}
 
 	public static List<AsyncLoggingSpecification> createAsyncLoggingSpecifications(List<Object> loggingObjects) {
-		return new SpringAiAsyncMcpLoggingConsumerProvider(loggingObjects).getLoggingSpecifications();
+		return new SpringAiAsyncMcpLoggingProvider(loggingObjects).getLoggingSpecifications();
 	}
 
 	public static List<AsyncSamplingSpecification> createAsyncSamplingSpecifications(List<Object> samplingObjects) {

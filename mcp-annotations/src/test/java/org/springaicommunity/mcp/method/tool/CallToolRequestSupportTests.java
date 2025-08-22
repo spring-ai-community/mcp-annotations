@@ -28,7 +28,7 @@ import org.junit.jupiter.api.Test;
 import org.springaicommunity.mcp.annotation.McpTool;
 import org.springaicommunity.mcp.annotation.McpToolParam;
 import org.springaicommunity.mcp.method.tool.utils.JsonSchemaGenerator;
-import org.springaicommunity.mcp.provider.SyncMcpToolProvider;
+import org.springaicommunity.mcp.provider.tool.SyncMcpToolProvider;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.JsonNode;
