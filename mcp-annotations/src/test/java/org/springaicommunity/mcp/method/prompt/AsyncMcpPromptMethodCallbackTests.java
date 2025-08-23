@@ -19,8 +19,9 @@ import io.modelcontextprotocol.spec.McpSchema.PromptMessage;
 import io.modelcontextprotocol.spec.McpSchema.Role;
 import io.modelcontextprotocol.spec.McpSchema.TextContent;
 import org.junit.jupiter.api.Test;
+import org.springaicommunity.mcp.annotation.McpArg;
+import org.springaicommunity.mcp.annotation.McpMeta;
 import org.springaicommunity.mcp.annotation.McpPrompt;
-import org.springaicommunity.mcp.method.prompt.AsyncMcpPromptMethodCallback;
 
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
@@ -136,6 +137,28 @@ public class AsyncMcpPromptMethodCallbackTests {
 
 		public GetPromptResult duplicateMapParameters(Map<String, Object> args1, Map<String, Object> args2) {
 			return new GetPromptResult("Invalid", List.of());
+		}
+
+		@McpPrompt(name = "mono-meta-prompt", description = "A prompt with meta parameter")
+		public Mono<GetPromptResult> getMonoPromptWithMeta(
+				@McpArg(name = "name", description = "The user's name", required = true) String name, McpMeta meta) {
+			String metaInfo = meta != null && meta.meta() != null ? meta.meta().toString() : "null";
+			return Mono.just(new GetPromptResult("Mono meta prompt", List
+				.of(new PromptMessage(Role.ASSISTANT, new TextContent("Hello " + name + ", Meta: " + metaInfo)))));
+		}
+
+		@McpPrompt(name = "mono-mixed-with-meta", description = "A prompt with mixed args and meta")
+		public Mono<GetPromptResult> getMonoPromptWithMixedAndMeta(McpAsyncServerExchange exchange,
+				@McpArg(name = "name", description = "The user's name", required = true) String name, McpMeta meta,
+				GetPromptRequest request) {
+			String metaInfo = meta != null && meta.meta() != null ? meta.meta().toString() : "null";
+			return Mono
+				.just(new GetPromptResult("Mono mixed with meta prompt", List.of(new PromptMessage(Role.ASSISTANT,
+						new TextContent("Hello " + name + " from " + request.name() + ", Meta: " + metaInfo)))));
+		}
+
+		public Mono<GetPromptResult> duplicateMetaParameters(McpMeta meta1, McpMeta meta2) {
+			return Mono.just(new GetPromptResult("Invalid", List.of()));
 		}
 
 	}
@@ -335,6 +358,122 @@ public class AsyncMcpPromptMethodCallbackTests {
 		McpAsyncServerExchange exchange = mock(McpAsyncServerExchange.class);
 
 		StepVerifier.create(callback.apply(exchange, null)).expectErrorMessage("Request must not be null").verify();
+	}
+
+	@Test
+	public void testCallbackWithMonoMeta() throws Exception {
+		TestPromptProvider provider = new TestPromptProvider();
+		Method method = TestPromptProvider.class.getMethod("getMonoPromptWithMeta", String.class, McpMeta.class);
+
+		Prompt prompt = createTestPrompt("mono-meta-prompt", "A prompt with meta parameter");
+
+		BiFunction<McpAsyncServerExchange, GetPromptRequest, Mono<GetPromptResult>> callback = AsyncMcpPromptMethodCallback
+			.builder()
+			.method(method)
+			.bean(provider)
+			.prompt(prompt)
+			.build();
+
+		McpAsyncServerExchange exchange = mock(McpAsyncServerExchange.class);
+		Map<String, Object> args = new HashMap<>();
+		args.put("name", "John");
+
+		// Create request with meta data
+		GetPromptRequest request = new GetPromptRequest("mono-meta-prompt", args,
+				Map.of("userId", "user123", "sessionId", "session456"));
+
+		Mono<GetPromptResult> resultMono = callback.apply(exchange, request);
+
+		StepVerifier.create(resultMono).assertNext(result -> {
+			assertThat(result).isNotNull();
+			assertThat(result.description()).isEqualTo("Mono meta prompt");
+			assertThat(result.messages()).hasSize(1);
+			PromptMessage message = result.messages().get(0);
+			assertThat(message.role()).isEqualTo(Role.ASSISTANT);
+			assertThat(((TextContent) message.content()).text())
+				.contains("Hello John, Meta: {userId=user123, sessionId=session456}");
+		}).verifyComplete();
+	}
+
+	@Test
+	public void testCallbackWithMonoMetaNull() throws Exception {
+		TestPromptProvider provider = new TestPromptProvider();
+		Method method = TestPromptProvider.class.getMethod("getMonoPromptWithMeta", String.class, McpMeta.class);
+
+		Prompt prompt = createTestPrompt("mono-meta-prompt", "A prompt with meta parameter");
+
+		BiFunction<McpAsyncServerExchange, GetPromptRequest, Mono<GetPromptResult>> callback = AsyncMcpPromptMethodCallback
+			.builder()
+			.method(method)
+			.bean(provider)
+			.prompt(prompt)
+			.build();
+
+		McpAsyncServerExchange exchange = mock(McpAsyncServerExchange.class);
+		Map<String, Object> args = new HashMap<>();
+		args.put("name", "John");
+
+		// Create request without meta
+		GetPromptRequest request = new GetPromptRequest("mono-meta-prompt", args);
+
+		Mono<GetPromptResult> resultMono = callback.apply(exchange, request);
+
+		StepVerifier.create(resultMono).assertNext(result -> {
+			assertThat(result).isNotNull();
+			assertThat(result.description()).isEqualTo("Mono meta prompt");
+			assertThat(result.messages()).hasSize(1);
+			PromptMessage message = result.messages().get(0);
+			assertThat(message.role()).isEqualTo(Role.ASSISTANT);
+			assertThat(((TextContent) message.content()).text()).isEqualTo("Hello John, Meta: {}");
+		}).verifyComplete();
+	}
+
+	@Test
+	public void testCallbackWithMonoMixedAndMeta() throws Exception {
+		TestPromptProvider provider = new TestPromptProvider();
+		Method method = TestPromptProvider.class.getMethod("getMonoPromptWithMixedAndMeta",
+				McpAsyncServerExchange.class, String.class, McpMeta.class, GetPromptRequest.class);
+
+		Prompt prompt = createTestPrompt("mono-mixed-with-meta", "A prompt with mixed args and meta");
+
+		BiFunction<McpAsyncServerExchange, GetPromptRequest, Mono<GetPromptResult>> callback = AsyncMcpPromptMethodCallback
+			.builder()
+			.method(method)
+			.bean(provider)
+			.prompt(prompt)
+			.build();
+
+		McpAsyncServerExchange exchange = mock(McpAsyncServerExchange.class);
+		Map<String, Object> args = new HashMap<>();
+		args.put("name", "John");
+
+		// Create request with meta data
+		GetPromptRequest request = new GetPromptRequest("mono-mixed-with-meta", args, Map.of("userId", "user123"));
+
+		Mono<GetPromptResult> resultMono = callback.apply(exchange, request);
+
+		StepVerifier.create(resultMono).assertNext(result -> {
+			assertThat(result).isNotNull();
+			assertThat(result.description()).isEqualTo("Mono mixed with meta prompt");
+			assertThat(result.messages()).hasSize(1);
+			PromptMessage message = result.messages().get(0);
+			assertThat(message.role()).isEqualTo(Role.ASSISTANT);
+			assertThat(((TextContent) message.content()).text())
+				.isEqualTo("Hello John from mono-mixed-with-meta, Meta: {userId=user123}");
+		}).verifyComplete();
+	}
+
+	@Test
+	public void testDuplicateMetaParameters() throws Exception {
+		TestPromptProvider provider = new TestPromptProvider();
+		Method method = TestPromptProvider.class.getMethod("duplicateMetaParameters", McpMeta.class, McpMeta.class);
+
+		Prompt prompt = createTestPrompt("invalid", "Invalid parameters");
+
+		assertThatThrownBy(
+				() -> AsyncMcpPromptMethodCallback.builder().method(method).bean(provider).prompt(prompt).build())
+			.isInstanceOf(IllegalArgumentException.class)
+			.hasMessageContaining("Method cannot have more than one McpMeta parameter");
 	}
 
 }

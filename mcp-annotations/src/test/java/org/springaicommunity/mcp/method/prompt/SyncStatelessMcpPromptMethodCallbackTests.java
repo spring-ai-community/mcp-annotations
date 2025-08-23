@@ -16,6 +16,7 @@ import java.util.function.BiFunction;
 
 import org.junit.jupiter.api.Test;
 import org.springaicommunity.mcp.annotation.McpArg;
+import org.springaicommunity.mcp.annotation.McpMeta;
 import org.springaicommunity.mcp.annotation.McpPrompt;
 
 import io.modelcontextprotocol.server.McpTransportContext;
@@ -106,6 +107,27 @@ public class SyncStatelessMcpPromptMethodCallbackTests {
 		}
 
 		public GetPromptResult duplicateMapParameters(Map<String, Object> args1, Map<String, Object> args2) {
+			return new GetPromptResult("Invalid", List.of());
+		}
+
+		@McpPrompt(name = "stateless-meta-prompt", description = "A prompt with meta parameter")
+		public GetPromptResult getPromptWithMeta(
+				@McpArg(name = "name", description = "The user's name", required = true) String name, McpMeta meta) {
+			String metaInfo = meta != null && meta.meta() != null ? meta.meta().toString() : "null";
+			return new GetPromptResult("Stateless meta prompt", List
+				.of(new PromptMessage(Role.ASSISTANT, new TextContent("Hello " + name + ", Meta: " + metaInfo))));
+		}
+
+		@McpPrompt(name = "stateless-mixed-with-meta", description = "A prompt with mixed args and meta")
+		public GetPromptResult getPromptWithMixedAndMeta(McpTransportContext context,
+				@McpArg(name = "name", description = "The user's name", required = true) String name, McpMeta meta,
+				GetPromptRequest request) {
+			String metaInfo = meta != null && meta.meta() != null ? meta.meta().toString() : "null";
+			return new GetPromptResult("Stateless mixed with meta prompt", List.of(new PromptMessage(Role.ASSISTANT,
+					new TextContent("Hello " + name + " from " + request.name() + ", Meta: " + metaInfo))));
+		}
+
+		public GetPromptResult duplicateMetaParameters(McpMeta meta1, McpMeta meta2) {
 			return new GetPromptResult("Invalid", List.of());
 		}
 
@@ -473,6 +495,118 @@ public class SyncStatelessMcpPromptMethodCallbackTests {
 
 		assertThatThrownBy(() -> callback.apply(context, null)).isInstanceOf(IllegalArgumentException.class)
 			.hasMessageContaining("Request must not be null");
+	}
+
+	@Test
+	public void testCallbackWithStatelessMeta() throws Exception {
+		TestPromptProvider provider = new TestPromptProvider();
+		Method method = TestPromptProvider.class.getMethod("getPromptWithMeta", String.class, McpMeta.class);
+
+		Prompt prompt = createTestPrompt("stateless-meta-prompt", "A prompt with meta parameter");
+
+		BiFunction<McpTransportContext, GetPromptRequest, GetPromptResult> callback = SyncStatelessMcpPromptMethodCallback
+			.builder()
+			.method(method)
+			.bean(provider)
+			.prompt(prompt)
+			.build();
+
+		McpTransportContext context = mock(McpTransportContext.class);
+		Map<String, Object> args = new HashMap<>();
+		args.put("name", "John");
+
+		// Create request with meta data
+		GetPromptRequest request = new GetPromptRequest("stateless-meta-prompt", args,
+				Map.of("userId", "user123", "sessionId", "session456"));
+
+		GetPromptResult result = callback.apply(context, request);
+
+		assertThat(result).isNotNull();
+		assertThat(result.description()).isEqualTo("Stateless meta prompt");
+		assertThat(result.messages()).hasSize(1);
+		PromptMessage message = result.messages().get(0);
+		assertThat(message.role()).isEqualTo(Role.ASSISTANT);
+		assertThat(((TextContent) message.content()).text())
+			.contains("Hello John, Meta: {userId=user123, sessionId=session456}");
+	}
+
+	@Test
+	public void testCallbackWithStatelessMetaNull() throws Exception {
+		TestPromptProvider provider = new TestPromptProvider();
+		Method method = TestPromptProvider.class.getMethod("getPromptWithMeta", String.class, McpMeta.class);
+
+		Prompt prompt = createTestPrompt("stateless-meta-prompt", "A prompt with meta parameter");
+
+		BiFunction<McpTransportContext, GetPromptRequest, GetPromptResult> callback = SyncStatelessMcpPromptMethodCallback
+			.builder()
+			.method(method)
+			.bean(provider)
+			.prompt(prompt)
+			.build();
+
+		McpTransportContext context = mock(McpTransportContext.class);
+		Map<String, Object> args = new HashMap<>();
+		args.put("name", "John");
+
+		// Create request without meta
+		GetPromptRequest request = new GetPromptRequest("stateless-meta-prompt", args);
+
+		GetPromptResult result = callback.apply(context, request);
+
+		assertThat(result).isNotNull();
+		assertThat(result.description()).isEqualTo("Stateless meta prompt");
+		assertThat(result.messages()).hasSize(1);
+		PromptMessage message = result.messages().get(0);
+		assertThat(message.role()).isEqualTo(Role.ASSISTANT);
+		assertThat(((TextContent) message.content()).text()).isEqualTo("Hello John, Meta: {}");
+	}
+
+	@Test
+	public void testCallbackWithStatelessMixedAndMeta() throws Exception {
+		TestPromptProvider provider = new TestPromptProvider();
+		Method method = TestPromptProvider.class.getMethod("getPromptWithMixedAndMeta", McpTransportContext.class,
+				String.class, McpMeta.class, GetPromptRequest.class);
+
+		Prompt prompt = createTestPrompt("stateless-mixed-with-meta", "A prompt with mixed args and meta");
+
+		BiFunction<McpTransportContext, GetPromptRequest, GetPromptResult> callback = SyncStatelessMcpPromptMethodCallback
+			.builder()
+			.method(method)
+			.bean(provider)
+			.prompt(prompt)
+			.build();
+
+		McpTransportContext context = mock(McpTransportContext.class);
+		Map<String, Object> args = new HashMap<>();
+		args.put("name", "John");
+
+		// Create request with meta data
+		GetPromptRequest request = new GetPromptRequest("stateless-mixed-with-meta", args, Map.of("userId", "user123"));
+
+		GetPromptResult result = callback.apply(context, request);
+
+		assertThat(result).isNotNull();
+		assertThat(result.description()).isEqualTo("Stateless mixed with meta prompt");
+		assertThat(result.messages()).hasSize(1);
+		PromptMessage message = result.messages().get(0);
+		assertThat(message.role()).isEqualTo(Role.ASSISTANT);
+		assertThat(((TextContent) message.content()).text())
+			.isEqualTo("Hello John from stateless-mixed-with-meta, Meta: {userId=user123}");
+	}
+
+	@Test
+	public void testDuplicateMetaParameters() throws Exception {
+		TestPromptProvider provider = new TestPromptProvider();
+		Method method = TestPromptProvider.class.getMethod("duplicateMetaParameters", McpMeta.class, McpMeta.class);
+
+		Prompt prompt = createTestPrompt("invalid", "Invalid parameters");
+
+		assertThatThrownBy(() -> SyncStatelessMcpPromptMethodCallback.builder()
+			.method(method)
+			.bean(provider)
+			.prompt(prompt)
+			.build()).isInstanceOf(IllegalArgumentException.class)
+			.hasMessageContaining("Method cannot have more than one McpMeta parameter");
 	}
 
 }

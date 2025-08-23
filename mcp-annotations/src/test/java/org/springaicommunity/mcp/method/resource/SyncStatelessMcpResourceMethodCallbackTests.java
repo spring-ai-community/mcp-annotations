@@ -7,12 +7,16 @@ package org.springaicommunity.mcp.method.resource;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import java.lang.reflect.Method;
 import java.util.List;
+import java.util.Map;
 import java.util.function.BiFunction;
 
 import org.junit.jupiter.api.Test;
+import org.springaicommunity.mcp.annotation.McpMeta;
+import org.springaicommunity.mcp.annotation.McpProgressToken;
 import org.springaicommunity.mcp.annotation.McpResource;
 import org.springaicommunity.mcp.annotation.ResourceAdaptor;
 
@@ -121,6 +125,49 @@ public class SyncStatelessMcpResourceMethodCallbackTests {
 		public ReadResourceResult duplicateRequestParameters(ReadResourceRequest request1,
 				ReadResourceRequest request2) {
 			return new ReadResourceResult(List.of());
+		}
+
+		// Methods for testing @McpMeta
+		public ReadResourceResult getResourceWithMeta(McpMeta meta, ReadResourceRequest request) {
+			String metaValue = (String) meta.get("testKey");
+			String content = "Content with meta: " + metaValue + " for " + request.uri();
+			return new ReadResourceResult(List.of(new TextResourceContents(request.uri(), "text/plain", content)));
+		}
+
+		public ReadResourceResult getResourceWithMetaOnly(McpMeta meta) {
+			String metaValue = (String) meta.get("testKey");
+			String content = "Content with only meta: " + metaValue;
+			return new ReadResourceResult(List.of(new TextResourceContents("test://resource", "text/plain", content)));
+		}
+
+		@McpResource(uri = "users/{userId}/posts/{postId}")
+		public ReadResourceResult getResourceWithMetaAndUriVariables(McpMeta meta, String userId, String postId) {
+			String metaValue = (String) meta.get("testKey");
+			String content = "User: " + userId + ", Post: " + postId + ", Meta: " + metaValue;
+			return new ReadResourceResult(
+					List.of(new TextResourceContents("users/" + userId + "/posts/" + postId, "text/plain", content)));
+		}
+
+		public ReadResourceResult getResourceWithContextAndMeta(McpTransportContext context, McpMeta meta,
+				ReadResourceRequest request) {
+			String metaValue = (String) meta.get("testKey");
+			String content = "Content with context and meta: " + metaValue + " for " + request.uri();
+			return new ReadResourceResult(List.of(new TextResourceContents(request.uri(), "text/plain", content)));
+		}
+
+		public ReadResourceResult getResourceWithMetaAndMixedParams(McpMeta meta,
+				@McpProgressToken String progressToken, ReadResourceRequest request) {
+			String metaValue = (String) meta.get("testKey");
+			String content = "Content with meta: " + metaValue + " and progress: " + progressToken + " for "
+					+ request.uri();
+			return new ReadResourceResult(List.of(new TextResourceContents(request.uri(), "text/plain", content)));
+		}
+
+		public ReadResourceResult getResourceWithMultipleMetas(McpMeta meta1, McpMeta meta2,
+				ReadResourceRequest request) {
+			// This should cause a validation error during callback creation
+			String content = "Content with multiple metas for " + request.uri();
+			return new ReadResourceResult(List.of(new TextResourceContents(request.uri(), "text/plain", content)));
 		}
 
 	}
@@ -635,6 +682,187 @@ public class SyncStatelessMcpResourceMethodCallbackTests {
 		assertThatThrownBy(() -> callback.apply(context, invalidRequest))
 			.isInstanceOf(AbstractMcpResourceMethodCallback.McpResourceMethodException.class)
 			.hasMessageContaining("Access error invoking resource method");
+	}
+
+	// Tests for @McpMeta functionality
+	@Test
+	public void testCallbackWithMeta() throws Exception {
+		TestResourceProvider provider = new TestResourceProvider();
+		Method method = TestResourceProvider.class.getMethod("getResourceWithMeta", McpMeta.class,
+				ReadResourceRequest.class);
+
+		BiFunction<McpTransportContext, ReadResourceRequest, ReadResourceResult> callback = SyncStatelessMcpResourceMethodCallback
+			.builder()
+			.method(method)
+			.bean(provider)
+			.resource(ResourceAdaptor.asResource(createMockMcpResource()))
+			.build();
+
+		McpTransportContext context = mock(McpTransportContext.class);
+		ReadResourceRequest request = mock(ReadResourceRequest.class);
+		when(request.uri()).thenReturn("test/resource");
+		when(request.meta()).thenReturn(Map.of("testKey", "testValue"));
+
+		ReadResourceResult result = callback.apply(context, request);
+
+		assertThat(result).isNotNull();
+		assertThat(result.contents()).hasSize(1);
+		assertThat(result.contents().get(0)).isInstanceOf(TextResourceContents.class);
+		TextResourceContents textContent = (TextResourceContents) result.contents().get(0);
+		assertThat(textContent.text()).isEqualTo("Content with meta: testValue for test/resource");
+	}
+
+	@Test
+	public void testCallbackWithMetaNull() throws Exception {
+		TestResourceProvider provider = new TestResourceProvider();
+		Method method = TestResourceProvider.class.getMethod("getResourceWithMeta", McpMeta.class,
+				ReadResourceRequest.class);
+
+		BiFunction<McpTransportContext, ReadResourceRequest, ReadResourceResult> callback = SyncStatelessMcpResourceMethodCallback
+			.builder()
+			.method(method)
+			.bean(provider)
+			.resource(ResourceAdaptor.asResource(createMockMcpResource()))
+			.build();
+
+		McpTransportContext context = mock(McpTransportContext.class);
+		ReadResourceRequest request = mock(ReadResourceRequest.class);
+		when(request.uri()).thenReturn("test/resource");
+		when(request.meta()).thenReturn(null);
+
+		ReadResourceResult result = callback.apply(context, request);
+
+		assertThat(result).isNotNull();
+		assertThat(result.contents()).hasSize(1);
+		assertThat(result.contents().get(0)).isInstanceOf(TextResourceContents.class);
+		TextResourceContents textContent = (TextResourceContents) result.contents().get(0);
+		assertThat(textContent.text()).isEqualTo("Content with meta: null for test/resource");
+	}
+
+	@Test
+	public void testCallbackWithMetaOnly() throws Exception {
+		TestResourceProvider provider = new TestResourceProvider();
+		Method method = TestResourceProvider.class.getMethod("getResourceWithMetaOnly", McpMeta.class);
+
+		BiFunction<McpTransportContext, ReadResourceRequest, ReadResourceResult> callback = SyncStatelessMcpResourceMethodCallback
+			.builder()
+			.method(method)
+			.bean(provider)
+			.resource(ResourceAdaptor.asResource(createMockMcpResource()))
+			.build();
+
+		McpTransportContext context = mock(McpTransportContext.class);
+		ReadResourceRequest request = mock(ReadResourceRequest.class);
+		when(request.uri()).thenReturn("test/resource");
+		when(request.meta()).thenReturn(Map.of("testKey", "metaOnlyValue"));
+
+		ReadResourceResult result = callback.apply(context, request);
+
+		assertThat(result).isNotNull();
+		assertThat(result.contents()).hasSize(1);
+		assertThat(result.contents().get(0)).isInstanceOf(TextResourceContents.class);
+		TextResourceContents textContent = (TextResourceContents) result.contents().get(0);
+		assertThat(textContent.text()).isEqualTo("Content with only meta: metaOnlyValue");
+	}
+
+	@Test
+	public void testCallbackWithMetaAndUriVariables() throws Exception {
+		TestResourceProvider provider = new TestResourceProvider();
+		Method method = TestResourceProvider.class.getMethod("getResourceWithMetaAndUriVariables", McpMeta.class,
+				String.class, String.class);
+		McpResource resourceAnnotation = method.getAnnotation(McpResource.class);
+
+		BiFunction<McpTransportContext, ReadResourceRequest, ReadResourceResult> callback = SyncStatelessMcpResourceMethodCallback
+			.builder()
+			.method(method)
+			.bean(provider)
+			.resource(ResourceAdaptor.asResource(resourceAnnotation))
+			.build();
+
+		McpTransportContext context = mock(McpTransportContext.class);
+		ReadResourceRequest request = mock(ReadResourceRequest.class);
+		when(request.uri()).thenReturn("users/123/posts/456");
+		when(request.meta()).thenReturn(Map.of("testKey", "uriMetaValue"));
+
+		ReadResourceResult result = callback.apply(context, request);
+
+		assertThat(result).isNotNull();
+		assertThat(result.contents()).hasSize(1);
+		assertThat(result.contents().get(0)).isInstanceOf(TextResourceContents.class);
+		TextResourceContents textContent = (TextResourceContents) result.contents().get(0);
+		assertThat(textContent.text()).isEqualTo("User: 123, Post: 456, Meta: uriMetaValue");
+	}
+
+	@Test
+	public void testCallbackWithContextAndMeta() throws Exception {
+		TestResourceProvider provider = new TestResourceProvider();
+		Method method = TestResourceProvider.class.getMethod("getResourceWithContextAndMeta", McpTransportContext.class,
+				McpMeta.class, ReadResourceRequest.class);
+
+		BiFunction<McpTransportContext, ReadResourceRequest, ReadResourceResult> callback = SyncStatelessMcpResourceMethodCallback
+			.builder()
+			.method(method)
+			.bean(provider)
+			.resource(ResourceAdaptor.asResource(createMockMcpResource()))
+			.build();
+
+		McpTransportContext context = mock(McpTransportContext.class);
+		ReadResourceRequest request = mock(ReadResourceRequest.class);
+		when(request.uri()).thenReturn("test/resource");
+		when(request.meta()).thenReturn(Map.of("testKey", "contextMetaValue"));
+
+		ReadResourceResult result = callback.apply(context, request);
+
+		assertThat(result).isNotNull();
+		assertThat(result.contents()).hasSize(1);
+		assertThat(result.contents().get(0)).isInstanceOf(TextResourceContents.class);
+		TextResourceContents textContent = (TextResourceContents) result.contents().get(0);
+		assertThat(textContent.text()).isEqualTo("Content with context and meta: contextMetaValue for test/resource");
+	}
+
+	@Test
+	public void testCallbackWithMetaAndMixedParams() throws Exception {
+		TestResourceProvider provider = new TestResourceProvider();
+		Method method = TestResourceProvider.class.getMethod("getResourceWithMetaAndMixedParams", McpMeta.class,
+				String.class, ReadResourceRequest.class);
+
+		BiFunction<McpTransportContext, ReadResourceRequest, ReadResourceResult> callback = SyncStatelessMcpResourceMethodCallback
+			.builder()
+			.method(method)
+			.bean(provider)
+			.resource(ResourceAdaptor.asResource(createMockMcpResource()))
+			.build();
+
+		McpTransportContext context = mock(McpTransportContext.class);
+		ReadResourceRequest request = mock(ReadResourceRequest.class);
+		when(request.uri()).thenReturn("test/resource");
+		when(request.meta()).thenReturn(Map.of("testKey", "mixedMetaValue"));
+		when(request.progressToken()).thenReturn("mixedProgress");
+
+		ReadResourceResult result = callback.apply(context, request);
+
+		assertThat(result).isNotNull();
+		assertThat(result.contents()).hasSize(1);
+		assertThat(result.contents().get(0)).isInstanceOf(TextResourceContents.class);
+		TextResourceContents textContent = (TextResourceContents) result.contents().get(0);
+		assertThat(textContent.text())
+			.isEqualTo("Content with meta: mixedMetaValue and progress: mixedProgress for test/resource");
+	}
+
+	@Test
+	public void testCallbackWithMultipleMetas() throws Exception {
+		TestResourceProvider provider = new TestResourceProvider();
+		Method method = TestResourceProvider.class.getMethod("getResourceWithMultipleMetas", McpMeta.class,
+				McpMeta.class, ReadResourceRequest.class);
+
+		// This should throw an exception during callback creation due to multiple
+		// McpMeta parameters
+		assertThatThrownBy(() -> SyncStatelessMcpResourceMethodCallback.builder()
+			.method(method)
+			.bean(provider)
+			.resource(ResourceAdaptor.asResource(createMockMcpResource()))
+			.build()).isInstanceOf(IllegalArgumentException.class)
+			.hasMessageContaining("Method cannot have more than one McpMeta parameter");
 	}
 
 }

@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.springaicommunity.mcp.annotation.McpArg;
+import org.springaicommunity.mcp.annotation.McpMeta;
 import org.springaicommunity.mcp.annotation.McpProgressToken;
 
 import io.modelcontextprotocol.spec.McpSchema.GetPromptRequest;
@@ -89,6 +90,7 @@ public abstract class AbstractMcpPromptMethodCallback {
 		boolean hasRequestParam = false;
 		boolean hasMapParam = false;
 		boolean hasProgressTokenParam = false;
+		boolean hasMetaParam = false;
 
 		for (java.lang.reflect.Parameter param : parameters) {
 			Class<?> paramType = param.getType();
@@ -100,6 +102,16 @@ public abstract class AbstractMcpPromptMethodCallback {
 							+ method.getName() + " in " + method.getDeclaringClass().getName());
 				}
 				hasProgressTokenParam = true;
+				continue;
+			}
+
+			// Skip McpMeta parameters from validation
+			if (McpMeta.class.isAssignableFrom(paramType)) {
+				if (hasMetaParam) {
+					throw new IllegalArgumentException("Method cannot have more than one McpMeta parameter: "
+							+ method.getName() + " in " + method.getDeclaringClass().getName());
+				}
+				hasMetaParam = true;
 				continue;
 			}
 
@@ -153,9 +165,17 @@ public abstract class AbstractMcpPromptMethodCallback {
 			}
 		}
 
+		// Handle McpMeta parameters
 		for (int i = 0; i < parameters.length; i++) {
-			// Skip if already set (e.g., @McpProgressToken)
-			if (args[i] != null || parameters[i].isAnnotationPresent(McpProgressToken.class)) {
+			if (McpMeta.class.isAssignableFrom(parameters[i].getType())) {
+				args[i] = request != null ? new McpMeta(request.meta()) : new McpMeta(null);
+			}
+		}
+
+		for (int i = 0; i < parameters.length; i++) {
+			// Skip if already set (e.g., @McpProgressToken, McpMeta)
+			if (args[i] != null || parameters[i].isAnnotationPresent(McpProgressToken.class)
+					|| McpMeta.class.isAssignableFrom(parameters[i].getType())) {
 				continue;
 			}
 

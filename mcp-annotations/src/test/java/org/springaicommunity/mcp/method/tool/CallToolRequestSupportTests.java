@@ -25,6 +25,7 @@ import io.modelcontextprotocol.spec.McpSchema.CallToolRequest;
 import io.modelcontextprotocol.spec.McpSchema.CallToolResult;
 import io.modelcontextprotocol.spec.McpSchema.TextContent;
 import org.junit.jupiter.api.Test;
+import org.springaicommunity.mcp.annotation.McpMeta;
 import org.springaicommunity.mcp.annotation.McpProgressToken;
 import org.springaicommunity.mcp.annotation.McpTool;
 import org.springaicommunity.mcp.annotation.McpToolParam;
@@ -147,6 +148,16 @@ public class CallToolRequestSupportTests {
 						exchange != null ? "present" : "null", request != null ? request.name() : "null",
 						progressToken != null ? progressToken : "null", regularParam))
 				.build();
+		}
+
+		/**
+		 * Tool with McpMeta parameter
+		 */
+		@McpTool(name = "meta-tool", description = "Tool with meta parameter")
+		public CallToolResult metaTool(@McpToolParam(description = "Input parameter", required = true) String input,
+				McpMeta meta) {
+			String metaInfo = meta != null && meta.meta() != null ? meta.meta().toString() : "null";
+			return CallToolResult.builder().addTextContent("Input: " + input + ", Meta: " + metaInfo).build();
 		}
 
 		/**
@@ -387,7 +398,7 @@ public class CallToolRequestSupportTests {
 		var toolSpecs = toolProvider.getToolSpecifications();
 
 		// Should have all tools registered
-		assertThat(toolSpecs).hasSize(8); // All 8 tools from the provider
+		assertThat(toolSpecs).hasSize(9); // All 9 tools from the provider
 
 		// Find the dynamic tool
 		var dynamicToolSpec = toolSpecs.stream()
@@ -596,6 +607,72 @@ public class CallToolRequestSupportTests {
 		String schemaStr = inputSchema.toString();
 		assertThat(schemaStr).contains("input");
 		assertThat(schemaStr).doesNotContain("progressToken");
+	}
+
+	@Test
+	public void testMetaParameterInjection() throws Exception {
+		// Test that McpMeta parameter receives the meta from request
+		CallToolRequestTestProvider provider = new CallToolRequestTestProvider();
+		Method method = CallToolRequestTestProvider.class.getMethod("metaTool", String.class, McpMeta.class);
+		SyncMcpToolMethodCallback callback = new SyncMcpToolMethodCallback(ReturnMode.TEXT, method, provider);
+
+		McpSyncServerExchange exchange = mock(McpSyncServerExchange.class);
+
+		// Create request with meta data
+		CallToolRequest request = CallToolRequest.builder()
+			.name("meta-tool")
+			.arguments(Map.of("input", "test-input"))
+			.meta(Map.of("userId", "user123", "sessionId", "session456"))
+			.build();
+
+		CallToolResult result = callback.apply(exchange, request);
+
+		assertThat(result).isNotNull();
+		assertThat(result.isError()).isFalse();
+		assertThat(((TextContent) result.content().get(0)).text()).contains("Input: test-input")
+			.contains("Meta: {userId=user123, sessionId=session456}");
+	}
+
+	@Test
+	public void testMetaParameterWithNullMeta() throws Exception {
+		// Test that McpMeta parameter handles null meta
+		CallToolRequestTestProvider provider = new CallToolRequestTestProvider();
+		Method method = CallToolRequestTestProvider.class.getMethod("metaTool", String.class, McpMeta.class);
+		SyncMcpToolMethodCallback callback = new SyncMcpToolMethodCallback(ReturnMode.TEXT, method, provider);
+
+		McpSyncServerExchange exchange = mock(McpSyncServerExchange.class);
+
+		// Create request without meta
+		CallToolRequest request = new CallToolRequest("meta-tool", Map.of("input", "test-input"));
+
+		CallToolResult result = callback.apply(exchange, request);
+
+		assertThat(result).isNotNull();
+		assertThat(result.isError()).isFalse();
+		assertThat(((TextContent) result.content().get(0)).text()).isEqualTo("Input: test-input, Meta: {}");
+	}
+
+	@Test
+	public void testJsonSchemaGenerationExcludesMeta() throws Exception {
+		// Test that schema generation excludes McpMeta parameters
+		Method metaMethod = CallToolRequestTestProvider.class.getMethod("metaTool", String.class, McpMeta.class);
+		String metaSchema = JsonSchemaGenerator.generateForMethodInput(metaMethod);
+
+		// Parse the schema
+		JsonNode schemaNode = objectMapper.readTree(metaSchema);
+
+		// Should only have the 'input' parameter, not the meta
+		assertThat(schemaNode.has("properties")).isTrue();
+		JsonNode properties = schemaNode.get("properties");
+		assertThat(properties.has("input")).isTrue();
+		assertThat(properties.has("meta")).isFalse();
+		assertThat(properties.size()).isEqualTo(1);
+
+		// Check required array
+		assertThat(schemaNode.has("required")).isTrue();
+		JsonNode required = schemaNode.get("required");
+		assertThat(required.size()).isEqualTo(1);
+		assertThat(required.get(0).asText()).isEqualTo("input");
 	}
 
 }
