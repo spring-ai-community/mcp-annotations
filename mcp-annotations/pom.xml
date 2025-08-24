@@ -22,12 +22,6 @@
 		<developerConnection>git@github.com/spring-ai-community/mcp-annotations.git</developerConnection>
 	</scm>
 
-	<properties>
-		<jsonschema.version>4.38.0</jsonschema.version>
-		<swagger-annotations.version>2.2.36</swagger-annotations.version>
-		<jackson-databind.version>2.19.2</jackson-databind.version>
-	</properties>
-
 	<dependencies>
 
 		<dependency>

@@ -46,4 +46,31 @@ public class AsyncMcpElicitationMethodCallbackExample {
 		return Mono.just(new ElicitResult(ElicitResult.Action.CANCEL, null));
 	}
 
+	// Test methods for invalid scenarios
+
+	@McpElicitation
+	public String invalidReturnType(ElicitRequest request) {
+		return "Invalid return type";
+	}
+
+	@McpElicitation
+	public Mono<String> invalidMonoReturnType(ElicitRequest request) {
+		return Mono.just("Invalid Mono return type");
+	}
+
+	@McpElicitation
+	public Mono<ElicitResult> invalidParameterType(String request) {
+		return Mono.just(new ElicitResult(ElicitResult.Action.ACCEPT, Map.of("test", "value")));
+	}
+
+	@McpElicitation
+	public Mono<ElicitResult> noParameters() {
+		return Mono.just(new ElicitResult(ElicitResult.Action.ACCEPT, Map.of("test", "value")));
+	}
+
+	@McpElicitation
+	public Mono<ElicitResult> tooManyParameters(ElicitRequest request, String extra) {
+		return Mono.just(new ElicitResult(ElicitResult.Action.ACCEPT, Map.of("test", "value")));
+	}
+
 }

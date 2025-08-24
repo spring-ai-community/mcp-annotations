@@ -37,4 +37,26 @@ public class SyncMcpElicitationMethodCallbackExample {
 		return new ElicitResult(ElicitResult.Action.CANCEL, null);
 	}
 
+	// Test methods for invalid scenarios
+
+	@McpElicitation
+	public String invalidReturnType(ElicitRequest request) {
+		return "Invalid return type";
+	}
+
+	@McpElicitation
+	public ElicitResult invalidParameterType(String request) {
+		return new ElicitResult(ElicitResult.Action.ACCEPT, Map.of("test", "value"));
+	}
+
+	@McpElicitation
+	public ElicitResult noParameters() {
+		return new ElicitResult(ElicitResult.Action.ACCEPT, Map.of("test", "value"));
+	}
+
+	@McpElicitation
+	public ElicitResult tooManyParameters(ElicitRequest request, String extra) {
+		return new ElicitResult(ElicitResult.Action.ACCEPT, Map.of("test", "value"));
+	}
+
 }
