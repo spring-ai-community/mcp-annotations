@@ -24,7 +24,7 @@
 
 	<properties>
 		<jsonschema.version>4.38.0</jsonschema.version>
-		<swagger-annotations.version>2.2.34</swagger-annotations.version>
+		<swagger-annotations.version>2.2.36</swagger-annotations.version>
 		<jackson-databind.version>2.19.2</jackson-databind.version>
 	</properties>
 
@@ -73,6 +73,7 @@
 			<version>${jackson-databind.version}</version>
 		</dependency>
 
+		<!-- TESTING -->
 		<dependency>
 			<groupId>io.modelcontextprotocol.sdk</groupId>
 			<artifactId>mcp-test</artifactId>
