@@ -18,11 +18,13 @@ package org.springaicommunity.mcp.spring;
 import java.lang.reflect.Method;
 import java.util.List;
 
+import org.springaicommunity.mcp.method.changed.resource.AsyncResourceListChangedSpecification;
 import org.springaicommunity.mcp.method.changed.tool.AsyncToolListChangedSpecification;
 import org.springaicommunity.mcp.method.elicitation.AsyncElicitationSpecification;
 import org.springaicommunity.mcp.method.logging.AsyncLoggingSpecification;
 import org.springaicommunity.mcp.method.progress.AsyncProgressSpecification;
 import org.springaicommunity.mcp.method.sampling.AsyncSamplingSpecification;
+import org.springaicommunity.mcp.provider.changed.resource.AsyncMcpResourceListChangedProvider;
 import org.springaicommunity.mcp.provider.changed.tool.AsyncMcpToolListChangedProvider;
 import org.springaicommunity.mcp.provider.elicitation.AsyncMcpElicitationProvider;
 import org.springaicommunity.mcp.provider.logging.AsyncMcpLoggingProvider;
@@ -158,6 +160,19 @@ public class AsyncMcpAnnotationProvider {
 
 	}
 
+	private static class SpringAiAsyncMcpResourceListChangedProvider extends AsyncMcpResourceListChangedProvider {
+
+		public SpringAiAsyncMcpResourceListChangedProvider(List<Object> resourceListChangedObjects) {
+			super(resourceListChangedObjects);
+		}
+
+		@Override
+		protected Method[] doGetClassMethods(Object bean) {
+			return AnnotationProviderUtil.beanMethods(bean);
+		}
+
+	}
+
 	public static List<AsyncLoggingSpecification> createAsyncLoggingSpecifications(List<Object> loggingObjects) {
 		return new SpringAiAsyncMcpLoggingProvider(loggingObjects).getLoggingSpecifications();
 	}
@@ -197,6 +212,12 @@ public class AsyncMcpAnnotationProvider {
 	public static List<AsyncToolListChangedSpecification> createAsyncToolListChangedSpecifications(
 			List<Object> toolListChangedObjects) {
 		return new SpringAiAsyncMcpToolListChangedProvider(toolListChangedObjects).getToolListChangedSpecifications();
+	}
+
+	public static List<AsyncResourceListChangedSpecification> createAsyncResourceListChangedSpecifications(
+			List<Object> resourceListChangedObjects) {
+		return new SpringAiAsyncMcpResourceListChangedProvider(resourceListChangedObjects)
+			.getResourceListChangedSpecifications();
 	}
 
 }

@@ -18,11 +18,13 @@ package org.springaicommunity.mcp.spring;
 import java.lang.reflect.Method;
 import java.util.List;
 
+import org.springaicommunity.mcp.method.changed.resource.SyncResourceListChangedSpecification;
 import org.springaicommunity.mcp.method.changed.tool.SyncToolListChangedSpecification;
 import org.springaicommunity.mcp.method.elicitation.SyncElicitationSpecification;
 import org.springaicommunity.mcp.method.logging.SyncLoggingSpecification;
 import org.springaicommunity.mcp.method.progress.SyncProgressSpecification;
 import org.springaicommunity.mcp.method.sampling.SyncSamplingSpecification;
+import org.springaicommunity.mcp.provider.changed.resource.SyncMcpResourceListChangedProvider;
 import org.springaicommunity.mcp.provider.changed.tool.SyncMcpToolListChangedProvider;
 import org.springaicommunity.mcp.provider.complete.SyncMcpCompletionProvider;
 import org.springaicommunity.mcp.provider.elicitation.SyncMcpElicitationProvider;
@@ -203,6 +205,19 @@ public class SyncMcpAnnotationProvider {
 
 	}
 
+	private static class SpringAiSyncMcpResourceListChangedProvider extends SyncMcpResourceListChangedProvider {
+
+		public SpringAiSyncMcpResourceListChangedProvider(List<Object> resourceListChangedObjects) {
+			super(resourceListChangedObjects);
+		}
+
+		@Override
+		protected Method[] doGetClassMethods(Object bean) {
+			return AnnotationProviderUtil.beanMethods(bean);
+		}
+
+	}
+
 	public static List<SyncToolSpecification> createSyncToolSpecifications(List<Object> toolObjects) {
 		return new SpringAiSyncToolProvider(toolObjects).getToolSpecifications();
 	}
@@ -254,6 +269,12 @@ public class SyncMcpAnnotationProvider {
 	public static List<SyncToolListChangedSpecification> createSyncToolListChangedSpecifications(
 			List<Object> toolListChangedObjects) {
 		return new SpringAiSyncMcpToolListChangedProvider(toolListChangedObjects).getToolListChangedSpecifications();
+	}
+
+	public static List<SyncResourceListChangedSpecification> createSyncResourceListChangedSpecifications(
+			List<Object> resourceListChangedObjects) {
+		return new SpringAiSyncMcpResourceListChangedProvider(resourceListChangedObjects)
+			.getResourceListChangedSpecifications();
 	}
 
 }
