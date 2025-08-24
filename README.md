@@ -113,6 +113,7 @@ The Spring integration module provides seamless integration with Spring AI and S
 - **`@McpSampling`** - Annotates methods that handle sampling requests from MCP servers
 - **`@McpElicitation`** - Annotates methods that handle elicitation requests to gather additional information from users
 - **`@McpProgress`** - Annotates methods that handle progress notifications for long-running operations
+- **`@McpToolListChanged`** - Annotates methods that handle tool list change notifications from MCP servers
 
 #### Server
 - **`@McpComplete`** - Annotates methods that provide completion functionality for prompts or URI templates
@@ -182,6 +183,11 @@ The modules provide callback implementations for each operation type:
 - `SyncMcpProgressMethodCallback` - Synchronous implementation
 - `AsyncMcpProgressMethodCallback` - Asynchronous implementation using Reactor's Mono
 
+#### Tool List Changed
+- `AbstractMcpToolListChangedMethodCallback` - Base class for tool list changed method callbacks
+- `SyncMcpToolListChangedMethodCallback` - Synchronous implementation
+- `AsyncMcpToolListChangedMethodCallback` - Asynchronous implementation using Reactor's Mono
+
 ### Providers
 
 The project includes provider classes that scan for annotated methods and create appropriate callbacks:
@@ -200,6 +206,8 @@ The project includes provider classes that scan for annotated methods and create
 - `AsyncMcpElicitationProvider` - Processes `@McpElicitation` annotations for asynchronous operations
 - `SyncMcpProgressProvider` - Processes `@McpProgress` annotations for synchronous operations
 - `AsyncMcpProgressProvider` - Processes `@McpProgress` annotations for asynchronous operations
+- `SyncMcpToolListChangedProvider` - Processes `@McpToolListChanged` annotations for synchronous operations
+- `AsyncMcpToolListChangedProvider` - Processes `@McpToolListChanged` annotations for asynchronous operations
 
 #### Stateless Providers (using McpTransportContext)
 - `SyncStatelessMcpCompleteProvider` - Processes `@McpComplete` annotations for synchronous stateless operations
@@ -1189,6 +1197,124 @@ public class MyMcpClient {
 }
 ```
 
+### Mcp Client Tool List Changed Example
+
+```java
+public class ToolListChangedHandler {
+
+    /**
+     * Handle tool list change notifications with a single parameter.
+     * @param updatedTools The updated list of tools after the change
+     */
+    @McpToolListChanged
+    public void handleToolListChanged(List<McpSchema.Tool> updatedTools) {
+        System.out.println("Tool list updated, now contains " + updatedTools.size() + " tools:");
+        for (McpSchema.Tool tool : updatedTools) {
+            System.out.println("  - " + tool.name() + ": " + tool.description());
+        }
+    }
+
+    /**
+     * Handle tool list change notifications for a specific client.
+     * @param updatedTools The updated list of tools after the change
+     */
+    @McpToolListChanged(clientId = "client-1")
+    public void handleClient1ToolListChanged(List<McpSchema.Tool> updatedTools) {
+        System.out.println("Client-1 tool list updated with " + updatedTools.size() + " tools");
+        // Process the updated tool list for client-1
+        updateClientToolCache("client-1", updatedTools);
+    }
+
+    /**
+     * Handle tool list change notifications for another specific client.
+     * @param updatedTools The updated list of tools after the change
+     */
+    @McpToolListChanged(clientId = "client-2")
+    public void handleClient2ToolListChanged(List<McpSchema.Tool> updatedTools) {
+        System.out.println("Client-2 tool list updated with " + updatedTools.size() + " tools");
+        // Process the updated tool list for client-2
+        updateClientToolCache("client-2", updatedTools);
+    }
+
+    private void updateClientToolCache(String clientId, List<McpSchema.Tool> tools) {
+        // Implementation to update tool cache for specific client
+        System.out.println("Updated tool cache for " + clientId + " with " + tools.size() + " tools");
+    }
+}
+
+public class AsyncToolListChangedHandler {
+
+    /**
+     * Handle tool list change notifications asynchronously.
+     * @param updatedTools The updated list of tools after the change
+     * @return A Mono that completes when the notification is handled
+     */
+    @McpToolListChanged
+    public Mono<Void> handleAsyncToolListChanged(List<McpSchema.Tool> updatedTools) {
+        return Mono.fromRunnable(() -> {
+            System.out.println("Async tool list update: " + updatedTools.size() + " tools");
+            // Process the updated tool list asynchronously
+            processToolListUpdate(updatedTools);
+        });
+    }
+
+    /**
+     * Handle tool list change notifications for a specific client asynchronously.
+     * @param updatedTools The updated list of tools after the change
+     * @return A Mono that completes when the notification is handled
+     */
+    @McpToolListChanged(clientId = "client-2")
+    public Mono<Void> handleClient2AsyncToolListChanged(List<McpSchema.Tool> updatedTools) {
+        return Mono.fromRunnable(() -> {
+            System.out.println("Client-2 async tool list update: " + updatedTools.size() + " tools");
+            // Process the updated tool list for client-2 asynchronously
+            processClientToolListUpdate("client-2", updatedTools);
+        }).then();
+    }
+
+    private void processToolListUpdate(List<McpSchema.Tool> tools) {
+        // Implementation to process tool list update
+        System.out.println("Processing tool list update with " + tools.size() + " tools");
+    }
+
+    private void processClientToolListUpdate(String clientId, List<McpSchema.Tool> tools) {
+        // Implementation to process tool list update for specific client
+        System.out.println("Processing tool list update for " + clientId + " with " + tools.size() + " tools");
+    }
+}
+
+public class MyMcpClient {
+
+    public static McpSyncClient createSyncClientWithToolListChanged(ToolListChangedHandler toolListChangedHandler) {
+        List<Consumer<List<McpSchema.Tool>>> toolListChangedConsumers = 
+            new SyncMcpToolListChangedProvider(List.of(toolListChangedHandler)).getToolListChangedConsumers();
+
+        McpSyncClient client = McpClient.sync(transport)
+            .capabilities(ClientCapabilities.builder()
+                // Enable capabilities...
+                .build())
+            .toolListChangedConsumers(toolListChangedConsumers)
+            .build();
+
+        return client;
+    }
+    
+    public static McpAsyncClient createAsyncClientWithToolListChanged(AsyncToolListChangedHandler asyncToolListChangedHandler) {
+        List<Function<List<McpSchema.Tool>, Mono<Void>>> toolListChangedHandlers = 
+            new AsyncMcpToolListChangedProvider(List.of(asyncToolListChangedHandler)).getToolListChangedHandlers();
+
+        McpAsyncClient client = McpClient.async(transport)
+            .capabilities(ClientCapabilities.builder()
+                // Enable capabilities...
+                .build())
+            .toolListChangedHandlers(toolListChangedHandlers)
+            .build();
+
+        return client;
+    }
+}
+```
+
 ### Mcp Client Elicitation Example
 
 ```java
@@ -1607,6 +1733,18 @@ public class McpConfig {
         return SpringAiMcpAnnotationProvider.createAsyncProgressSpecifications(asyncProgressHandlers);
     }
     
+    @Bean
+    public List<SyncToolListChangedSpecification> syncToolListChangedSpecifications(
+            List<ToolListChangedHandler> toolListChangedHandlers) {
+        return SpringAiMcpAnnotationProvider.createSyncToolListChangedSpecifications(toolListChangedHandlers);
+    }
+    
+    @Bean
+    public List<AsyncToolListChangedSpecification> asyncToolListChangedSpecifications(
+            List<AsyncToolListChangedHandler> asyncToolListChangedHandlers) {
+        return SpringAiMcpAnnotationProvider.createAsyncToolListChangedSpecifications(asyncToolListChangedHandlers);
+    }
+    
     // Stateless Spring Integration Examples
     
     @Bean
@@ -1643,6 +1781,7 @@ public class McpConfig {
 - **Logging consumer support** - Handle logging message notifications from MCP servers
 - **Sampling support** - Handle sampling requests from MCP servers
 - **Progress notification support** - Handle progress notifications for long-running operations
+- **Tool list changed support** - Handle tool list change notifications from MCP servers when tools are dynamically added, removed, or modified
 - **Spring integration** - Seamless integration with Spring Framework and Spring AI, including support for both stateful and stateless operations
 - **AOP proxy support** - Proper handling of Spring AOP proxies when processing annotations
 
