@@ -122,9 +122,12 @@ The Spring integration module provides seamless integration with Spring AI and S
 - **`@McpTool`** - Annotates methods that implement MCP tools with automatic JSON schema generation
   - **`@McpToolParam`** - Annotates tool method parameters with descriptions and requirement specifications
 
-#### Special Parameter Annotations
+#### Special Parameters and Annotations
 - **`@McpProgressToken`** - Marks a method parameter to receive the progress token from the request. This parameter is automatically injected and excluded from the generated JSON schema
 - **`McpMeta`** - Special parameter type that provides access to metadata from MCP requests, notifications, and results. This parameter is automatically injected and excluded from parameter count limits and JSON schema generation
+- **`McpSyncServerExchange`** - Special parameter type for stateful synchronous operations that provides access to server exchange functionality including logging notifications, progress updates, and other server-side operations. This parameter is automatically injected and excluded from JSON schema generation
+- **`McpAsyncServerExchange`** - Special parameter type for stateful asynchronous operations that provides access to server exchange functionality with reactive support. This parameter is automatically injected and excluded from JSON schema generation
+- **`McpTransportContext`** - Special parameter type for stateless operations that provides lightweight access to transport-level context without full server exchange functionality. This parameter is automatically injected and excluded from JSON schema generation
 
 ### Method Callbacks
 
