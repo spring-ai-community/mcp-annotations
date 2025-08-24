@@ -16,6 +16,7 @@ import io.modelcontextprotocol.spec.McpSchema.PromptReference;
 import io.modelcontextprotocol.spec.McpSchema.ResourceReference;
 import org.junit.jupiter.api.Test;
 import org.springaicommunity.mcp.annotation.McpComplete;
+import org.springaicommunity.mcp.annotation.McpMeta;
 import org.springaicommunity.mcp.annotation.McpProgressToken;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -122,6 +123,25 @@ public class SyncMcpCompleteMethodCallbackTests {
 
 		public CompleteResult duplicateProgressTokenParameters(@McpProgressToken String token1,
 				@McpProgressToken String token2) {
+			return new CompleteResult(new CompleteCompletion(List.of(), 0, false));
+		}
+
+		public CompleteResult getCompletionWithMeta(McpMeta meta, CompleteRequest request) {
+			String metaInfo = meta != null && meta.get("key") != null ? " (meta: " + meta.get("key") + ")"
+					: " (no meta)";
+			return new CompleteResult(new CompleteCompletion(
+					List.of("Completion with meta" + metaInfo + " for: " + request.argument().value()), 1, false));
+		}
+
+		public CompleteResult getCompletionWithMetaAndMixed(McpSyncServerExchange exchange, McpMeta meta, String value,
+				CompleteRequest request) {
+			String metaInfo = meta != null && meta.get("key") != null ? " (meta: " + meta.get("key") + ")"
+					: " (no meta)";
+			return new CompleteResult(new CompleteCompletion(List.of("Mixed completion" + metaInfo + " with value: "
+					+ value + " and request: " + request.argument().value()), 1, false));
+		}
+
+		public CompleteResult duplicateMetaParameters(McpMeta meta1, McpMeta meta2) {
 			return new CompleteResult(new CompleteCompletion(List.of(), 0, false));
 		}
 
@@ -571,6 +591,95 @@ public class SyncMcpCompleteMethodCallbackTests {
 			.prompt("test-prompt")
 			.build()).isInstanceOf(IllegalArgumentException.class)
 			.hasMessageContaining("Method cannot have more than one @McpProgressToken parameter");
+	}
+
+	@Test
+	public void testCallbackWithMeta() throws Exception {
+		TestCompleteProvider provider = new TestCompleteProvider();
+		Method method = TestCompleteProvider.class.getMethod("getCompletionWithMeta", McpMeta.class,
+				CompleteRequest.class);
+
+		BiFunction<McpSyncServerExchange, CompleteRequest, CompleteResult> callback = SyncMcpCompleteMethodCallback
+			.builder()
+			.method(method)
+			.bean(provider)
+			.prompt("test-prompt")
+			.build();
+
+		McpSyncServerExchange exchange = mock(McpSyncServerExchange.class);
+		CompleteRequest request = new CompleteRequest(new PromptReference("test-prompt"),
+				new CompleteRequest.CompleteArgument("test", "value"), java.util.Map.of("key", "test-value"));
+
+		CompleteResult result = callback.apply(exchange, request);
+
+		assertThat(result).isNotNull();
+		assertThat(result.completion()).isNotNull();
+		assertThat(result.completion().values()).hasSize(1);
+		assertThat(result.completion().values().get(0)).isEqualTo("Completion with meta (meta: test-value) for: value");
+	}
+
+	@Test
+	public void testCallbackWithMetaNull() throws Exception {
+		TestCompleteProvider provider = new TestCompleteProvider();
+		Method method = TestCompleteProvider.class.getMethod("getCompletionWithMeta", McpMeta.class,
+				CompleteRequest.class);
+
+		BiFunction<McpSyncServerExchange, CompleteRequest, CompleteResult> callback = SyncMcpCompleteMethodCallback
+			.builder()
+			.method(method)
+			.bean(provider)
+			.prompt("test-prompt")
+			.build();
+
+		McpSyncServerExchange exchange = mock(McpSyncServerExchange.class);
+		CompleteRequest request = new CompleteRequest(new PromptReference("test-prompt"),
+				new CompleteRequest.CompleteArgument("test", "value"));
+
+		CompleteResult result = callback.apply(exchange, request);
+
+		assertThat(result).isNotNull();
+		assertThat(result.completion()).isNotNull();
+		assertThat(result.completion().values()).hasSize(1);
+		assertThat(result.completion().values().get(0)).isEqualTo("Completion with meta (no meta) for: value");
+	}
+
+	@Test
+	public void testCallbackWithMetaAndMixed() throws Exception {
+		TestCompleteProvider provider = new TestCompleteProvider();
+		Method method = TestCompleteProvider.class.getMethod("getCompletionWithMetaAndMixed",
+				McpSyncServerExchange.class, McpMeta.class, String.class, CompleteRequest.class);
+
+		BiFunction<McpSyncServerExchange, CompleteRequest, CompleteResult> callback = SyncMcpCompleteMethodCallback
+			.builder()
+			.method(method)
+			.bean(provider)
+			.prompt("test-prompt")
+			.build();
+
+		McpSyncServerExchange exchange = mock(McpSyncServerExchange.class);
+		CompleteRequest request = new CompleteRequest(new PromptReference("test-prompt"),
+				new CompleteRequest.CompleteArgument("test", "value"), java.util.Map.of("key", "test-value"));
+
+		CompleteResult result = callback.apply(exchange, request);
+
+		assertThat(result).isNotNull();
+		assertThat(result.completion()).isNotNull();
+		assertThat(result.completion().values()).hasSize(1);
+		assertThat(result.completion().values().get(0))
+			.isEqualTo("Mixed completion (meta: test-value) with value: value and request: value");
+	}
+
+	@Test
+	public void testDuplicateMetaParameters() throws Exception {
+		TestCompleteProvider provider = new TestCompleteProvider();
+		Method method = TestCompleteProvider.class.getMethod("duplicateMetaParameters", McpMeta.class, McpMeta.class);
+
+		assertThatThrownBy(() -> SyncMcpCompleteMethodCallback.builder()
+			.method(method)
+			.bean(provider)
+			.prompt("test-prompt")
+			.build()).isInstanceOf(IllegalArgumentException.class)
+			.hasMessageContaining("Method cannot have more than one McpMeta parameter");
 	}
 
 }

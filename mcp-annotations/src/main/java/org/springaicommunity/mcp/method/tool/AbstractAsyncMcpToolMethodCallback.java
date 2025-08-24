@@ -23,6 +23,7 @@ import java.util.Map;
 import java.util.stream.Stream;
 
 import org.reactivestreams.Publisher;
+import org.springaicommunity.mcp.annotation.McpMeta;
 import org.springaicommunity.mcp.annotation.McpProgressToken;
 import org.springaicommunity.mcp.annotation.McpTool;
 import org.springaicommunity.mcp.method.tool.utils.JsonParser;
@@ -102,6 +103,12 @@ public abstract class AbstractAsyncMcpToolMethodCallback<T> {
 			if (parameter.isAnnotationPresent(McpProgressToken.class)) {
 				// Return the progress token from the request
 				return request != null ? request.progressToken() : null;
+			}
+
+			// Check if parameter is McpMeta type
+			if (McpMeta.class.isAssignableFrom(parameter.getType())) {
+				// Return the meta from the request wrapped in McpMeta
+				return request != null ? new McpMeta(request.meta()) : new McpMeta(null);
 			}
 
 			// Check if parameter is CallToolRequest type

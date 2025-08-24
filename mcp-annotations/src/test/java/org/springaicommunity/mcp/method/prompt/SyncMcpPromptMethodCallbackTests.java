@@ -16,6 +16,7 @@ import java.util.function.BiFunction;
 
 import org.junit.jupiter.api.Test;
 import org.springaicommunity.mcp.annotation.McpArg;
+import org.springaicommunity.mcp.annotation.McpMeta;
 import org.springaicommunity.mcp.annotation.McpProgressToken;
 import org.springaicommunity.mcp.annotation.McpPrompt;
 
@@ -131,6 +132,27 @@ public class SyncMcpPromptMethodCallbackTests {
 
 		public GetPromptResult duplicateProgressTokenParameters(@McpProgressToken String token1,
 				@McpProgressToken String token2) {
+			return new GetPromptResult("Invalid", List.of());
+		}
+
+		@McpPrompt(name = "meta-prompt", description = "A prompt with meta parameter")
+		public GetPromptResult getPromptWithMeta(
+				@McpArg(name = "name", description = "The user's name", required = true) String name, McpMeta meta) {
+			String metaInfo = meta != null && meta.meta() != null ? meta.meta().toString() : "null";
+			return new GetPromptResult("Meta prompt", List
+				.of(new PromptMessage(Role.ASSISTANT, new TextContent("Hello " + name + ", Meta: " + metaInfo))));
+		}
+
+		@McpPrompt(name = "mixed-with-meta", description = "A prompt with mixed args and meta")
+		public GetPromptResult getPromptWithMixedAndMeta(McpSyncServerExchange exchange,
+				@McpArg(name = "name", description = "The user's name", required = true) String name, McpMeta meta,
+				GetPromptRequest request) {
+			String metaInfo = meta != null && meta.meta() != null ? meta.meta().toString() : "null";
+			return new GetPromptResult("Mixed with meta prompt", List.of(new PromptMessage(Role.ASSISTANT,
+					new TextContent("Hello " + name + " from " + request.name() + ", Meta: " + metaInfo))));
+		}
+
+		public GetPromptResult duplicateMetaParameters(McpMeta meta1, McpMeta meta2) {
 			return new GetPromptResult("Invalid", List.of());
 		}
 
@@ -568,6 +590,116 @@ public class SyncMcpPromptMethodCallbackTests {
 				() -> SyncMcpPromptMethodCallback.builder().method(method).bean(provider).prompt(prompt).build())
 			.isInstanceOf(IllegalArgumentException.class)
 			.hasMessageContaining("Method cannot have more than one @McpProgressToken parameter");
+	}
+
+	@Test
+	public void testCallbackWithMeta() throws Exception {
+		TestPromptProvider provider = new TestPromptProvider();
+		Method method = TestPromptProvider.class.getMethod("getPromptWithMeta", String.class, McpMeta.class);
+
+		Prompt prompt = createTestPrompt("meta-prompt", "A prompt with meta parameter");
+
+		BiFunction<McpSyncServerExchange, GetPromptRequest, GetPromptResult> callback = SyncMcpPromptMethodCallback
+			.builder()
+			.method(method)
+			.bean(provider)
+			.prompt(prompt)
+			.build();
+
+		McpSyncServerExchange exchange = mock(McpSyncServerExchange.class);
+		Map<String, Object> args = new HashMap<>();
+		args.put("name", "John");
+
+		// Create request with meta data
+		GetPromptRequest request = new GetPromptRequest("meta-prompt", args,
+				Map.of("userId", "user123", "sessionId", "session456"));
+
+		GetPromptResult result = callback.apply(exchange, request);
+
+		assertThat(result).isNotNull();
+		assertThat(result.description()).isEqualTo("Meta prompt");
+		assertThat(result.messages()).hasSize(1);
+		PromptMessage message = result.messages().get(0);
+		assertThat(message.role()).isEqualTo(Role.ASSISTANT);
+		assertThat(((TextContent) message.content()).text())
+			.contains("Hello John, Meta: {userId=user123, sessionId=session456}");
+	}
+
+	@Test
+	public void testCallbackWithMetaNull() throws Exception {
+		TestPromptProvider provider = new TestPromptProvider();
+		Method method = TestPromptProvider.class.getMethod("getPromptWithMeta", String.class, McpMeta.class);
+
+		Prompt prompt = createTestPrompt("meta-prompt", "A prompt with meta parameter");
+
+		BiFunction<McpSyncServerExchange, GetPromptRequest, GetPromptResult> callback = SyncMcpPromptMethodCallback
+			.builder()
+			.method(method)
+			.bean(provider)
+			.prompt(prompt)
+			.build();
+
+		McpSyncServerExchange exchange = mock(McpSyncServerExchange.class);
+		Map<String, Object> args = new HashMap<>();
+		args.put("name", "John");
+
+		// Create request without meta
+		GetPromptRequest request = new GetPromptRequest("meta-prompt", args);
+
+		GetPromptResult result = callback.apply(exchange, request);
+
+		assertThat(result).isNotNull();
+		assertThat(result.description()).isEqualTo("Meta prompt");
+		assertThat(result.messages()).hasSize(1);
+		PromptMessage message = result.messages().get(0);
+		assertThat(message.role()).isEqualTo(Role.ASSISTANT);
+		assertThat(((TextContent) message.content()).text()).isEqualTo("Hello John, Meta: {}");
+	}
+
+	@Test
+	public void testCallbackWithMixedAndMeta() throws Exception {
+		TestPromptProvider provider = new TestPromptProvider();
+		Method method = TestPromptProvider.class.getMethod("getPromptWithMixedAndMeta", McpSyncServerExchange.class,
+				String.class, McpMeta.class, GetPromptRequest.class);
+
+		Prompt prompt = createTestPrompt("mixed-with-meta", "A prompt with mixed args and meta");
+
+		BiFunction<McpSyncServerExchange, GetPromptRequest, GetPromptResult> callback = SyncMcpPromptMethodCallback
+			.builder()
+			.method(method)
+			.bean(provider)
+			.prompt(prompt)
+			.build();
+
+		McpSyncServerExchange exchange = mock(McpSyncServerExchange.class);
+		Map<String, Object> args = new HashMap<>();
+		args.put("name", "John");
+
+		// Create request with meta data
+		GetPromptRequest request = new GetPromptRequest("mixed-with-meta", args, Map.of("userId", "user123"));
+
+		GetPromptResult result = callback.apply(exchange, request);
+
+		assertThat(result).isNotNull();
+		assertThat(result.description()).isEqualTo("Mixed with meta prompt");
+		assertThat(result.messages()).hasSize(1);
+		PromptMessage message = result.messages().get(0);
+		assertThat(message.role()).isEqualTo(Role.ASSISTANT);
+		assertThat(((TextContent) message.content()).text())
+			.isEqualTo("Hello John from mixed-with-meta, Meta: {userId=user123}");
+	}
+
+	@Test
+	public void testDuplicateMetaParameters() throws Exception {
+		TestPromptProvider provider = new TestPromptProvider();
+		Method method = TestPromptProvider.class.getMethod("duplicateMetaParameters", McpMeta.class, McpMeta.class);
+
+		Prompt prompt = createTestPrompt("invalid", "Invalid parameters");
+
+		assertThatThrownBy(
+				() -> SyncMcpPromptMethodCallback.builder().method(method).bean(provider).prompt(prompt).build())
+			.isInstanceOf(IllegalArgumentException.class)
+			.hasMessageContaining("Method cannot have more than one McpMeta parameter");
 	}
 
 }

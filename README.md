@@ -124,6 +124,7 @@ The Spring integration module provides seamless integration with Spring AI and S
 
 #### Special Parameter Annotations
 - **`@McpProgressToken`** - Marks a method parameter to receive the progress token from the request. This parameter is automatically injected and excluded from the generated JSON schema
+- **`McpMeta`** - Special parameter type that provides access to metadata from MCP requests, notifications, and results. This parameter is automatically injected and excluded from parameter count limits and JSON schema generation
 
 ### Method Callbacks
 
@@ -637,6 +638,136 @@ public List<String> completeWithProgress(
 ```
 
 This feature enables better tracking and monitoring of MCP operations, especially for long-running tasks that need to report progress back to clients.
+
+#### McpMeta Support
+
+The `McpMeta` class provides access to metadata from MCP requests, notifications, and results. This is useful for accessing contextual information that clients may include with their requests.
+
+When a method parameter is of type `McpMeta`:
+- The parameter automatically receives metadata from the request wrapped in an `McpMeta` object
+- The parameter is excluded from parameter count limits and JSON schema generation
+- The parameter provides convenient access to metadata through the `get(String key)` method
+- If no metadata is present in the request, an empty `McpMeta` object is injected
+
+Example usage with tools:
+
+```java
+@McpTool(name = "personalized-task", description = "Performs a task with user context")
+public String personalizedTask(
+        @McpToolParam(description = "Task name", required = true) String taskName,
+        McpMeta meta) {
+    
+    // Access metadata from the request
+    String userId = (String) meta.get("userId");
+    String sessionId = (String) meta.get("sessionId");
+    
+    if (userId != null) {
+        return "Task " + taskName + " executed for user: " + userId + 
+               " (session: " + sessionId + ")";
+    }
+    
+    return "Task " + taskName + " executed (no user context)";
+}
+
+// Tool with both CallToolRequest and McpMeta
+@McpTool(name = "flexible-task", description = "Flexible task with metadata")
+public CallToolResult flexibleTask(
+        CallToolRequest request,
+        McpMeta meta) {
+    
+    // Access both the full request and metadata
+    Map<String, Object> args = request.arguments();
+    String userRole = (String) meta.get("userRole");
+    
+    String result = "Processed " + args.size() + " arguments";
+    if (userRole != null) {
+        result += " for user with role: " + userRole;
+    }
+    
+    return CallToolResult.builder()
+        .addTextContent(result)
+        .build();
+}
+```
+
+The `McpMeta` parameter is also supported in other MCP callback types:
+
+**Resource callbacks:**
+```java
+@McpResource(uri = "user-data://{id}", name = "User Data", description = "User data with context")
+public ReadResourceResult getUserData(
+        String id,
+        McpMeta meta) {
+    
+    String requestingUser = (String) meta.get("requestingUser");
+    String accessLevel = (String) meta.get("accessLevel");
+    
+    // Use metadata to customize response based on requesting user
+    String content = "User data for " + id;
+    if ("admin".equals(accessLevel)) {
+        content += " (full access granted to " + requestingUser + ")";
+    } else {
+        content += " (limited access)";
+    }
+    
+    return new ReadResourceResult(List.of(
+        new TextResourceContents("user-data://" + id, "text/plain", content)
+    ));
+}
+```
+
+**Prompt callbacks:**
+```java
+@McpPrompt(name = "contextual-prompt", description = "Generate contextual prompt")
+public GetPromptResult contextualPrompt(
+        @McpArg(name = "topic", required = true) String topic,
+        McpMeta meta) {
+    
+    String userPreference = (String) meta.get("preferredStyle");
+    String language = (String) meta.get("language");
+    
+    String message = "Let's discuss " + topic;
+    if ("formal".equals(userPreference)) {
+        message = "I would like to formally discuss the topic of " + topic;
+    } else if ("casual".equals(userPreference)) {
+        message = "Hey! Let's chat about " + topic;
+    }
+    
+    if (language != null && !"en".equals(language)) {
+        message += " (Note: Response requested in " + language + ")";
+    }
+    
+    return new GetPromptResult("Contextual Prompt",
+        List.of(new PromptMessage(Role.ASSISTANT, new TextContent(message))));
+}
+```
+
+**Complete callbacks:**
+```java
+@McpComplete(prompt = "smart-complete")
+public List<String> smartComplete(
+        String prefix,
+        McpMeta meta) {
+    
+    String userLevel = (String) meta.get("userLevel");
+    String domain = (String) meta.get("domain");
+    
+    // Customize completions based on user context
+    List<String> completions = generateBasicCompletions(prefix);
+    
+    if ("expert".equals(userLevel)) {
+        completions.addAll(generateAdvancedCompletions(prefix));
+    }
+    
+    if (domain != null) {
+        completions = filterByDomain(completions, domain);
+    }
+    
+    return completions;
+}
+```
+
+This feature enables context-aware MCP operations where the behavior can be customized based on client-provided metadata such as user identity, preferences, session information, or any other contextual data.
 
 ### Async Tool Example
 
