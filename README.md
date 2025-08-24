@@ -114,6 +114,7 @@ The Spring integration module provides seamless integration with Spring AI and S
 - **`@McpElicitation`** - Annotates methods that handle elicitation requests to gather additional information from users
 - **`@McpProgress`** - Annotates methods that handle progress notifications for long-running operations
 - **`@McpToolListChanged`** - Annotates methods that handle tool list change notifications from MCP servers
+- **`@McpResourceListChanged`** - Annotates methods that handle resource list change notifications from MCP servers
 
 #### Server
 - **`@McpComplete`** - Annotates methods that provide completion functionality for prompts or URI templates
@@ -188,6 +189,11 @@ The modules provide callback implementations for each operation type:
 - `SyncMcpToolListChangedMethodCallback` - Synchronous implementation
 - `AsyncMcpToolListChangedMethodCallback` - Asynchronous implementation using Reactor's Mono
 
+#### Resource List Changed
+- `AbstractMcpResourceListChangedMethodCallback` - Base class for resource list changed method callbacks
+- `SyncMcpResourceListChangedMethodCallback` - Synchronous implementation
+- `AsyncMcpResourceListChangedMethodCallback` - Asynchronous implementation using Reactor's Mono
+
 ### Providers
 
 The project includes provider classes that scan for annotated methods and create appropriate callbacks:
@@ -208,6 +214,8 @@ The project includes provider classes that scan for annotated methods and create
 - `AsyncMcpProgressProvider` - Processes `@McpProgress` annotations for asynchronous operations
 - `SyncMcpToolListChangedProvider` - Processes `@McpToolListChanged` annotations for synchronous operations
 - `AsyncMcpToolListChangedProvider` - Processes `@McpToolListChanged` annotations for asynchronous operations
+- `SyncMcpResourceListChangedProvider` - Processes `@McpResourceListChanged` annotations for synchronous operations
+- `AsyncMcpResourceListChangedProvider` - Processes `@McpResourceListChanged` annotations for asynchronous operations
 
 #### Stateless Providers (using McpTransportContext)
 - `SyncStatelessMcpCompleteProvider` - Processes `@McpComplete` annotations for synchronous stateless operations
@@ -1315,6 +1323,124 @@ public class MyMcpClient {
 }
 ```
 
+### Mcp Client Resource List Changed Example
+
+```java
+public class ResourceListChangedHandler {
+
+    /**
+     * Handle resource list change notifications with a single parameter.
+     * @param updatedResources The updated list of resources after the change
+     */
+    @McpResourceListChanged
+    public void handleResourceListChanged(List<McpSchema.Resource> updatedResources) {
+        System.out.println("Resource list updated, now contains " + updatedResources.size() + " resources:");
+        for (McpSchema.Resource resource : updatedResources) {
+            System.out.println("  - " + resource.name() + ": " + resource.description());
+        }
+    }
+
+    /**
+     * Handle resource list change notifications for a specific client.
+     * @param updatedResources The updated list of resources after the change
+     */
+    @McpResourceListChanged(clientId = "client-1")
+    public void handleClient1ResourceListChanged(List<McpSchema.Resource> updatedResources) {
+        System.out.println("Client-1 resource list updated with " + updatedResources.size() + " resources");
+        // Process the updated resource list for client-1
+        updateClientResourceCache("client-1", updatedResources);
+    }
+
+    /**
+     * Handle resource list change notifications for another specific client.
+     * @param updatedResources The updated list of resources after the change
+     */
+    @McpResourceListChanged(clientId = "client-2")
+    public void handleClient2ResourceListChanged(List<McpSchema.Resource> updatedResources) {
+        System.out.println("Client-2 resource list updated with " + updatedResources.size() + " resources");
+        // Process the updated resource list for client-2
+        updateClientResourceCache("client-2", updatedResources);
+    }
+
+    private void updateClientResourceCache(String clientId, List<McpSchema.Resource> resources) {
+        // Implementation to update resource cache for specific client
+        System.out.println("Updated resource cache for " + clientId + " with " + resources.size() + " resources");
+    }
+}
+
+public class AsyncResourceListChangedHandler {
+
+    /**
+     * Handle resource list change notifications asynchronously.
+     * @param updatedResources The updated list of resources after the change
+     * @return A Mono that completes when the notification is handled
+     */
+    @McpResourceListChanged
+    public Mono<Void> handleAsyncResourceListChanged(List<McpSchema.Resource> updatedResources) {
+        return Mono.fromRunnable(() -> {
+            System.out.println("Async resource list update: " + updatedResources.size() + " resources");
+            // Process the updated resource list asynchronously
+            processResourceListUpdate(updatedResources);
+        });
+    }
+
+    /**
+     * Handle resource list change notifications for a specific client asynchronously.
+     * @param updatedResources The updated list of resources after the change
+     * @return A Mono that completes when the notification is handled
+     */
+    @McpResourceListChanged(clientId = "client-2")
+    public Mono<Void> handleClient2AsyncResourceListChanged(List<McpSchema.Resource> updatedResources) {
+        return Mono.fromRunnable(() -> {
+            System.out.println("Client-2 async resource list update: " + updatedResources.size() + " resources");
+            // Process the updated resource list for client-2 asynchronously
+            processClientResourceListUpdate("client-2", updatedResources);
+        }).then();
+    }
+
+    private void processResourceListUpdate(List<McpSchema.Resource> resources) {
+        // Implementation to process resource list update
+        System.out.println("Processing resource list update with " + resources.size() + " resources");
+    }
+
+    private void processClientResourceListUpdate(String clientId, List<McpSchema.Resource> resources) {
+        // Implementation to process resource list update for specific client
+        System.out.println("Processing resource list update for " + clientId + " with " + resources.size() + " resources");
+    }
+}
+
+public class MyMcpClient {
+
+    public static McpSyncClient createSyncClientWithResourceListChanged(ResourceListChangedHandler resourceListChangedHandler) {
+        List<Consumer<List<McpSchema.Resource>>> resourceListChangedConsumers = 
+            new SyncMcpResourceListChangedProvider(List.of(resourceListChangedHandler)).getResourceListChangedConsumers();
+
+        McpSyncClient client = McpClient.sync(transport)
+            .capabilities(ClientCapabilities.builder()
+                // Enable capabilities...
+                .build())
+            .resourceListChangedConsumers(resourceListChangedConsumers)
+            .build();
+
+        return client;
+    }
+    
+    public static McpAsyncClient createAsyncClientWithResourceListChanged(AsyncResourceListChangedHandler asyncResourceListChangedHandler) {
+        List<Function<List<McpSchema.Resource>, Mono<Void>>> resourceListChangedHandlers = 
+            new AsyncMcpResourceListChangedProvider(List.of(asyncResourceListChangedHandler)).getResourceListChangedHandlers();
+
+        McpAsyncClient client = McpClient.async(transport)
+            .capabilities(ClientCapabilities.builder()
+                // Enable capabilities...
+                .build())
+            .resourceListChangedHandlers(resourceListChangedHandlers)
+            .build();
+
+        return client;
+    }
+}
+```
+
 ### Mcp Client Elicitation Example
 
 ```java
@@ -1465,7 +1591,6 @@ public class MyMcpClient {
     }
 }
 ```
-
 
 ### Stateless Examples
 
@@ -1743,6 +1868,18 @@ public class McpConfig {
     public List<AsyncToolListChangedSpecification> asyncToolListChangedSpecifications(
             List<AsyncToolListChangedHandler> asyncToolListChangedHandlers) {
         return SpringAiMcpAnnotationProvider.createAsyncToolListChangedSpecifications(asyncToolListChangedHandlers);
+    }
+    
+    @Bean
+    public List<SyncResourceListChangedSpecification> syncResourceListChangedSpecifications(
+            List<ResourceListChangedHandler> resourceListChangedHandlers) {
+        return SpringAiMcpAnnotationProvider.createSyncResourceListChangedSpecifications(resourceListChangedHandlers);
+    }
+    
+    @Bean
+    public List<AsyncResourceListChangedSpecification> asyncResourceListChangedSpecifications(
+            List<AsyncResourceListChangedHandler> asyncResourceListChangedHandlers) {
+        return SpringAiMcpAnnotationProvider.createAsyncResourceListChangedSpecifications(asyncResourceListChangedHandlers);
     }
     
     // Stateless Spring Integration Examples
