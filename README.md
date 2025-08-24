@@ -115,6 +115,7 @@ The Spring integration module provides seamless integration with Spring AI and S
 - **`@McpProgress`** - Annotates methods that handle progress notifications for long-running operations
 - **`@McpToolListChanged`** - Annotates methods that handle tool list change notifications from MCP servers
 - **`@McpResourceListChanged`** - Annotates methods that handle resource list change notifications from MCP servers
+- **`@McpPromptListChanged`** - Annotates methods that handle prompt list change notifications from MCP servers
 
 #### Server
 - **`@McpComplete`** - Annotates methods that provide completion functionality for prompts or URI templates
@@ -216,6 +217,8 @@ The project includes provider classes that scan for annotated methods and create
 - `AsyncMcpToolListChangedProvider` - Processes `@McpToolListChanged` annotations for asynchronous operations
 - `SyncMcpResourceListChangedProvider` - Processes `@McpResourceListChanged` annotations for synchronous operations
 - `AsyncMcpResourceListChangedProvider` - Processes `@McpResourceListChanged` annotations for asynchronous operations
+- `SyncMcpPromptListChangedProvider` - Processes `@McpPromptListChanged` annotations for synchronous operations
+- `AsyncMcpPromptListChangedProvider` - Processes `@McpPromptListChanged` annotations for asynchronous operations
 
 #### Stateless Providers (using McpTransportContext)
 - `SyncStatelessMcpCompleteProvider` - Processes `@McpComplete` annotations for synchronous stateless operations
@@ -1441,6 +1444,124 @@ public class MyMcpClient {
 }
 ```
 
+### Mcp Client Prompt List Changed Example
+
+```java
+public class PromptListChangedHandler {
+
+    /**
+     * Handle prompt list change notifications with a single parameter.
+     * @param updatedPrompts The updated list of prompts after the change
+     */
+    @McpPromptListChanged
+    public void handlePromptListChanged(List<McpSchema.Prompt> updatedPrompts) {
+        System.out.println("Prompt list updated, now contains " + updatedPrompts.size() + " prompts:");
+        for (McpSchema.Prompt prompt : updatedPrompts) {
+            System.out.println("  - " + prompt.name() + ": " + prompt.description());
+        }
+    }
+
+    /**
+     * Handle prompt list change notifications for a specific client.
+     * @param updatedPrompts The updated list of prompts after the change
+     */
+    @McpPromptListChanged(clientId = "client-1")
+    public void handleClient1PromptListChanged(List<McpSchema.Prompt> updatedPrompts) {
+        System.out.println("Client-1 prompt list updated with " + updatedPrompts.size() + " prompts");
+        // Process the updated prompt list for client-1
+        updateClientPromptCache("client-1", updatedPrompts);
+    }
+
+    /**
+     * Handle prompt list change notifications for another specific client.
+     * @param updatedPrompts The updated list of prompts after the change
+     */
+    @McpPromptListChanged(clientId = "client-2")
+    public void handleClient2PromptListChanged(List<McpSchema.Prompt> updatedPrompts) {
+        System.out.println("Client-2 prompt list updated with " + updatedPrompts.size() + " prompts");
+        // Process the updated prompt list for client-2
+        updateClientPromptCache("client-2", updatedPrompts);
+    }
+
+    private void updateClientPromptCache(String clientId, List<McpSchema.Prompt> prompts) {
+        // Implementation to update prompt cache for specific client
+        System.out.println("Updated prompt cache for " + clientId + " with " + prompts.size() + " prompts");
+    }
+}
+
+public class AsyncPromptListChangedHandler {
+
+    /**
+     * Handle prompt list change notifications asynchronously.
+     * @param updatedPrompts The updated list of prompts after the change
+     * @return A Mono that completes when the notification is handled
+     */
+    @McpPromptListChanged
+    public Mono<Void> handleAsyncPromptListChanged(List<McpSchema.Prompt> updatedPrompts) {
+        return Mono.fromRunnable(() -> {
+            System.out.println("Async prompt list update: " + updatedPrompts.size() + " prompts");
+            // Process the updated prompt list asynchronously
+            processPromptListUpdate(updatedPrompts);
+        });
+    }
+
+    /**
+     * Handle prompt list change notifications for a specific client asynchronously.
+     * @param updatedPrompts The updated list of prompts after the change
+     * @return A Mono that completes when the notification is handled
+     */
+    @McpPromptListChanged(clientId = "client-2")
+    public Mono<Void> handleClient2AsyncPromptListChanged(List<McpSchema.Prompt> updatedPrompts) {
+        return Mono.fromRunnable(() -> {
+            System.out.println("Client-2 async prompt list update: " + updatedPrompts.size() + " prompts");
+            // Process the updated prompt list for client-2 asynchronously
+            processClientPromptListUpdate("client-2", updatedPrompts);
+        }).then();
+    }
+
+    private void processPromptListUpdate(List<McpSchema.Prompt> prompts) {
+        // Implementation to process prompt list update
+        System.out.println("Processing prompt list update with " + prompts.size() + " prompts");
+    }
+
+    private void processClientPromptListUpdate(String clientId, List<McpSchema.Prompt> prompts) {
+        // Implementation to process prompt list update for specific client
+        System.out.println("Processing prompt list update for " + clientId + " with " + prompts.size() + " prompts");
+    }
+}
+
+public class MyMcpClient {
+
+    public static McpSyncClient createSyncClientWithPromptListChanged(PromptListChangedHandler promptListChangedHandler) {
+        List<Consumer<List<McpSchema.Prompt>>> promptListChangedConsumers = 
+            new SyncMcpPromptListChangedProvider(List.of(promptListChangedHandler)).getPromptListChangedConsumers();
+
+        McpSyncClient client = McpClient.sync(transport)
+            .capabilities(ClientCapabilities.builder()
+                // Enable capabilities...
+                .build())
+            .promptListChangedConsumers(promptListChangedConsumers)
+            .build();
+
+        return client;
+    }
+    
+    public static McpAsyncClient createAsyncClientWithPromptListChanged(AsyncPromptListChangedHandler asyncPromptListChangedHandler) {
+        List<Function<List<McpSchema.Prompt>, Mono<Void>>> promptListChangedHandlers = 
+            new AsyncMcpPromptListChangedProvider(List.of(asyncPromptListChangedHandler)).getPromptListChangedHandlers();
+
+        McpAsyncClient client = McpClient.async(transport)
+            .capabilities(ClientCapabilities.builder()
+                // Enable capabilities...
+                .build())
+            .promptListChangedHandlers(promptListChangedHandlers)
+            .build();
+
+        return client;
+    }
+}
+```
+
 ### Mcp Client Elicitation Example
 
 ```java
@@ -1880,6 +2001,18 @@ public class McpConfig {
     public List<AsyncResourceListChangedSpecification> asyncResourceListChangedSpecifications(
             List<AsyncResourceListChangedHandler> asyncResourceListChangedHandlers) {
         return SpringAiMcpAnnotationProvider.createAsyncResourceListChangedSpecifications(asyncResourceListChangedHandlers);
+    }
+    
+    @Bean
+    public List<SyncPromptListChangedSpecification> syncPromptListChangedSpecifications(
+            List<PromptListChangedHandler> promptListChangedHandlers) {
+        return SpringAiMcpAnnotationProvider.createSyncPromptListChangedSpecifications(promptListChangedHandlers);
+    }
+    
+    @Bean
+    public List<AsyncPromptListChangedSpecification> asyncPromptListChangedSpecifications(
+            List<AsyncPromptListChangedHandler> asyncPromptListChangedHandlers) {
+        return SpringAiMcpAnnotationProvider.createAsyncPromptListChangedSpecifications(asyncPromptListChangedHandlers);
     }
     
     // Stateless Spring Integration Examples
