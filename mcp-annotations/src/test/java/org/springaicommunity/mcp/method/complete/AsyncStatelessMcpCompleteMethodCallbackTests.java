@@ -16,6 +16,8 @@ import io.modelcontextprotocol.spec.McpSchema.PromptReference;
 import io.modelcontextprotocol.spec.McpSchema.ResourceReference;
 import org.junit.jupiter.api.Test;
 import org.springaicommunity.mcp.annotation.McpComplete;
+import org.springaicommunity.mcp.annotation.McpMeta;
+import org.springaicommunity.mcp.annotation.McpProgressToken;
 
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
@@ -127,6 +129,46 @@ public class AsyncStatelessMcpCompleteMethodCallbackTests {
 
 		public Mono<CompleteResult> duplicateArgumentParameters(CompleteRequest.CompleteArgument arg1,
 				CompleteRequest.CompleteArgument arg2) {
+			return Mono.just(new CompleteResult(new CompleteCompletion(List.of(), 0, false)));
+		}
+
+		public Mono<CompleteResult> getCompletionWithProgressToken(@McpProgressToken String progressToken,
+				CompleteRequest request) {
+			String tokenInfo = progressToken != null ? " (token: " + progressToken + ")" : " (no token)";
+			return Mono.just(new CompleteResult(new CompleteCompletion(List
+				.of("Async stateless completion with progress" + tokenInfo + " for: " + request.argument().value()), 1,
+					false)));
+		}
+
+		public Mono<CompleteResult> getCompletionWithMixedAndProgress(McpTransportContext context,
+				@McpProgressToken String progressToken, String value, CompleteRequest request) {
+			String tokenInfo = progressToken != null ? " (token: " + progressToken + ")" : " (no token)";
+			return Mono.just(new CompleteResult(new CompleteCompletion(List.of("Async stateless mixed completion"
+					+ tokenInfo + " with value: " + value + " and request: " + request.argument().value()), 1, false)));
+		}
+
+		public Mono<CompleteResult> duplicateProgressTokenParameters(@McpProgressToken String token1,
+				@McpProgressToken String token2) {
+			return Mono.just(new CompleteResult(new CompleteCompletion(List.of(), 0, false)));
+		}
+
+		public Mono<CompleteResult> getCompletionWithMeta(McpMeta meta, CompleteRequest request) {
+			String metaInfo = meta != null && meta.get("key") != null ? " (meta: " + meta.get("key") + ")"
+					: " (no meta)";
+			return Mono.just(new CompleteResult(new CompleteCompletion(
+					List.of("Async stateless completion with meta" + metaInfo + " for: " + request.argument().value()),
+					1, false)));
+		}
+
+		public Mono<CompleteResult> getCompletionWithMetaAndMixed(McpTransportContext context, McpMeta meta,
+				String value, CompleteRequest request) {
+			String metaInfo = meta != null && meta.get("key") != null ? " (meta: " + meta.get("key") + ")"
+					: " (no meta)";
+			return Mono.just(new CompleteResult(new CompleteCompletion(List.of("Async stateless mixed completion"
+					+ metaInfo + " with value: " + value + " and request: " + request.argument().value()), 1, false)));
+		}
+
+		public Mono<CompleteResult> duplicateMetaParameters(McpMeta meta1, McpMeta meta2) {
 			return Mono.just(new CompleteResult(new CompleteCompletion(List.of(), 0, false)));
 		}
 
@@ -630,6 +672,176 @@ public class AsyncStatelessMcpCompleteMethodCallbackTests {
 			.expectErrorMatches(throwable -> throwable instanceof IllegalArgumentException
 					&& throwable.getMessage().contains("Request must not be null"))
 			.verify();
+	}
+
+	@Test
+	public void testCallbackWithProgressToken() throws Exception {
+		TestAsyncStatelessCompleteProvider provider = new TestAsyncStatelessCompleteProvider();
+		Method method = TestAsyncStatelessCompleteProvider.class.getMethod("getCompletionWithProgressToken",
+				String.class, CompleteRequest.class);
+
+		BiFunction<McpTransportContext, CompleteRequest, Mono<CompleteResult>> callback = AsyncStatelessMcpCompleteMethodCallback
+			.builder()
+			.method(method)
+			.bean(provider)
+			.prompt("test-prompt")
+			.build();
+
+		McpTransportContext context = mock(McpTransportContext.class);
+		CompleteRequest request = new CompleteRequest(new PromptReference("test-prompt"),
+				new CompleteRequest.CompleteArgument("test", "value"));
+
+		Mono<CompleteResult> resultMono = callback.apply(context, request);
+
+		StepVerifier.create(resultMono).assertNext(result -> {
+			assertThat(result).isNotNull();
+			assertThat(result.completion()).isNotNull();
+			assertThat(result.completion().values()).hasSize(1);
+			// Since CompleteRequest doesn't have progressToken, it should be null
+			assertThat(result.completion().values().get(0))
+				.isEqualTo("Async stateless completion with progress (no token) for: value");
+		}).verifyComplete();
+	}
+
+	@Test
+	public void testCallbackWithMixedAndProgressToken() throws Exception {
+		TestAsyncStatelessCompleteProvider provider = new TestAsyncStatelessCompleteProvider();
+		Method method = TestAsyncStatelessCompleteProvider.class.getMethod("getCompletionWithMixedAndProgress",
+				McpTransportContext.class, String.class, String.class, CompleteRequest.class);
+
+		BiFunction<McpTransportContext, CompleteRequest, Mono<CompleteResult>> callback = AsyncStatelessMcpCompleteMethodCallback
+			.builder()
+			.method(method)
+			.bean(provider)
+			.prompt("test-prompt")
+			.build();
+
+		McpTransportContext context = mock(McpTransportContext.class);
+		CompleteRequest request = new CompleteRequest(new PromptReference("test-prompt"),
+				new CompleteRequest.CompleteArgument("test", "value"));
+
+		Mono<CompleteResult> resultMono = callback.apply(context, request);
+
+		StepVerifier.create(resultMono).assertNext(result -> {
+			assertThat(result).isNotNull();
+			assertThat(result.completion()).isNotNull();
+			assertThat(result.completion().values()).hasSize(1);
+			// Since CompleteRequest doesn't have progressToken, it should be null
+			assertThat(result.completion().values().get(0))
+				.isEqualTo("Async stateless mixed completion (no token) with value: value and request: value");
+		}).verifyComplete();
+	}
+
+	@Test
+	public void testDuplicateProgressTokenParameters() throws Exception {
+		TestAsyncStatelessCompleteProvider provider = new TestAsyncStatelessCompleteProvider();
+		Method method = TestAsyncStatelessCompleteProvider.class.getMethod("duplicateProgressTokenParameters",
+				String.class, String.class);
+
+		assertThatThrownBy(() -> AsyncStatelessMcpCompleteMethodCallback.builder()
+			.method(method)
+			.bean(provider)
+			.prompt("test-prompt")
+			.build()).isInstanceOf(IllegalArgumentException.class)
+			.hasMessageContaining("Method cannot have more than one @McpProgressToken parameter");
+	}
+
+	@Test
+	public void testCallbackWithMeta() throws Exception {
+		TestAsyncStatelessCompleteProvider provider = new TestAsyncStatelessCompleteProvider();
+		Method method = TestAsyncStatelessCompleteProvider.class.getMethod("getCompletionWithMeta", McpMeta.class,
+				CompleteRequest.class);
+
+		BiFunction<McpTransportContext, CompleteRequest, Mono<CompleteResult>> callback = AsyncStatelessMcpCompleteMethodCallback
+			.builder()
+			.method(method)
+			.bean(provider)
+			.prompt("test-prompt")
+			.build();
+
+		McpTransportContext context = mock(McpTransportContext.class);
+		CompleteRequest request = new CompleteRequest(new PromptReference("test-prompt"),
+				new CompleteRequest.CompleteArgument("test", "value"), java.util.Map.of("key", "test-value"));
+
+		Mono<CompleteResult> resultMono = callback.apply(context, request);
+
+		StepVerifier.create(resultMono).assertNext(result -> {
+			assertThat(result).isNotNull();
+			assertThat(result.completion()).isNotNull();
+			assertThat(result.completion().values()).hasSize(1);
+			assertThat(result.completion().values().get(0))
+				.isEqualTo("Async stateless completion with meta (meta: test-value) for: value");
+		}).verifyComplete();
+	}
+
+	@Test
+	public void testCallbackWithMetaNull() throws Exception {
+		TestAsyncStatelessCompleteProvider provider = new TestAsyncStatelessCompleteProvider();
+		Method method = TestAsyncStatelessCompleteProvider.class.getMethod("getCompletionWithMeta", McpMeta.class,
+				CompleteRequest.class);
+
+		BiFunction<McpTransportContext, CompleteRequest, Mono<CompleteResult>> callback = AsyncStatelessMcpCompleteMethodCallback
+			.builder()
+			.method(method)
+			.bean(provider)
+			.prompt("test-prompt")
+			.build();
+
+		McpTransportContext context = mock(McpTransportContext.class);
+		CompleteRequest request = new CompleteRequest(new PromptReference("test-prompt"),
+				new CompleteRequest.CompleteArgument("test", "value"));
+
+		Mono<CompleteResult> resultMono = callback.apply(context, request);
+
+		StepVerifier.create(resultMono).assertNext(result -> {
+			assertThat(result).isNotNull();
+			assertThat(result.completion()).isNotNull();
+			assertThat(result.completion().values()).hasSize(1);
+			assertThat(result.completion().values().get(0))
+				.isEqualTo("Async stateless completion with meta (no meta) for: value");
+		}).verifyComplete();
+	}
+
+	@Test
+	public void testCallbackWithMetaAndMixed() throws Exception {
+		TestAsyncStatelessCompleteProvider provider = new TestAsyncStatelessCompleteProvider();
+		Method method = TestAsyncStatelessCompleteProvider.class.getMethod("getCompletionWithMetaAndMixed",
+				McpTransportContext.class, McpMeta.class, String.class, CompleteRequest.class);
+
+		BiFunction<McpTransportContext, CompleteRequest, Mono<CompleteResult>> callback = AsyncStatelessMcpCompleteMethodCallback
+			.builder()
+			.method(method)
+			.bean(provider)
+			.prompt("test-prompt")
+			.build();
+
+		McpTransportContext context = mock(McpTransportContext.class);
+		CompleteRequest request = new CompleteRequest(new PromptReference("test-prompt"),
+				new CompleteRequest.CompleteArgument("test", "value"), java.util.Map.of("key", "test-value"));
+
+		Mono<CompleteResult> resultMono = callback.apply(context, request);
+
+		StepVerifier.create(resultMono).assertNext(result -> {
+			assertThat(result).isNotNull();
+			assertThat(result.completion()).isNotNull();
+			assertThat(result.completion().values()).hasSize(1);
+			assertThat(result.completion().values().get(0))
+				.isEqualTo("Async stateless mixed completion (meta: test-value) with value: value and request: value");
+		}).verifyComplete();
+	}
+
+	@Test
+	public void testDuplicateMetaParameters() throws Exception {
+		TestAsyncStatelessCompleteProvider provider = new TestAsyncStatelessCompleteProvider();
+		Method method = TestAsyncStatelessCompleteProvider.class.getMethod("duplicateMetaParameters", McpMeta.class,
+				McpMeta.class);
+
+		assertThatThrownBy(() -> AsyncStatelessMcpCompleteMethodCallback.builder()
+			.method(method)
+			.bean(provider)
+			.prompt("test-prompt")
+			.build()).isInstanceOf(IllegalArgumentException.class)
+			.hasMessageContaining("Method cannot have more than one McpMeta parameter");
 	}
 
 }

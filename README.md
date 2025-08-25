@@ -113,6 +113,9 @@ The Spring integration module provides seamless integration with Spring AI and S
 - **`@McpSampling`** - Annotates methods that handle sampling requests from MCP servers
 - **`@McpElicitation`** - Annotates methods that handle elicitation requests to gather additional information from users
 - **`@McpProgress`** - Annotates methods that handle progress notifications for long-running operations
+- **`@McpToolListChanged`** - Annotates methods that handle tool list change notifications from MCP servers
+- **`@McpResourceListChanged`** - Annotates methods that handle resource list change notifications from MCP servers
+- **`@McpPromptListChanged`** - Annotates methods that handle prompt list change notifications from MCP servers
 
 #### Server
 - **`@McpComplete`** - Annotates methods that provide completion functionality for prompts or URI templates
@@ -122,8 +125,12 @@ The Spring integration module provides seamless integration with Spring AI and S
 - **`@McpTool`** - Annotates methods that implement MCP tools with automatic JSON schema generation
   - **`@McpToolParam`** - Annotates tool method parameters with descriptions and requirement specifications
 
-#### Special Parameter Annotations
+#### Special Parameters and Annotations
 - **`@McpProgressToken`** - Marks a method parameter to receive the progress token from the request. This parameter is automatically injected and excluded from the generated JSON schema
+- **`McpMeta`** - Special parameter type that provides access to metadata from MCP requests, notifications, and results. This parameter is automatically injected and excluded from parameter count limits and JSON schema generation
+- **`McpSyncServerExchange`** - Special parameter type for stateful synchronous operations that provides access to server exchange functionality including logging notifications, progress updates, and other server-side operations. This parameter is automatically injected and excluded from JSON schema generation
+- **`McpAsyncServerExchange`** - Special parameter type for stateful asynchronous operations that provides access to server exchange functionality with reactive support. This parameter is automatically injected and excluded from JSON schema generation
+- **`McpTransportContext`** - Special parameter type for stateless operations that provides lightweight access to transport-level context without full server exchange functionality. This parameter is automatically injected and excluded from JSON schema generation
 
 ### Method Callbacks
 
@@ -178,6 +185,16 @@ The modules provide callback implementations for each operation type:
 - `SyncMcpProgressMethodCallback` - Synchronous implementation
 - `AsyncMcpProgressMethodCallback` - Asynchronous implementation using Reactor's Mono
 
+#### Tool List Changed
+- `AbstractMcpToolListChangedMethodCallback` - Base class for tool list changed method callbacks
+- `SyncMcpToolListChangedMethodCallback` - Synchronous implementation
+- `AsyncMcpToolListChangedMethodCallback` - Asynchronous implementation using Reactor's Mono
+
+#### Resource List Changed
+- `AbstractMcpResourceListChangedMethodCallback` - Base class for resource list changed method callbacks
+- `SyncMcpResourceListChangedMethodCallback` - Synchronous implementation
+- `AsyncMcpResourceListChangedMethodCallback` - Asynchronous implementation using Reactor's Mono
+
 ### Providers
 
 The project includes provider classes that scan for annotated methods and create appropriate callbacks:
@@ -196,6 +213,12 @@ The project includes provider classes that scan for annotated methods and create
 - `AsyncMcpElicitationProvider` - Processes `@McpElicitation` annotations for asynchronous operations
 - `SyncMcpProgressProvider` - Processes `@McpProgress` annotations for synchronous operations
 - `AsyncMcpProgressProvider` - Processes `@McpProgress` annotations for asynchronous operations
+- `SyncMcpToolListChangedProvider` - Processes `@McpToolListChanged` annotations for synchronous operations
+- `AsyncMcpToolListChangedProvider` - Processes `@McpToolListChanged` annotations for asynchronous operations
+- `SyncMcpResourceListChangedProvider` - Processes `@McpResourceListChanged` annotations for synchronous operations
+- `AsyncMcpResourceListChangedProvider` - Processes `@McpResourceListChanged` annotations for asynchronous operations
+- `SyncMcpPromptListChangedProvider` - Processes `@McpPromptListChanged` annotations for synchronous operations
+- `AsyncMcpPromptListChangedProvider` - Processes `@McpPromptListChanged` annotations for asynchronous operations
 
 #### Stateless Providers (using McpTransportContext)
 - `SyncStatelessMcpCompleteProvider` - Processes `@McpComplete` annotations for synchronous stateless operations
@@ -638,6 +661,136 @@ public List<String> completeWithProgress(
 
 This feature enables better tracking and monitoring of MCP operations, especially for long-running tasks that need to report progress back to clients.
 
+#### McpMeta Support
+
+The `McpMeta` class provides access to metadata from MCP requests, notifications, and results. This is useful for accessing contextual information that clients may include with their requests.
+
+When a method parameter is of type `McpMeta`:
+- The parameter automatically receives metadata from the request wrapped in an `McpMeta` object
+- The parameter is excluded from parameter count limits and JSON schema generation
+- The parameter provides convenient access to metadata through the `get(String key)` method
+- If no metadata is present in the request, an empty `McpMeta` object is injected
+
+Example usage with tools:
+
+```java
+@McpTool(name = "personalized-task", description = "Performs a task with user context")
+public String personalizedTask(
+        @McpToolParam(description = "Task name", required = true) String taskName,
+        McpMeta meta) {
+    
+    // Access metadata from the request
+    String userId = (String) meta.get("userId");
+    String sessionId = (String) meta.get("sessionId");
+    
+    if (userId != null) {
+        return "Task " + taskName + " executed for user: " + userId + 
+               " (session: " + sessionId + ")";
+    }
+    
+    return "Task " + taskName + " executed (no user context)";
+}
+
+// Tool with both CallToolRequest and McpMeta
+@McpTool(name = "flexible-task", description = "Flexible task with metadata")
+public CallToolResult flexibleTask(
+        CallToolRequest request,
+        McpMeta meta) {
+    
+    // Access both the full request and metadata
+    Map<String, Object> args = request.arguments();
+    String userRole = (String) meta.get("userRole");
+    
+    String result = "Processed " + args.size() + " arguments";
+    if (userRole != null) {
+        result += " for user with role: " + userRole;
+    }
+    
+    return CallToolResult.builder()
+        .addTextContent(result)
+        .build();
+}
+```
+
+The `McpMeta` parameter is also supported in other MCP callback types:
+
+**Resource callbacks:**
+```java
+@McpResource(uri = "user-data://{id}", name = "User Data", description = "User data with context")
+public ReadResourceResult getUserData(
+        String id,
+        McpMeta meta) {
+    
+    String requestingUser = (String) meta.get("requestingUser");
+    String accessLevel = (String) meta.get("accessLevel");
+    
+    // Use metadata to customize response based on requesting user
+    String content = "User data for " + id;
+    if ("admin".equals(accessLevel)) {
+        content += " (full access granted to " + requestingUser + ")";
+    } else {
+        content += " (limited access)";
+    }
+    
+    return new ReadResourceResult(List.of(
+        new TextResourceContents("user-data://" + id, "text/plain", content)
+    ));
+}
+```
+
+**Prompt callbacks:**
+```java
+@McpPrompt(name = "contextual-prompt", description = "Generate contextual prompt")
+public GetPromptResult contextualPrompt(
+        @McpArg(name = "topic", required = true) String topic,
+        McpMeta meta) {
+    
+    String userPreference = (String) meta.get("preferredStyle");
+    String language = (String) meta.get("language");
+    
+    String message = "Let's discuss " + topic;
+    if ("formal".equals(userPreference)) {
+        message = "I would like to formally discuss the topic of " + topic;
+    } else if ("casual".equals(userPreference)) {
+        message = "Hey! Let's chat about " + topic;
+    }
+    
+    if (language != null && !"en".equals(language)) {
+        message += " (Note: Response requested in " + language + ")";
+    }
+    
+    return new GetPromptResult("Contextual Prompt",
+        List.of(new PromptMessage(Role.ASSISTANT, new TextContent(message))));
+}
+```
+
+**Complete callbacks:**
+```java
+@McpComplete(prompt = "smart-complete")
+public List<String> smartComplete(
+        String prefix,
+        McpMeta meta) {
+    
+    String userLevel = (String) meta.get("userLevel");
+    String domain = (String) meta.get("domain");
+    
+    // Customize completions based on user context
+    List<String> completions = generateBasicCompletions(prefix);
+    
+    if ("expert".equals(userLevel)) {
+        completions.addAll(generateAdvancedCompletions(prefix));
+    }
+    
+    if (domain != null) {
+        completions = filterByDomain(completions, domain);
+    }
+    
+    return completions;
+}
+```
+
+This feature enables context-aware MCP operations where the behavior can be customized based on client-provided metadata such as user identity, preferences, session information, or any other contextual data.
+
 ### Async Tool Example
 
 ```java
@@ -1055,6 +1208,360 @@ public class MyMcpClient {
 }
 ```
 
+### Mcp Client Tool List Changed Example
+
+```java
+public class ToolListChangedHandler {
+
+    /**
+     * Handle tool list change notifications with a single parameter.
+     * @param updatedTools The updated list of tools after the change
+     */
+    @McpToolListChanged
+    public void handleToolListChanged(List<McpSchema.Tool> updatedTools) {
+        System.out.println("Tool list updated, now contains " + updatedTools.size() + " tools:");
+        for (McpSchema.Tool tool : updatedTools) {
+            System.out.println("  - " + tool.name() + ": " + tool.description());
+        }
+    }
+
+    /**
+     * Handle tool list change notifications for a specific client.
+     * @param updatedTools The updated list of tools after the change
+     */
+    @McpToolListChanged(clientId = "client-1")
+    public void handleClient1ToolListChanged(List<McpSchema.Tool> updatedTools) {
+        System.out.println("Client-1 tool list updated with " + updatedTools.size() + " tools");
+        // Process the updated tool list for client-1
+        updateClientToolCache("client-1", updatedTools);
+    }
+
+    /**
+     * Handle tool list change notifications for another specific client.
+     * @param updatedTools The updated list of tools after the change
+     */
+    @McpToolListChanged(clientId = "client-2")
+    public void handleClient2ToolListChanged(List<McpSchema.Tool> updatedTools) {
+        System.out.println("Client-2 tool list updated with " + updatedTools.size() + " tools");
+        // Process the updated tool list for client-2
+        updateClientToolCache("client-2", updatedTools);
+    }
+
+    private void updateClientToolCache(String clientId, List<McpSchema.Tool> tools) {
+        // Implementation to update tool cache for specific client
+        System.out.println("Updated tool cache for " + clientId + " with " + tools.size() + " tools");
+    }
+}
+
+public class AsyncToolListChangedHandler {
+
+    /**
+     * Handle tool list change notifications asynchronously.
+     * @param updatedTools The updated list of tools after the change
+     * @return A Mono that completes when the notification is handled
+     */
+    @McpToolListChanged
+    public Mono<Void> handleAsyncToolListChanged(List<McpSchema.Tool> updatedTools) {
+        return Mono.fromRunnable(() -> {
+            System.out.println("Async tool list update: " + updatedTools.size() + " tools");
+            // Process the updated tool list asynchronously
+            processToolListUpdate(updatedTools);
+        });
+    }
+
+    /**
+     * Handle tool list change notifications for a specific client asynchronously.
+     * @param updatedTools The updated list of tools after the change
+     * @return A Mono that completes when the notification is handled
+     */
+    @McpToolListChanged(clientId = "client-2")
+    public Mono<Void> handleClient2AsyncToolListChanged(List<McpSchema.Tool> updatedTools) {
+        return Mono.fromRunnable(() -> {
+            System.out.println("Client-2 async tool list update: " + updatedTools.size() + " tools");
+            // Process the updated tool list for client-2 asynchronously
+            processClientToolListUpdate("client-2", updatedTools);
+        }).then();
+    }
+
+    private void processToolListUpdate(List<McpSchema.Tool> tools) {
+        // Implementation to process tool list update
+        System.out.println("Processing tool list update with " + tools.size() + " tools");
+    }
+
+    private void processClientToolListUpdate(String clientId, List<McpSchema.Tool> tools) {
+        // Implementation to process tool list update for specific client
+        System.out.println("Processing tool list update for " + clientId + " with " + tools.size() + " tools");
+    }
+}
+
+public class MyMcpClient {
+
+    public static McpSyncClient createSyncClientWithToolListChanged(ToolListChangedHandler toolListChangedHandler) {
+        List<Consumer<List<McpSchema.Tool>>> toolListChangedConsumers = 
+            new SyncMcpToolListChangedProvider(List.of(toolListChangedHandler)).getToolListChangedConsumers();
+
+        McpSyncClient client = McpClient.sync(transport)
+            .capabilities(ClientCapabilities.builder()
+                // Enable capabilities...
+                .build())
+            .toolListChangedConsumers(toolListChangedConsumers)
+            .build();
+
+        return client;
+    }
+    
+    public static McpAsyncClient createAsyncClientWithToolListChanged(AsyncToolListChangedHandler asyncToolListChangedHandler) {
+        List<Function<List<McpSchema.Tool>, Mono<Void>>> toolListChangedHandlers = 
+            new AsyncMcpToolListChangedProvider(List.of(asyncToolListChangedHandler)).getToolListChangedHandlers();
+
+        McpAsyncClient client = McpClient.async(transport)
+            .capabilities(ClientCapabilities.builder()
+                // Enable capabilities...
+                .build())
+            .toolListChangedHandlers(toolListChangedHandlers)
+            .build();
+
+        return client;
+    }
+}
+```
+
+### Mcp Client Resource List Changed Example
+
+```java
+public class ResourceListChangedHandler {
+
+    /**
+     * Handle resource list change notifications with a single parameter.
+     * @param updatedResources The updated list of resources after the change
+     */
+    @McpResourceListChanged
+    public void handleResourceListChanged(List<McpSchema.Resource> updatedResources) {
+        System.out.println("Resource list updated, now contains " + updatedResources.size() + " resources:");
+        for (McpSchema.Resource resource : updatedResources) {
+            System.out.println("  - " + resource.name() + ": " + resource.description());
+        }
+    }
+
+    /**
+     * Handle resource list change notifications for a specific client.
+     * @param updatedResources The updated list of resources after the change
+     */
+    @McpResourceListChanged(clientId = "client-1")
+    public void handleClient1ResourceListChanged(List<McpSchema.Resource> updatedResources) {
+        System.out.println("Client-1 resource list updated with " + updatedResources.size() + " resources");
+        // Process the updated resource list for client-1
+        updateClientResourceCache("client-1", updatedResources);
+    }
+
+    /**
+     * Handle resource list change notifications for another specific client.
+     * @param updatedResources The updated list of resources after the change
+     */
+    @McpResourceListChanged(clientId = "client-2")
+    public void handleClient2ResourceListChanged(List<McpSchema.Resource> updatedResources) {
+        System.out.println("Client-2 resource list updated with " + updatedResources.size() + " resources");
+        // Process the updated resource list for client-2
+        updateClientResourceCache("client-2", updatedResources);
+    }
+
+    private void updateClientResourceCache(String clientId, List<McpSchema.Resource> resources) {
+        // Implementation to update resource cache for specific client
+        System.out.println("Updated resource cache for " + clientId + " with " + resources.size() + " resources");
+    }
+}
+
+public class AsyncResourceListChangedHandler {
+
+    /**
+     * Handle resource list change notifications asynchronously.
+     * @param updatedResources The updated list of resources after the change
+     * @return A Mono that completes when the notification is handled
+     */
+    @McpResourceListChanged
+    public Mono<Void> handleAsyncResourceListChanged(List<McpSchema.Resource> updatedResources) {
+        return Mono.fromRunnable(() -> {
+            System.out.println("Async resource list update: " + updatedResources.size() + " resources");
+            // Process the updated resource list asynchronously
+            processResourceListUpdate(updatedResources);
+        });
+    }
+
+    /**
+     * Handle resource list change notifications for a specific client asynchronously.
+     * @param updatedResources The updated list of resources after the change
+     * @return A Mono that completes when the notification is handled
+     */
+    @McpResourceListChanged(clientId = "client-2")
+    public Mono<Void> handleClient2AsyncResourceListChanged(List<McpSchema.Resource> updatedResources) {
+        return Mono.fromRunnable(() -> {
+            System.out.println("Client-2 async resource list update: " + updatedResources.size() + " resources");
+            // Process the updated resource list for client-2 asynchronously
+            processClientResourceListUpdate("client-2", updatedResources);
+        }).then();
+    }
+
+    private void processResourceListUpdate(List<McpSchema.Resource> resources) {
+        // Implementation to process resource list update
+        System.out.println("Processing resource list update with " + resources.size() + " resources");
+    }
+
+    private void processClientResourceListUpdate(String clientId, List<McpSchema.Resource> resources) {
+        // Implementation to process resource list update for specific client
+        System.out.println("Processing resource list update for " + clientId + " with " + resources.size() + " resources");
+    }
+}
+
+public class MyMcpClient {
+
+    public static McpSyncClient createSyncClientWithResourceListChanged(ResourceListChangedHandler resourceListChangedHandler) {
+        List<Consumer<List<McpSchema.Resource>>> resourceListChangedConsumers = 
+            new SyncMcpResourceListChangedProvider(List.of(resourceListChangedHandler)).getResourceListChangedConsumers();
+
+        McpSyncClient client = McpClient.sync(transport)
+            .capabilities(ClientCapabilities.builder()
+                // Enable capabilities...
+                .build())
+            .resourceListChangedConsumers(resourceListChangedConsumers)
+            .build();
+
+        return client;
+    }
+    
+    public static McpAsyncClient createAsyncClientWithResourceListChanged(AsyncResourceListChangedHandler asyncResourceListChangedHandler) {
+        List<Function<List<McpSchema.Resource>, Mono<Void>>> resourceListChangedHandlers = 
+            new AsyncMcpResourceListChangedProvider(List.of(asyncResourceListChangedHandler)).getResourceListChangedHandlers();
+
+        McpAsyncClient client = McpClient.async(transport)
+            .capabilities(ClientCapabilities.builder()
+                // Enable capabilities...
+                .build())
+            .resourceListChangedHandlers(resourceListChangedHandlers)
+            .build();
+
+        return client;
+    }
+}
+```
+
+### Mcp Client Prompt List Changed Example
+
+```java
+public class PromptListChangedHandler {
+
+    /**
+     * Handle prompt list change notifications with a single parameter.
+     * @param updatedPrompts The updated list of prompts after the change
+     */
+    @McpPromptListChanged
+    public void handlePromptListChanged(List<McpSchema.Prompt> updatedPrompts) {
+        System.out.println("Prompt list updated, now contains " + updatedPrompts.size() + " prompts:");
+        for (McpSchema.Prompt prompt : updatedPrompts) {
+            System.out.println("  - " + prompt.name() + ": " + prompt.description());
+        }
+    }
+
+    /**
+     * Handle prompt list change notifications for a specific client.
+     * @param updatedPrompts The updated list of prompts after the change
+     */
+    @McpPromptListChanged(clientId = "client-1")
+    public void handleClient1PromptListChanged(List<McpSchema.Prompt> updatedPrompts) {
+        System.out.println("Client-1 prompt list updated with " + updatedPrompts.size() + " prompts");
+        // Process the updated prompt list for client-1
+        updateClientPromptCache("client-1", updatedPrompts);
+    }
+
+    /**
+     * Handle prompt list change notifications for another specific client.
+     * @param updatedPrompts The updated list of prompts after the change
+     */
+    @McpPromptListChanged(clientId = "client-2")
+    public void handleClient2PromptListChanged(List<McpSchema.Prompt> updatedPrompts) {
+        System.out.println("Client-2 prompt list updated with " + updatedPrompts.size() + " prompts");
+        // Process the updated prompt list for client-2
+        updateClientPromptCache("client-2", updatedPrompts);
+    }
+
+    private void updateClientPromptCache(String clientId, List<McpSchema.Prompt> prompts) {
+        // Implementation to update prompt cache for specific client
+        System.out.println("Updated prompt cache for " + clientId + " with " + prompts.size() + " prompts");
+    }
+}
+
+public class AsyncPromptListChangedHandler {
+
+    /**
+     * Handle prompt list change notifications asynchronously.
+     * @param updatedPrompts The updated list of prompts after the change
+     * @return A Mono that completes when the notification is handled
+     */
+    @McpPromptListChanged
+    public Mono<Void> handleAsyncPromptListChanged(List<McpSchema.Prompt> updatedPrompts) {
+        return Mono.fromRunnable(() -> {
+            System.out.println("Async prompt list update: " + updatedPrompts.size() + " prompts");
+            // Process the updated prompt list asynchronously
+            processPromptListUpdate(updatedPrompts);
+        });
+    }
+
+    /**
+     * Handle prompt list change notifications for a specific client asynchronously.
+     * @param updatedPrompts The updated list of prompts after the change
+     * @return A Mono that completes when the notification is handled
+     */
+    @McpPromptListChanged(clientId = "client-2")
+    public Mono<Void> handleClient2AsyncPromptListChanged(List<McpSchema.Prompt> updatedPrompts) {
+        return Mono.fromRunnable(() -> {
+            System.out.println("Client-2 async prompt list update: " + updatedPrompts.size() + " prompts");
+            // Process the updated prompt list for client-2 asynchronously
+            processClientPromptListUpdate("client-2", updatedPrompts);
+        }).then();
+    }
+
+    private void processPromptListUpdate(List<McpSchema.Prompt> prompts) {
+        // Implementation to process prompt list update
+        System.out.println("Processing prompt list update with " + prompts.size() + " prompts");
+    }
+
+    private void processClientPromptListUpdate(String clientId, List<McpSchema.Prompt> prompts) {
+        // Implementation to process prompt list update for specific client
+        System.out.println("Processing prompt list update for " + clientId + " with " + prompts.size() + " prompts");
+    }
+}
+
+public class MyMcpClient {
+
+    public static McpSyncClient createSyncClientWithPromptListChanged(PromptListChangedHandler promptListChangedHandler) {
+        List<Consumer<List<McpSchema.Prompt>>> promptListChangedConsumers = 
+            new SyncMcpPromptListChangedProvider(List.of(promptListChangedHandler)).getPromptListChangedConsumers();
+
+        McpSyncClient client = McpClient.sync(transport)
+            .capabilities(ClientCapabilities.builder()
+                // Enable capabilities...
+                .build())
+            .promptListChangedConsumers(promptListChangedConsumers)
+            .build();
+
+        return client;
+    }
+    
+    public static McpAsyncClient createAsyncClientWithPromptListChanged(AsyncPromptListChangedHandler asyncPromptListChangedHandler) {
+        List<Function<List<McpSchema.Prompt>, Mono<Void>>> promptListChangedHandlers = 
+            new AsyncMcpPromptListChangedProvider(List.of(asyncPromptListChangedHandler)).getPromptListChangedHandlers();
+
+        McpAsyncClient client = McpClient.async(transport)
+            .capabilities(ClientCapabilities.builder()
+                // Enable capabilities...
+                .build())
+            .promptListChangedHandlers(promptListChangedHandlers)
+            .build();
+
+        return client;
+    }
+}
+```
+
 ### Mcp Client Elicitation Example
 
 ```java
@@ -1205,7 +1712,6 @@ public class MyMcpClient {
     }
 }
 ```
-
 
 ### Stateless Examples
 
@@ -1473,6 +1979,42 @@ public class McpConfig {
         return SpringAiMcpAnnotationProvider.createAsyncProgressSpecifications(asyncProgressHandlers);
     }
     
+    @Bean
+    public List<SyncToolListChangedSpecification> syncToolListChangedSpecifications(
+            List<ToolListChangedHandler> toolListChangedHandlers) {
+        return SpringAiMcpAnnotationProvider.createSyncToolListChangedSpecifications(toolListChangedHandlers);
+    }
+    
+    @Bean
+    public List<AsyncToolListChangedSpecification> asyncToolListChangedSpecifications(
+            List<AsyncToolListChangedHandler> asyncToolListChangedHandlers) {
+        return SpringAiMcpAnnotationProvider.createAsyncToolListChangedSpecifications(asyncToolListChangedHandlers);
+    }
+    
+    @Bean
+    public List<SyncResourceListChangedSpecification> syncResourceListChangedSpecifications(
+            List<ResourceListChangedHandler> resourceListChangedHandlers) {
+        return SpringAiMcpAnnotationProvider.createSyncResourceListChangedSpecifications(resourceListChangedHandlers);
+    }
+    
+    @Bean
+    public List<AsyncResourceListChangedSpecification> asyncResourceListChangedSpecifications(
+            List<AsyncResourceListChangedHandler> asyncResourceListChangedHandlers) {
+        return SpringAiMcpAnnotationProvider.createAsyncResourceListChangedSpecifications(asyncResourceListChangedHandlers);
+    }
+    
+    @Bean
+    public List<SyncPromptListChangedSpecification> syncPromptListChangedSpecifications(
+            List<PromptListChangedHandler> promptListChangedHandlers) {
+        return SpringAiMcpAnnotationProvider.createSyncPromptListChangedSpecifications(promptListChangedHandlers);
+    }
+    
+    @Bean
+    public List<AsyncPromptListChangedSpecification> asyncPromptListChangedSpecifications(
+            List<AsyncPromptListChangedHandler> asyncPromptListChangedHandlers) {
+        return SpringAiMcpAnnotationProvider.createAsyncPromptListChangedSpecifications(asyncPromptListChangedHandlers);
+    }
+    
     // Stateless Spring Integration Examples
     
     @Bean
@@ -1509,6 +2051,7 @@ public class McpConfig {
 - **Logging consumer support** - Handle logging message notifications from MCP servers
 - **Sampling support** - Handle sampling requests from MCP servers
 - **Progress notification support** - Handle progress notifications for long-running operations
+- **Tool list changed support** - Handle tool list change notifications from MCP servers when tools are dynamically added, removed, or modified
 - **Spring integration** - Seamless integration with Spring Framework and Spring AI, including support for both stateful and stateless operations
 - **AOP proxy support** - Proper handling of Spring AOP proxies when processing annotations
 

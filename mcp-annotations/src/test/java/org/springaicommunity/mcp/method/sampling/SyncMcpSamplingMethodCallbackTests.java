@@ -11,7 +11,6 @@ import java.lang.reflect.Method;
 
 import org.junit.jupiter.api.Test;
 import org.springaicommunity.mcp.annotation.McpSampling;
-import org.springaicommunity.mcp.method.sampling.SyncMcpSamplingMethodCallback;
 import org.springaicommunity.mcp.method.sampling.AbstractMcpSamplingMethodCallback.McpSamplingMethodException;
 
 import io.modelcontextprotocol.spec.McpSchema.CreateMessageRequest;

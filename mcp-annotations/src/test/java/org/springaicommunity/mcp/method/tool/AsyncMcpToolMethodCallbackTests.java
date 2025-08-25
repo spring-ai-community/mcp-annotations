@@ -14,6 +14,7 @@ import io.modelcontextprotocol.spec.McpSchema.CallToolResult;
 import io.modelcontextprotocol.spec.McpSchema.TextContent;
 import org.junit.jupiter.api.Test;
 import org.reactivestreams.Publisher;
+import org.springaicommunity.mcp.annotation.McpMeta;
 import org.springaicommunity.mcp.annotation.McpTool;
 import org.springaicommunity.mcp.annotation.McpToolParam;
 import reactor.core.publisher.Flux;
@@ -145,6 +146,16 @@ public class AsyncMcpToolMethodCallbackTests {
 		@McpTool(name = "private-mono-tool", description = "Private mono tool")
 		private Mono<String> privateMonoTool(String input) {
 			return Mono.just("Private: " + input);
+		}
+
+		/**
+		 * Tool with McpMeta parameter
+		 */
+		@McpTool(name = "meta-mono-tool", description = "Mono tool with meta parameter")
+		public Mono<String> metaMonoTool(@McpToolParam(description = "Input parameter", required = true) String input,
+				McpMeta meta) {
+			String metaInfo = meta != null && meta.meta() != null ? meta.meta().toString() : "null";
+			return Mono.just("Input: " + input + ", Meta: " + metaInfo);
 		}
 
 		// Non-reactive method that should cause error in async context
@@ -730,6 +741,53 @@ public class AsyncMcpToolMethodCallbackTests {
 			assertThat(result.content()).hasSize(1);
 			assertThat(result.content().get(0)).isInstanceOf(TextContent.class);
 			assertThat(((TextContent) result.content().get(0)).text()).isEqualTo("Name: Alice, Age: 25, Active: false");
+		}).verifyComplete();
+	}
+
+	@Test
+	public void testAsyncMetaParameterInjection() throws Exception {
+		// Test that McpMeta parameter receives the meta from request in async context
+		TestAsyncToolProvider provider = new TestAsyncToolProvider();
+		Method method = TestAsyncToolProvider.class.getMethod("metaMonoTool", String.class, McpMeta.class);
+		AsyncMcpToolMethodCallback callback = new AsyncMcpToolMethodCallback(ReturnMode.TEXT, method, provider);
+
+		McpAsyncServerExchange exchange = mock(McpAsyncServerExchange.class);
+
+		// Create request with meta data
+		CallToolRequest request = CallToolRequest.builder()
+			.name("meta-mono-tool")
+			.arguments(Map.of("input", "test-input"))
+			.meta(Map.of("userId", "user123", "sessionId", "session456"))
+			.build();
+
+		StepVerifier.create(callback.apply(exchange, request)).assertNext(result -> {
+			assertThat(result).isNotNull();
+			assertThat(result.isError()).isFalse();
+			assertThat(result.content()).hasSize(1);
+			assertThat(result.content().get(0)).isInstanceOf(TextContent.class);
+			assertThat(((TextContent) result.content().get(0)).text()).contains("Input: test-input")
+				.contains("Meta: {userId=user123, sessionId=session456}");
+		}).verifyComplete();
+	}
+
+	@Test
+	public void testAsyncMetaParameterWithNullMeta() throws Exception {
+		// Test that McpMeta parameter handles null meta in async context
+		TestAsyncToolProvider provider = new TestAsyncToolProvider();
+		Method method = TestAsyncToolProvider.class.getMethod("metaMonoTool", String.class, McpMeta.class);
+		AsyncMcpToolMethodCallback callback = new AsyncMcpToolMethodCallback(ReturnMode.TEXT, method, provider);
+
+		McpAsyncServerExchange exchange = mock(McpAsyncServerExchange.class);
+
+		// Create request without meta
+		CallToolRequest request = new CallToolRequest("meta-mono-tool", Map.of("input", "test-input"));
+
+		StepVerifier.create(callback.apply(exchange, request)).assertNext(result -> {
+			assertThat(result).isNotNull();
+			assertThat(result.isError()).isFalse();
+			assertThat(result.content()).hasSize(1);
+			assertThat(result.content().get(0)).isInstanceOf(TextContent.class);
+			assertThat(((TextContent) result.content().get(0)).text()).isEqualTo("Input: test-input, Meta: {}");
 		}).verifyComplete();
 	}
 
