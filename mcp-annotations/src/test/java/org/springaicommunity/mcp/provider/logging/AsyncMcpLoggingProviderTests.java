@@ -16,7 +16,6 @@ import org.springaicommunity.mcp.method.logging.AsyncLoggingSpecification;
 import io.modelcontextprotocol.spec.McpSchema.LoggingLevel;
 import io.modelcontextprotocol.spec.McpSchema.LoggingMessageNotification;
 import reactor.core.publisher.Mono;
-import reactor.test.StepVerifier;
 
 /**
  * Tests for {@link AsyncMcpLoggingProvider}.
@@ -28,7 +27,7 @@ public class AsyncMcpLoggingProviderTests {
 	/**
 	 * Test class with logging consumer methods.
 	 */
-	static class AsyncLoggingHandler {
+	static class TestAsyncLoggingProvider {
 
 		private LoggingMessageNotification lastNotification;
 
@@ -68,7 +67,7 @@ public class AsyncMcpLoggingProviderTests {
 
 	@Test
 	void testGetLoggingConsumers() {
-		AsyncLoggingHandler loggingHandler = new AsyncLoggingHandler();
+		TestAsyncLoggingProvider loggingHandler = new TestAsyncLoggingProvider();
 		AsyncMcpLoggingProvider provider = new AsyncMcpLoggingProvider(List.of(loggingHandler));
 
 		List<AsyncLoggingSpecification> specifications = provider.getLoggingSpecifications();
@@ -83,7 +82,7 @@ public class AsyncMcpLoggingProviderTests {
 		LoggingMessageNotification notification = new LoggingMessageNotification(LoggingLevel.INFO, "test-logger",
 				"This is a test message");
 
-		StepVerifier.create(consumers.get(0).apply(notification)).verifyComplete();
+		consumers.get(0).apply(notification).block();
 
 		// Verify that the method was called
 		assertThat(loggingHandler.lastNotification).isEqualTo(notification);
@@ -92,7 +91,7 @@ public class AsyncMcpLoggingProviderTests {
 		loggingHandler.lastNotification = null;
 
 		// Test the second consumer (Mono return type with parameters)
-		StepVerifier.create(consumers.get(1).apply(notification)).verifyComplete();
+		consumers.get(1).apply(notification).block();
 
 		// Verify that the method was called
 		assertThat(loggingHandler.lastLevel).isEqualTo(notification.level());
@@ -100,7 +99,7 @@ public class AsyncMcpLoggingProviderTests {
 		assertThat(loggingHandler.lastData).isEqualTo(notification.data());
 
 		// Test the third consumer (void return type)
-		StepVerifier.create(consumers.get(2).apply(notification)).verifyComplete();
+		consumers.get(2).apply(notification).block();
 
 		// Verify that the method was called
 		assertThat(loggingHandler.lastNotification).isEqualTo(notification);
@@ -121,8 +120,8 @@ public class AsyncMcpLoggingProviderTests {
 
 	@Test
 	void testMultipleObjects() {
-		AsyncLoggingHandler handler1 = new AsyncLoggingHandler();
-		AsyncLoggingHandler handler2 = new AsyncLoggingHandler();
+		TestAsyncLoggingProvider handler1 = new TestAsyncLoggingProvider();
+		TestAsyncLoggingProvider handler2 = new TestAsyncLoggingProvider();
 		AsyncMcpLoggingProvider provider = new AsyncMcpLoggingProvider(List.of(handler1, handler2));
 
 		List<AsyncLoggingSpecification> specifications = provider.getLoggingSpecifications();
