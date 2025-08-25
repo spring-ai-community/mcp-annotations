@@ -41,7 +41,7 @@ import io.modelcontextprotocol.server.McpStatelessServerFeatures;
 /**
  * @author Christian Tzolov
  */
-public class AsyncMcpAnnotationProvider {
+public class AsyncMcpAnnotationProviders {
 
 	private static class SpringAiAsyncMcpLoggingProvider extends AsyncMcpLoggingProvider {
 
@@ -173,48 +173,47 @@ public class AsyncMcpAnnotationProvider {
 
 	}
 
-	public static List<AsyncLoggingSpecification> createAsyncLoggingSpecifications(List<Object> loggingObjects) {
+	public static List<AsyncLoggingSpecification> loggingSpecifications(List<Object> loggingObjects) {
 		return new SpringAiAsyncMcpLoggingProvider(loggingObjects).getLoggingSpecifications();
 	}
 
-	public static List<AsyncSamplingSpecification> createAsyncSamplingSpecifications(List<Object> samplingObjects) {
+	public static List<AsyncSamplingSpecification> samplingSpecifications(List<Object> samplingObjects) {
 		return new SpringAiAsyncMcpSamplingProvider(samplingObjects).getSamplingSpecifictions();
 	}
 
-	public static List<AsyncElicitationSpecification> createAsyncElicitationSpecifications(
-			List<Object> elicitationObjects) {
+	public static List<AsyncElicitationSpecification> elicitationSpecifications(List<Object> elicitationObjects) {
 		return new SpringAiAsyncMcpElicitationProvider(elicitationObjects).getElicitationSpecifications();
 	}
 
-	public static List<AsyncToolSpecification> createAsyncToolSpecifications(List<Object> toolObjects) {
+	public static List<AsyncToolSpecification> toolSpecifications(List<Object> toolObjects) {
 		return new SpringAiAsyncMcpToolProvider(toolObjects).getToolSpecifications();
 	}
 
-	public static List<McpStatelessServerFeatures.AsyncToolSpecification> createAsyncStatelessToolSpecifications(
+	public static List<McpStatelessServerFeatures.AsyncToolSpecification> statelessToolSpecifications(
 			List<Object> toolObjects) {
 		return new SpringAiAsyncStatelessMcpToolProvider(toolObjects).getToolSpecifications();
 	}
 
-	public static List<McpStatelessServerFeatures.AsyncPromptSpecification> createAsyncStatelessPromptSpecifications(
+	public static List<McpStatelessServerFeatures.AsyncPromptSpecification> statelessPromptSpecifications(
 			List<Object> promptObjects) {
 		return new SpringAiAsyncStatelessPromptProvider(promptObjects).getPromptSpecifications();
 	}
 
-	public static List<McpStatelessServerFeatures.AsyncResourceSpecification> createAsyncStatelessResourceSpecifications(
+	public static List<McpStatelessServerFeatures.AsyncResourceSpecification> statelessResourceSpecifications(
 			List<Object> resourceObjects) {
 		return new SpringAiAsyncStatelessResourceProvider(resourceObjects).getResourceSpecifications();
 	}
 
-	public static List<AsyncProgressSpecification> createAsyncProgressSpecifications(List<Object> progressObjects) {
+	public static List<AsyncProgressSpecification> progressSpecifications(List<Object> progressObjects) {
 		return new SpringAiAsyncMcpProgressProvider(progressObjects).getProgressSpecifications();
 	}
 
-	public static List<AsyncToolListChangedSpecification> createAsyncToolListChangedSpecifications(
+	public static List<AsyncToolListChangedSpecification> toolListChangedSpecifications(
 			List<Object> toolListChangedObjects) {
 		return new SpringAiAsyncMcpToolListChangedProvider(toolListChangedObjects).getToolListChangedSpecifications();
 	}
 
-	public static List<AsyncResourceListChangedSpecification> createAsyncResourceListChangedSpecifications(
+	public static List<AsyncResourceListChangedSpecification> resourceListChangedSpecifications(
 			List<Object> resourceListChangedObjects) {
 		return new SpringAiAsyncMcpResourceListChangedProvider(resourceListChangedObjects)
 			.getResourceListChangedSpecifications();
