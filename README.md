@@ -200,9 +200,12 @@ The modules provide callback implementations for each operation type:
 The project includes provider classes that scan for annotated methods and create appropriate callbacks:
 
 #### Stateful Providers (using McpSyncServerExchange/McpAsyncServerExchange)
-- `SyncMcpCompletionProvider` - Processes `@McpComplete` annotations for synchronous operations
+- `SyncMcpCompleteProvider` - Processes `@McpComplete` annotations for synchronous operations
+- `AsyncMcpCompleteProvider` - Processes `@McpComplete` annotations for asynchronous operations
 - `SyncMcpPromptProvider` - Processes `@McpPrompt` annotations for synchronous operations
+- `AsyncMcpPromptProvider` - Processes `@McpPrompt` annotations for asynchronous operations
 - `SyncMcpResourceProvider` - Processes `@McpResource` annotations for synchronous operations
+- `AsyncMcpResourceProvider` - Processes `@McpResource` annotations for asynchronous operations
 - `SyncMcpToolProvider` - Processes `@McpTool` annotations for synchronous operations
 - `AsyncMcpToolProvider` - Processes `@McpTool` annotations for asynchronous operations
 - `SyncMcpLoggingProvider` - Processes `@McpLogging` annotations for synchronous operations
@@ -234,7 +237,8 @@ The project includes provider classes that scan for annotated methods and create
 
 The Spring integration module provides:
 
-- `SpringAiMcpAnnotationProvider` - Handles Spring-specific concerns when processing MCP annotations
+- `AsyncMcpAnnotationProviders` - Handles Spring-specific concerns when processing asynchronous MCP annotations
+- `SyncMcpAnnotationProviders` - Handles Spring-specific concerns when processing synchronous MCP annotations
 - Integration with Spring AOP proxies
 - Support for Spring AI model abstractions
 
@@ -894,7 +898,7 @@ public class McpServerFactory {
             new SyncMcpResourceProvider(List.of(myResourceProvider)).getResourceSpecifications();
 
         List<SyncCompletionSpecification> completionSpecifications = 
-            new SyncMcpCompletionProvider(List.of(autocompleteProvider)).getCompleteSpecifications();
+            new SyncMcpCompleteProvider(List.of(autocompleteProvider)).getCompleteSpecifications();
 
         List<SyncPromptSpecification> promptSpecifications = 
             new SyncMcpPromptProvider(List.of(promptProvider)).getPromptSpecifications();
@@ -1904,115 +1908,121 @@ public class McpConfig {
     @Bean
     public List<SyncCompletionSpecification> syncCompletionSpecifications(
             List<AutocompleteProvider> completeProviders) {
-        return SpringAiMcpAnnotationProvider.createSyncCompleteSpecifications(completeProviders);
+        return SyncMcpAnnotationProviders.completeSpecifications(completeProviders);
+    }
+    
+    @Bean
+    public List<McpStatelessServerFeatures.SyncCompletionSpecification> syncStatelessCompleteSpecifications(
+            List<StatelessAutocompleteProvider> statelessCompleteProviders) {
+        return SyncMcpAnnotationProviders.statelessCompleteSpecifications(statelessCompleteProviders);
     }
     
     @Bean
     public List<SyncPromptSpecification> syncPromptSpecifications(
             List<PromptProvider> promptProviders) {
-        return SpringAiMcpAnnotationProvider.createSyncPromptSpecifications(promptProviders);
+        return SyncMcpAnnotationProviders.promptSpecifications(promptProviders);
     }
     
     @Bean
     public List<SyncResourceSpecification> syncResourceSpecifications(
             List<ResourceProvider> resourceProviders) {
-        return SpringAiMcpAnnotationProvider.createSyncResourceSpecifications(resourceProviders);
+        return SyncMcpAnnotationProviders.resourceSpecifications(resourceProviders);
     }
     
     @Bean
     public List<SyncToolSpecification> syncToolSpecifications(
             List<CalculatorToolProvider> toolProviders) {
-        return SpringAiMcpAnnotationProvider.createSyncToolSpecifications(toolProviders);
+        return SyncMcpAnnotationProviders.toolSpecifications(toolProviders);
     }
     
     @Bean
     public List<AsyncToolSpecification> asyncToolSpecifications(
             List<AsyncToolProvider> asyncToolProviders) {
-        return SpringAiMcpAnnotationProvider.createAsyncToolSpecifications(asyncToolProviders);
+        return AsyncMcpAnnotationProviders.toolSpecifications(asyncToolProviders);
     }
     
     @Bean
     public List<SyncLoggingSpecification> syncLoggingSpecifications(
             List<LoggingHandler> loggingHandlers) {
-        return SpringAiMcpAnnotationProvider.createSyncLoggingSpecifications(loggingHandlers);
+        return SyncMcpAnnotationProviders.loggingSpecifications(loggingHandlers);
     }
     
     @Bean
     public List<AsyncLoggingSpecification> asyncLoggingSpecifications(
             List<AsyncLoggingHandler> asyncLoggingHandlers) {
-        return SpringAiMcpAnnotationProvider.createAsyncLoggingSpecifications(asyncLoggingHandlers);
+        return AsyncMcpAnnotationProviders.loggingSpecifications(asyncLoggingHandlers);
     }
     
     @Bean
     public List<SyncSamplingSpecification> syncSamplingSpecifications(
             List<SamplingHandler> samplingHandlers) {
-        return SpringAiMcpAnnotationProvider.createSyncSamplingSpecifications(samplingHandlers);
+        return SyncMcpAnnotationProviders.samplingSpecifications(samplingHandlers);
     }
     
     @Bean
     public List<AsyncSamplingSpecification> asyncSamplingSpecifications(
             List<AsyncSamplingHandler> asyncSamplingHandlers) {
-        return SpringAiMcpAnnotationProvider.createAsyncSamplingSpecifications(asyncSamplingHandlers);
+        return AsyncMcpAnnotationProviders.samplingSpecifications(asyncSamplingHandlers);
     }
     
     @Bean
     public List<SyncElicitationSpecification> syncElicitationSpecifications(
             List<ElicitationHandler> elicitationHandlers) {
-        return SpringAiMcpAnnotationProvider.createSyncElicitationSpecifications(elicitationHandlers);
+        return SyncMcpAnnotationProviders.elicitationSpecifications(elicitationHandlers);
     }
     
     @Bean
     public List<AsyncElicitationSpecification> asyncElicitationSpecifications(
             List<AsyncElicitationHandler> asyncElicitationHandlers) {
-        return SpringAiMcpAnnotationProvider.createAsyncElicitationSpecifications(asyncElicitationHandlers);
+        return AsyncMcpAnnotationProviders.elicitationSpecifications(asyncElicitationHandlers);
     }
     
     @Bean
     public List<SyncProgressSpecification> syncProgressSpecifications(
             List<ProgressHandler> progressHandlers) {
-        return SpringAiMcpAnnotationProvider.createSyncProgressSpecifications(progressHandlers);
+        return SyncMcpAnnotationProviders.progressSpecifications(progressHandlers);
     }
     
     @Bean
     public List<AsyncProgressSpecification> asyncProgressSpecifications(
             List<AsyncProgressHandler> asyncProgressHandlers) {
-        return SpringAiMcpAnnotationProvider.createAsyncProgressSpecifications(asyncProgressHandlers);
+        return AsyncMcpAnnotationProviders.progressSpecifications(asyncProgressHandlers);
     }
     
     @Bean
     public List<SyncToolListChangedSpecification> syncToolListChangedSpecifications(
             List<ToolListChangedHandler> toolListChangedHandlers) {
-        return SpringAiMcpAnnotationProvider.createSyncToolListChangedSpecifications(toolListChangedHandlers);
+        return SyncMcpAnnotationProviders.toolListChangedSpecifications(toolListChangedHandlers);
     }
     
     @Bean
     public List<AsyncToolListChangedSpecification> asyncToolListChangedSpecifications(
             List<AsyncToolListChangedHandler> asyncToolListChangedHandlers) {
-        return SpringAiMcpAnnotationProvider.createAsyncToolListChangedSpecifications(asyncToolListChangedHandlers);
+        return AsyncMcpAnnotationProviders.toolListChangedSpecifications(asyncToolListChangedHandlers);
     }
     
     @Bean
     public List<SyncResourceListChangedSpecification> syncResourceListChangedSpecifications(
             List<ResourceListChangedHandler> resourceListChangedHandlers) {
-        return SpringAiMcpAnnotationProvider.createSyncResourceListChangedSpecifications(resourceListChangedHandlers);
+        return SyncMcpAnnotationProviders.resourceListChangedSpecifications(resourceListChangedHandlers);
     }
     
     @Bean
     public List<AsyncResourceListChangedSpecification> asyncResourceListChangedSpecifications(
             List<AsyncResourceListChangedHandler> asyncResourceListChangedHandlers) {
-        return SpringAiMcpAnnotationProvider.createAsyncResourceListChangedSpecifications(asyncResourceListChangedHandlers);
+        return AsyncMcpAnnotationProviders.resourceListChangedSpecifications(asyncResourceListChangedHandlers);
     }
     
     @Bean
     public List<SyncPromptListChangedSpecification> syncPromptListChangedSpecifications(
             List<PromptListChangedHandler> promptListChangedHandlers) {
-        return SpringAiMcpAnnotationProvider.createSyncPromptListChangedSpecifications(promptListChangedHandlers);
+        return SyncMcpAnnotationProviders.promptListChangedSpecifications(promptListChangedHandlers);
     }
     
     @Bean
     public List<AsyncPromptListChangedSpecification> asyncPromptListChangedSpecifications(
             List<AsyncPromptListChangedHandler> asyncPromptListChangedHandlers) {
-        return SpringAiMcpAnnotationProvider.createAsyncPromptListChangedSpecifications(asyncPromptListChangedHandlers);
+        return AsyncMcpAnnotationProviders.promptListChangedSpecifications(asyncPromptListChangedHandlers);
     }
     
     // Stateless Spring Integration Examples
@@ -2020,19 +2030,19 @@ public class McpConfig {
     @Bean
     public List<McpStatelessServerFeatures.SyncToolSpecification> syncStatelessToolSpecifications(
             List<StatelessCalculatorProvider> statelessToolProviders) {
-        return SpringAiMcpAnnotationProvider.createSyncStatelessToolSpecifications(statelessToolProviders);
+        return SyncMcpAnnotationProviders.statelessToolSpecifications(statelessToolProviders);
     }
     
     @Bean
     public List<McpStatelessServerFeatures.SyncPromptSpecification> syncStatelessPromptSpecifications(
             List<StatelessPromptProvider> statelessPromptProviders) {
-        return SpringAiMcpAnnotationProvider.createSyncStatelessPromptSpecifications(statelessPromptProviders);
+        return SyncMcpAnnotationProviders.statelessPromptSpecifications(statelessPromptProviders);
     }
     
     @Bean
     public List<McpStatelessServerFeatures.SyncResourceSpecification> syncStatelessResourceSpecifications(
             List<StatelessResourceProvider> statelessResourceProviders) {
-        return SpringAiMcpAnnotationProvider.createSyncStatelessResourceSpecifications(statelessResourceProviders);
+        return SyncMcpAnnotationProviders.statelessResourceSpecifications(statelessResourceProviders);
     }
 }
 ```
@@ -2059,7 +2069,7 @@ public class McpConfig {
 
 - Java 17 or higher
 - Reactor Core (for async operations)
-- MCP Java SDK 0.11.2 or higher
+- MCP Java SDK 0.12.0-SNAPSHOT or higher
 - Spring Framework and Spring AI (for mcp-annotations-spring module)
 
 ## Building from Source

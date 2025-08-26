@@ -30,11 +30,11 @@ import reactor.core.publisher.Mono;
 
 /**
  */
-public class SyncMcpCompletionProvider {
+public class SyncMcpCompleteProvider {
 
 	private final List<Object> completeObjects;
 
-	public SyncMcpCompletionProvider(List<Object> completeObjects) {
+	public SyncMcpCompleteProvider(List<Object> completeObjects) {
 		Assert.notNull(completeObjects, "completeObjects cannot be null");
 		this.completeObjects = completeObjects;
 	}
