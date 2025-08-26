@@ -200,9 +200,12 @@ The modules provide callback implementations for each operation type:
 The project includes provider classes that scan for annotated methods and create appropriate callbacks:
 
 #### Stateful Providers (using McpSyncServerExchange/McpAsyncServerExchange)
-- `SyncMcpCompletionProvider` - Processes `@McpComplete` annotations for synchronous operations
+- `SyncMcpCompleteProvider` - Processes `@McpComplete` annotations for synchronous operations
+- `AsyncMcpCompleteProvider` - Processes `@McpComplete` annotations for asynchronous operations
 - `SyncMcpPromptProvider` - Processes `@McpPrompt` annotations for synchronous operations
+- `AsyncMcpPromptProvider` - Processes `@McpPrompt` annotations for asynchronous operations
 - `SyncMcpResourceProvider` - Processes `@McpResource` annotations for synchronous operations
+- `AsyncMcpResourceProvider` - Processes `@McpResource` annotations for asynchronous operations
 - `SyncMcpToolProvider` - Processes `@McpTool` annotations for synchronous operations
 - `AsyncMcpToolProvider` - Processes `@McpTool` annotations for asynchronous operations
 - `SyncMcpLoggingProvider` - Processes `@McpLogging` annotations for synchronous operations
@@ -895,7 +898,7 @@ public class McpServerFactory {
             new SyncMcpResourceProvider(List.of(myResourceProvider)).getResourceSpecifications();
 
         List<SyncCompletionSpecification> completionSpecifications = 
-            new SyncMcpCompletionProvider(List.of(autocompleteProvider)).getCompleteSpecifications();
+            new SyncMcpCompleteProvider(List.of(autocompleteProvider)).getCompleteSpecifications();
 
         List<SyncPromptSpecification> promptSpecifications = 
             new SyncMcpPromptProvider(List.of(promptProvider)).getPromptSpecifications();
@@ -1909,6 +1912,12 @@ public class McpConfig {
     }
     
     @Bean
+    public List<McpStatelessServerFeatures.SyncCompletionSpecification> syncStatelessCompleteSpecifications(
+            List<StatelessAutocompleteProvider> statelessCompleteProviders) {
+        return SyncMcpAnnotationProviders.statelessCompleteSpecifications(statelessCompleteProviders);
+    }
+    
+    @Bean
     public List<SyncPromptSpecification> syncPromptSpecifications(
             List<PromptProvider> promptProviders) {
         return SyncMcpAnnotationProviders.promptSpecifications(promptProviders);
@@ -2060,7 +2069,7 @@ public class McpConfig {
 
 - Java 17 or higher
 - Reactor Core (for async operations)
-- MCP Java SDK 0.11.2 or higher
+- MCP Java SDK 0.12.0-SNAPSHOT or higher
 - Spring Framework and Spring AI (for mcp-annotations-spring module)
 
 ## Building from Source

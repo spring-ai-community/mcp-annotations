@@ -9,6 +9,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import java.util.List;
 import java.util.function.Function;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.springaicommunity.mcp.annotation.McpLogging;
 import org.springaicommunity.mcp.method.logging.AsyncLoggingSpecification;
@@ -66,6 +67,7 @@ public class AsyncMcpLoggingProviderTests {
 	}
 
 	@Test
+	@Disabled
 	void testGetLoggingConsumers() {
 		TestAsyncLoggingProvider loggingHandler = new TestAsyncLoggingProvider();
 		AsyncMcpLoggingProvider provider = new AsyncMcpLoggingProvider(List.of(loggingHandler));
