@@ -18,15 +18,19 @@ package org.springaicommunity.mcp.spring;
 import java.lang.reflect.Method;
 import java.util.List;
 
+import org.springaicommunity.mcp.method.changed.prompt.AsyncPromptListChangedSpecification;
+import org.springaicommunity.mcp.method.changed.prompt.SyncPromptListChangedSpecification;
 import org.springaicommunity.mcp.method.changed.resource.SyncResourceListChangedSpecification;
 import org.springaicommunity.mcp.method.changed.tool.SyncToolListChangedSpecification;
 import org.springaicommunity.mcp.method.elicitation.SyncElicitationSpecification;
 import org.springaicommunity.mcp.method.logging.SyncLoggingSpecification;
 import org.springaicommunity.mcp.method.progress.SyncProgressSpecification;
 import org.springaicommunity.mcp.method.sampling.SyncSamplingSpecification;
+import org.springaicommunity.mcp.provider.changed.prompt.SyncMcpPromptListChangedProvider;
 import org.springaicommunity.mcp.provider.changed.resource.SyncMcpResourceListChangedProvider;
 import org.springaicommunity.mcp.provider.changed.tool.SyncMcpToolListChangedProvider;
-import org.springaicommunity.mcp.provider.complete.SyncMcpCompletionProvider;
+import org.springaicommunity.mcp.provider.complete.SyncMcpCompleteProvider;
+import org.springaicommunity.mcp.provider.complete.SyncStatelessMcpCompleteProvider;
 import org.springaicommunity.mcp.provider.elicitation.SyncMcpElicitationProvider;
 import org.springaicommunity.mcp.provider.logging.SyncMcpLogginProvider;
 import org.springaicommunity.mcp.provider.progress.SyncMcpProgressProvider;
@@ -49,9 +53,10 @@ import io.modelcontextprotocol.server.McpStatelessServerFeatures;
  */
 public class SyncMcpAnnotationProviders {
 
-	private static class SpringAiSyncMcpCompletionProvider extends SyncMcpCompletionProvider {
+	// COMPLETE
+	private static class SpringAiSyncMcpCompleteProvider extends SyncMcpCompleteProvider {
 
-		public SpringAiSyncMcpCompletionProvider(List<Object> completeObjects) {
+		public SpringAiSyncMcpCompleteProvider(List<Object> completeObjects) {
 			super(completeObjects);
 		}
 
@@ -62,6 +67,20 @@ public class SyncMcpAnnotationProviders {
 
 	};
 
+	private static class SpringAiSyncStatelessMcpCompleteProvider extends SyncStatelessMcpCompleteProvider {
+
+		public SpringAiSyncStatelessMcpCompleteProvider(List<Object> completeObjects) {
+			super(completeObjects);
+		}
+
+		@Override
+		protected Method[] doGetClassMethods(Object bean) {
+			return AnnotationProviderUtil.beanMethods(bean);
+		}
+
+	};
+
+	// TOOL
 	private static class SpringAiSyncToolProvider extends SyncMcpToolProvider {
 
 		public SpringAiSyncToolProvider(List<Object> toolObjects) {
@@ -88,6 +107,7 @@ public class SyncMcpAnnotationProviders {
 
 	}
 
+	// PROMPT
 	private static class SpringAiSyncMcpPromptProvider extends SyncMcpPromptProvider {
 
 		public SpringAiSyncMcpPromptProvider(List<Object> promptObjects) {
@@ -114,6 +134,7 @@ public class SyncMcpAnnotationProviders {
 
 	}
 
+	// RESOURCE
 	private static class SpringAiSyncMcpResourceProvider extends SyncMcpResourceProvider {
 
 		public SpringAiSyncMcpResourceProvider(List<Object> resourceObjects) {
@@ -140,6 +161,7 @@ public class SyncMcpAnnotationProviders {
 
 	}
 
+	// LOGGING (CLIENT)
 	private static class SpringAiSyncMcpLoggingProvider extends SyncMcpLogginProvider {
 
 		public SpringAiSyncMcpLoggingProvider(List<Object> loggingObjects) {
@@ -153,6 +175,7 @@ public class SyncMcpAnnotationProviders {
 
 	}
 
+	// SAMPLING (CLIENT)
 	private static class SpringAiSyncMcpSamplingProvider extends SyncMcpSamplingProvider {
 
 		public SpringAiSyncMcpSamplingProvider(List<Object> samplingObjects) {
@@ -166,6 +189,7 @@ public class SyncMcpAnnotationProviders {
 
 	}
 
+	// ELICITATION (CLIENT)
 	private static class SpringAiSyncMcpElicitationProvider extends SyncMcpElicitationProvider {
 
 		public SpringAiSyncMcpElicitationProvider(List<Object> elicitationObjects) {
@@ -179,6 +203,7 @@ public class SyncMcpAnnotationProviders {
 
 	}
 
+	// PROGRESS (CLIENT)
 	private static class SpringAiSyncMcpProgressProvider extends SyncMcpProgressProvider {
 
 		public SpringAiSyncMcpProgressProvider(List<Object> progressObjects) {
@@ -192,6 +217,7 @@ public class SyncMcpAnnotationProviders {
 
 	}
 
+	// TOOL LIST CHANGE
 	private static class SpringAiSyncMcpToolListChangedProvider extends SyncMcpToolListChangedProvider {
 
 		public SpringAiSyncMcpToolListChangedProvider(List<Object> toolListChangedObjects) {
@@ -205,6 +231,7 @@ public class SyncMcpAnnotationProviders {
 
 	}
 
+	// RESOURCE LIST CHANGE
 	private static class SpringAiSyncMcpResourceListChangedProvider extends SyncMcpResourceListChangedProvider {
 
 		public SpringAiSyncMcpResourceListChangedProvider(List<Object> resourceListChangedObjects) {
@@ -218,6 +245,25 @@ public class SyncMcpAnnotationProviders {
 
 	}
 
+	// PROMPT LIST CHANGE
+	private static class SpringAiSyncMcpPromptListChangedProvider extends SyncMcpPromptListChangedProvider {
+
+		public SpringAiSyncMcpPromptListChangedProvider(List<Object> promptListChangedObjects) {
+			super(promptListChangedObjects);
+		}
+
+		@Override
+		protected Method[] doGetClassMethods(Object bean) {
+			return AnnotationProviderUtil.beanMethods(bean);
+		}
+
+	}
+
+	//
+	// UTILITIES
+	//
+
+	// TOOLS
 	public static List<SyncToolSpecification> toolSpecifications(List<Object> toolObjects) {
 		return new SpringAiSyncToolProvider(toolObjects).getToolSpecifications();
 	}
@@ -227,10 +273,17 @@ public class SyncMcpAnnotationProviders {
 		return new SpringAiSyncStatelessToolProvider(toolObjects).getToolSpecifications();
 	}
 
+	// COMPLETE
 	public static List<SyncCompletionSpecification> completeSpecifications(List<Object> completeObjects) {
-		return new SpringAiSyncMcpCompletionProvider(completeObjects).getCompleteSpecifications();
+		return new SpringAiSyncMcpCompleteProvider(completeObjects).getCompleteSpecifications();
 	}
 
+	public static List<McpStatelessServerFeatures.SyncCompletionSpecification> statelessCompleteSpecifications(
+			List<Object> completeObjects) {
+		return new SpringAiSyncStatelessMcpCompleteProvider(completeObjects).getCompleteSpecifications();
+	}
+
+	// PROMPT
 	public static List<SyncPromptSpecification> promptSpecifications(List<Object> promptObjects) {
 		return new SpringAiSyncMcpPromptProvider(promptObjects).getPromptSpecifications();
 	}
@@ -240,6 +293,7 @@ public class SyncMcpAnnotationProviders {
 		return new SpringAiSyncStatelessPromptProvider(promptObjects).getPromptSpecifications();
 	}
 
+	// RESOURCE
 	public static List<SyncResourceSpecification> resourceSpecifications(List<Object> resourceObjects) {
 		return new SpringAiSyncMcpResourceProvider(resourceObjects).getResourceSpecifications();
 	}
@@ -249,31 +303,44 @@ public class SyncMcpAnnotationProviders {
 		return new SpringAiSyncStatelessResourceProvider(resourceObjects).getResourceSpecifications();
 	}
 
+	// LOGGING (CLIENT)
 	public static List<SyncLoggingSpecification> loggingSpecifications(List<Object> loggingObjects) {
 		return new SpringAiSyncMcpLoggingProvider(loggingObjects).getLoggingSpecifications();
 	}
 
+	// SAMPLING (CLIENT)
 	public static List<SyncSamplingSpecification> samplingSpecifications(List<Object> samplingObjects) {
 		return new SpringAiSyncMcpSamplingProvider(samplingObjects).getSamplingSpecifications();
 	}
 
+	// ELICITATION (CLIENT)
 	public static List<SyncElicitationSpecification> elicitationSpecifications(List<Object> elicitationObjects) {
 		return new SpringAiSyncMcpElicitationProvider(elicitationObjects).getElicitationSpecifications();
 	}
 
+	// PROGRESS (CLIENT)
 	public static List<SyncProgressSpecification> progressSpecifications(List<Object> progressObjects) {
 		return new SpringAiSyncMcpProgressProvider(progressObjects).getProgressSpecifications();
 	}
 
+	// TOOL LIST CHANGED
 	public static List<SyncToolListChangedSpecification> toolListChangedSpecifications(
 			List<Object> toolListChangedObjects) {
 		return new SpringAiSyncMcpToolListChangedProvider(toolListChangedObjects).getToolListChangedSpecifications();
 	}
 
+	// RESOURCE LIST CHANGED
 	public static List<SyncResourceListChangedSpecification> resourceListChangedSpecifications(
 			List<Object> resourceListChangedObjects) {
 		return new SpringAiSyncMcpResourceListChangedProvider(resourceListChangedObjects)
 			.getResourceListChangedSpecifications();
+	}
+
+	// PROMPT LIST CHANGED
+	public static List<SyncPromptListChangedSpecification> promptListChangedSpecifications(
+			List<Object> promptListChangedObjects) {
+		return new SpringAiSyncMcpPromptListChangedProvider(promptListChangedObjects)
+			.getPromptListChangedSpecifications();
 	}
 
 }
