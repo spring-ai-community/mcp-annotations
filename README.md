@@ -40,7 +40,9 @@ To use the MCP Annotations core module in your project, add the following depend
 </dependency>
 ```
 
-### Spring Integration Module
+### (DEPRECATED) Spring Integration Module 
+
+This module is moved to Spring AI
 
 To use the Spring integration module, add the following dependency:
 
@@ -100,7 +102,7 @@ The core module provides a set of annotations and callback implementations for p
 
 Each operation type has both synchronous and asynchronous implementations, allowing for flexible integration with different application architectures.
 
-### Spring Integration Module (mcp-annotations-spring)
+### (DEPRECATED) Spring Integration Module (mcp-annotations-spring)
 
 The Spring integration module provides seamless integration with Spring AI and Spring Framework applications. It handles Spring-specific concerns such as AOP proxies and integrates with Spring AI's model abstractions.
 
@@ -233,9 +235,9 @@ The project includes provider classes that scan for annotated methods and create
 - `SyncStatelessMcpToolProvider` - Processes `@McpTool` annotations for synchronous stateless operations
 - `AsyncStatelessMcpToolProvider` - Processes `@McpTool` annotations for asynchronous stateless operations
 
-### Spring Integration
+### (DEPRECATED) Spring Integration
 
-The Spring integration module provides:
+Deprecated.The Spring integration module is moved to the Spring AI
 
 - `AsyncMcpAnnotationProviders` - Handles Spring-specific concerns when processing asynchronous MCP annotations
 - `SyncMcpAnnotationProviders` - Handles Spring-specific concerns when processing synchronous MCP annotations
@@ -1899,153 +1901,6 @@ public class StatelessMcpServerFactory {
 }
 ```
 
-### Spring Integration Example
-
-```java
-@Configuration
-public class McpConfig {
-    
-    @Bean
-    public List<SyncCompletionSpecification> syncCompletionSpecifications(
-            List<AutocompleteProvider> completeProviders) {
-        return SyncMcpAnnotationProviders.completeSpecifications(completeProviders);
-    }
-    
-    @Bean
-    public List<McpStatelessServerFeatures.SyncCompletionSpecification> syncStatelessCompleteSpecifications(
-            List<StatelessAutocompleteProvider> statelessCompleteProviders) {
-        return SyncMcpAnnotationProviders.statelessCompleteSpecifications(statelessCompleteProviders);
-    }
-    
-    @Bean
-    public List<SyncPromptSpecification> syncPromptSpecifications(
-            List<PromptProvider> promptProviders) {
-        return SyncMcpAnnotationProviders.promptSpecifications(promptProviders);
-    }
-    
-    @Bean
-    public List<SyncResourceSpecification> syncResourceSpecifications(
-            List<ResourceProvider> resourceProviders) {
-        return SyncMcpAnnotationProviders.resourceSpecifications(resourceProviders);
-    }
-    
-    @Bean
-    public List<SyncToolSpecification> syncToolSpecifications(
-            List<CalculatorToolProvider> toolProviders) {
-        return SyncMcpAnnotationProviders.toolSpecifications(toolProviders);
-    }
-    
-    @Bean
-    public List<AsyncToolSpecification> asyncToolSpecifications(
-            List<AsyncToolProvider> asyncToolProviders) {
-        return AsyncMcpAnnotationProviders.toolSpecifications(asyncToolProviders);
-    }
-    
-    @Bean
-    public List<SyncLoggingSpecification> syncLoggingSpecifications(
-            List<LoggingHandler> loggingHandlers) {
-        return SyncMcpAnnotationProviders.loggingSpecifications(loggingHandlers);
-    }
-    
-    @Bean
-    public List<AsyncLoggingSpecification> asyncLoggingSpecifications(
-            List<AsyncLoggingHandler> asyncLoggingHandlers) {
-        return AsyncMcpAnnotationProviders.loggingSpecifications(asyncLoggingHandlers);
-    }
-    
-    @Bean
-    public List<SyncSamplingSpecification> syncSamplingSpecifications(
-            List<SamplingHandler> samplingHandlers) {
-        return SyncMcpAnnotationProviders.samplingSpecifications(samplingHandlers);
-    }
-    
-    @Bean
-    public List<AsyncSamplingSpecification> asyncSamplingSpecifications(
-            List<AsyncSamplingHandler> asyncSamplingHandlers) {
-        return AsyncMcpAnnotationProviders.samplingSpecifications(asyncSamplingHandlers);
-    }
-    
-    @Bean
-    public List<SyncElicitationSpecification> syncElicitationSpecifications(
-            List<ElicitationHandler> elicitationHandlers) {
-        return SyncMcpAnnotationProviders.elicitationSpecifications(elicitationHandlers);
-    }
-    
-    @Bean
-    public List<AsyncElicitationSpecification> asyncElicitationSpecifications(
-            List<AsyncElicitationHandler> asyncElicitationHandlers) {
-        return AsyncMcpAnnotationProviders.elicitationSpecifications(asyncElicitationHandlers);
-    }
-    
-    @Bean
-    public List<SyncProgressSpecification> syncProgressSpecifications(
-            List<ProgressHandler> progressHandlers) {
-        return SyncMcpAnnotationProviders.progressSpecifications(progressHandlers);
-    }
-    
-    @Bean
-    public List<AsyncProgressSpecification> asyncProgressSpecifications(
-            List<AsyncProgressHandler> asyncProgressHandlers) {
-        return AsyncMcpAnnotationProviders.progressSpecifications(asyncProgressHandlers);
-    }
-    
-    @Bean
-    public List<SyncToolListChangedSpecification> syncToolListChangedSpecifications(
-            List<ToolListChangedHandler> toolListChangedHandlers) {
-        return SyncMcpAnnotationProviders.toolListChangedSpecifications(toolListChangedHandlers);
-    }
-    
-    @Bean
-    public List<AsyncToolListChangedSpecification> asyncToolListChangedSpecifications(
-            List<AsyncToolListChangedHandler> asyncToolListChangedHandlers) {
-        return AsyncMcpAnnotationProviders.toolListChangedSpecifications(asyncToolListChangedHandlers);
-    }
-    
-    @Bean
-    public List<SyncResourceListChangedSpecification> syncResourceListChangedSpecifications(
-            List<ResourceListChangedHandler> resourceListChangedHandlers) {
-        return SyncMcpAnnotationProviders.resourceListChangedSpecifications(resourceListChangedHandlers);
-    }
-    
-    @Bean
-    public List<AsyncResourceListChangedSpecification> asyncResourceListChangedSpecifications(
-            List<AsyncResourceListChangedHandler> asyncResourceListChangedHandlers) {
-        return AsyncMcpAnnotationProviders.resourceListChangedSpecifications(asyncResourceListChangedHandlers);
-    }
-    
-    @Bean
-    public List<SyncPromptListChangedSpecification> syncPromptListChangedSpecifications(
-            List<PromptListChangedHandler> promptListChangedHandlers) {
-        return SyncMcpAnnotationProviders.promptListChangedSpecifications(promptListChangedHandlers);
-    }
-    
-    @Bean
-    public List<AsyncPromptListChangedSpecification> asyncPromptListChangedSpecifications(
-            List<AsyncPromptListChangedHandler> asyncPromptListChangedHandlers) {
-        return AsyncMcpAnnotationProviders.promptListChangedSpecifications(asyncPromptListChangedHandlers);
-    }
-    
-    // Stateless Spring Integration Examples
-    
-    @Bean
-    public List<McpStatelessServerFeatures.SyncToolSpecification> syncStatelessToolSpecifications(
-            List<StatelessCalculatorProvider> statelessToolProviders) {
-        return SyncMcpAnnotationProviders.statelessToolSpecifications(statelessToolProviders);
-    }
-    
-    @Bean
-    public List<McpStatelessServerFeatures.SyncPromptSpecification> syncStatelessPromptSpecifications(
-            List<StatelessPromptProvider> statelessPromptProviders) {
-        return SyncMcpAnnotationProviders.statelessPromptSpecifications(statelessPromptProviders);
-    }
-    
-    @Bean
-    public List<McpStatelessServerFeatures.SyncResourceSpecification> syncStatelessResourceSpecifications(
-            List<StatelessResourceProvider> statelessResourceProviders) {
-        return SyncMcpAnnotationProviders.statelessResourceSpecifications(statelessResourceProviders);
-    }
-}
-```
 
 ## Features
 
@@ -2062,15 +1917,12 @@ public class McpConfig {
 - **Sampling support** - Handle sampling requests from MCP servers
 - **Progress notification support** - Handle progress notifications for long-running operations
 - **Tool list changed support** - Handle tool list change notifications from MCP servers when tools are dynamically added, removed, or modified
-- **Spring integration** - Seamless integration with Spring Framework and Spring AI, including support for both stateful and stateless operations
-- **AOP proxy support** - Proper handling of Spring AOP proxies when processing annotations
 
 ## Requirements
 
 - Java 17 or higher
 - Reactor Core (for async operations)
 - MCP Java SDK 0.12.0-SNAPSHOT or higher
-- Spring Framework and Spring AI (for mcp-annotations-spring module)
 
 ## Building from Source
 
