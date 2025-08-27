@@ -149,6 +149,7 @@ public abstract class AbstractMcpCompleteMethodCallback {
 		boolean hasExchangeParam = false;
 		boolean hasRequestParam = false;
 		boolean hasArgumentParam = false;
+		boolean hasContextParam = false;
 		boolean hasProgressTokenParam = false;
 		boolean hasMetaParam = false;
 
@@ -196,6 +197,13 @@ public abstract class AbstractMcpCompleteMethodCallback {
 				}
 				hasArgumentParam = true;
 			}
+			else if (CompleteRequest.CompleteContext.class.isAssignableFrom(paramType)) {
+				if (hasContextParam) {
+					throw new IllegalArgumentException("Method cannot have more than one CompleteContext parameter: "
+							+ method.getName() + " in " + method.getDeclaringClass().getName());
+				}
+				hasContextParam = true;
+			}
 			else if (!String.class.isAssignableFrom(paramType)) {
 				throw new IllegalArgumentException(
 						"Method parameters must be exchange, CompleteRequest, CompleteArgument, or String: "
@@ -218,6 +226,7 @@ public abstract class AbstractMcpCompleteMethodCallback {
 	protected Object[] buildArgs(Method method, Object exchange, CompleteRequest request) {
 		Parameter[] parameters = method.getParameters();
 		Object[] args = new Object[parameters.length];
+		int uriVarIndex = 0;
 
 		for (int i = 0; i < parameters.length; i++) {
 			Parameter param = parameters[i];
@@ -243,8 +252,20 @@ public abstract class AbstractMcpCompleteMethodCallback {
 			else if (CompleteRequest.CompleteArgument.class.isAssignableFrom(paramType)) {
 				args[i] = request.argument();
 			}
+			else if (CompleteRequest.CompleteContext.class.isAssignableFrom(paramType)) {
+				args[i] = request.context();
+			}
 			else if (String.class.isAssignableFrom(paramType)) {
-				args[i] = request.argument().value();
+				//do the string params need to be in same order as in template uri?
+				//why are the param names arg0, arg1, etc...
+				String variableName = uriVariables.get(uriVarIndex++);
+				if (request.argument().name().equals(variableName)) {
+					args[i] = request.argument().value();
+				} else if (request.context().arguments().containsKey(variableName)) {
+					args[i] = request.context().arguments().get(variableName);
+				} else {
+					args[i] = null;
+				}
 			}
 			else {
 				args[i] = null; // For any other parameter types
