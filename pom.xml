@@ -6,7 +6,7 @@
 
 	<groupId>org.springaicommunity</groupId>
 	<artifactId>mcp-annotations-parent</artifactId>
-	<version>0.2.0</version>
+	<version>0.2.1-SNAPSHOT</version>
 
 	<packaging>pom</packaging>
 	<url>https://github.com/spring-ai-community/mcp-annotations</url>
