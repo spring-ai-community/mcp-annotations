@@ -39,12 +39,12 @@ public class SyncMcpLoggingMethodCallbackTests {
 
 		private String lastData;
 
-		@McpLogging(clientId = "test-client")
+		@McpLogging(clients = "test-client")
 		public void handleLoggingMessage(LoggingMessageNotification notification) {
 			this.lastNotification = notification;
 		}
 
-		@McpLogging(clientId = "test-client")
+		@McpLogging(clients = "test-client")
 		public void handleLoggingMessageWithParams(LoggingLevel level, String logger, String data) {
 			this.lastLevel = level;
 			this.lastLogger = logger;
@@ -58,22 +58,22 @@ public class SyncMcpLoggingMethodCallbackTests {
 	 */
 	static class InvalidMethods {
 
-		@McpLogging(clientId = "test-client")
+		@McpLogging(clients = "test-client")
 		public String invalidReturnType(LoggingMessageNotification notification) {
 			return "Invalid";
 		}
 
-		@McpLogging(clientId = "test-client")
+		@McpLogging(clients = "test-client")
 		public void invalidParameterCount(LoggingMessageNotification notification, String extra) {
 			// Invalid parameter count
 		}
 
-		@McpLogging(clientId = "test-client")
+		@McpLogging(clients = "test-client")
 		public void invalidParameterType(String invalidType) {
 			// Invalid parameter type
 		}
 
-		@McpLogging(clientId = "test-client")
+		@McpLogging(clients = "test-client")
 		public void invalidParameterTypes(String level, int logger, boolean data) {
 			// Invalid parameter types
 		}

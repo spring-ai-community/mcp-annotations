@@ -8,6 +8,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.List;
 import java.util.function.Consumer;
+import java.util.stream.Stream;
 
 import org.junit.jupiter.api.Test;
 import org.springaicommunity.mcp.annotation.McpPromptListChanged;
@@ -33,12 +34,12 @@ public class SyncMcpPromptListChangedProviderTests {
 
 		private List<McpSchema.Prompt> lastUpdatedPrompts;
 
-		@McpPromptListChanged
+		@McpPromptListChanged(clients = "my-client-id")
 		public void handlePromptListChanged(List<McpSchema.Prompt> updatedPrompts) {
 			this.lastUpdatedPrompts = updatedPrompts;
 		}
 
-		@McpPromptListChanged(clientId = "test-client")
+		@McpPromptListChanged(clients = "test-client")
 		public void handlePromptListChangedWithClientId(List<McpSchema.Prompt> updatedPrompts) {
 			this.lastUpdatedPrompts = updatedPrompts;
 		}
@@ -91,9 +92,9 @@ public class SyncMcpPromptListChangedProviderTests {
 		assertThat(specifications).hasSize(2);
 
 		// Check client IDs
-		List<String> clientIds = specifications.stream().map(SyncPromptListChangedSpecification::clientId).toList();
+		List<String> clientIds = specifications.stream().map(spec -> spec.clients()).flatMap(Stream::of).toList();
 
-		assertThat(clientIds).containsExactlyInAnyOrder("", "test-client");
+		assertThat(clientIds).containsExactlyInAnyOrder("test-client", "my-client-id");
 	}
 
 	@Test

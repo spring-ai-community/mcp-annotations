@@ -4,17 +4,18 @@
 
 package org.springaicommunity.mcp.method.elicitation;
 
+import java.util.Arrays;
 import java.util.Objects;
 import java.util.function.Function;
 
 import io.modelcontextprotocol.spec.McpSchema.ElicitRequest;
 import io.modelcontextprotocol.spec.McpSchema.ElicitResult;
 
-public record SyncElicitationSpecification(String clientId, Function<ElicitRequest, ElicitResult> elicitationHandler) {
+public record SyncElicitationSpecification(String[] clients, Function<ElicitRequest, ElicitResult> elicitationHandler) {
 	public SyncElicitationSpecification {
-		Objects.requireNonNull(clientId, "clientId must not be null");
-		if (clientId.trim().isEmpty()) {
-			throw new IllegalArgumentException("clientId must not be empty");
+		Objects.requireNonNull(clients, "clients must not be null");
+		if (clients.length == 0 || Arrays.stream(clients).map(String::trim).anyMatch(String::isEmpty)) {
+			throw new IllegalArgumentException("clients must not be empty");
 		}
 		Objects.requireNonNull(elicitationHandler, "elicitationHandler must not be null");
 	}

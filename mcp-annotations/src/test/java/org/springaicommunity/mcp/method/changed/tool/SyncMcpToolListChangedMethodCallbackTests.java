@@ -34,7 +34,7 @@ public class SyncMcpToolListChangedMethodCallbackTests {
 
 		private List<McpSchema.Tool> lastUpdatedTools;
 
-		@McpToolListChanged
+		@McpToolListChanged(clients = "client1")
 		public void handleToolListChanged(List<McpSchema.Tool> updatedTools) {
 			this.lastUpdatedTools = updatedTools;
 		}
@@ -46,22 +46,22 @@ public class SyncMcpToolListChangedMethodCallbackTests {
 	 */
 	static class InvalidMethods {
 
-		@McpToolListChanged
+		@McpToolListChanged(clients = "client1")
 		public String invalidReturnType(List<McpSchema.Tool> updatedTools) {
 			return "Invalid";
 		}
 
-		@McpToolListChanged
+		@McpToolListChanged(clients = "client1")
 		public void invalidParameterCount(List<McpSchema.Tool> updatedTools, String extra) {
 			// Invalid parameter count
 		}
 
-		@McpToolListChanged
+		@McpToolListChanged(clients = "client1")
 		public void invalidParameterType(String invalidType) {
 			// Invalid parameter type
 		}
 
-		@McpToolListChanged
+		@McpToolListChanged(clients = "client1")
 		public void noParameters() {
 			// No parameters
 		}
@@ -180,7 +180,7 @@ public class SyncMcpToolListChangedMethodCallbackTests {
 		// Test class that throws an exception in the method
 		class ThrowingMethod {
 
-			@McpToolListChanged
+			@McpToolListChanged(clients = "client1")
 			public void handleToolListChanged(List<McpSchema.Tool> updatedTools) {
 				throw new RuntimeException("Test exception");
 			}

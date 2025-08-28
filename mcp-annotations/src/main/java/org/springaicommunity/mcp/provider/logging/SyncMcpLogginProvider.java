@@ -90,7 +90,7 @@ public class SyncMcpLogginProvider {
 						.loggingConsumer(loggingConsumerAnnotation)
 						.build();
 
-					return new SyncLoggingSpecification(loggingConsumerAnnotation.clientId(), methodCallback);
+					return new SyncLoggingSpecification(loggingConsumerAnnotation.clients(), methodCallback);
 				})
 				.toList())
 			.flatMap(List::stream)

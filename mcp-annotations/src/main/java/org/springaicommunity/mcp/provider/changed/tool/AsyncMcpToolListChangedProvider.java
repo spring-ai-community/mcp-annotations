@@ -93,7 +93,7 @@ public class AsyncMcpToolListChangedProvider {
 						.bean(consumerObject)
 						.build();
 
-					return new AsyncToolListChangedSpecification(toolListChangedAnnotation.clientId(), methodCallback);
+					return new AsyncToolListChangedSpecification(toolListChangedAnnotation.clients(), methodCallback);
 				})
 				.toList())
 			.flatMap(List::stream)

@@ -92,7 +92,7 @@ public class SyncMcpPromptListChangedProvider {
 						.promptListChanged(promptListChangedAnnotation)
 						.build();
 
-					return new SyncPromptListChangedSpecification(promptListChangedAnnotation.clientId(),
+					return new SyncPromptListChangedSpecification(promptListChangedAnnotation.clients(),
 							methodCallback);
 				})
 				.toList())

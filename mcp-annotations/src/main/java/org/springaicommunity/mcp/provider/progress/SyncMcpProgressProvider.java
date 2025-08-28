@@ -91,7 +91,7 @@ public class SyncMcpProgressProvider {
 						.progress(progressAnnotation)
 						.build();
 
-					return new SyncProgressSpecification(progressAnnotation.clientId(), methodCallback);
+					return new SyncProgressSpecification(progressAnnotation.clients(), methodCallback);
 				})
 				.toList())
 			.flatMap(List::stream)

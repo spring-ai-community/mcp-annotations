@@ -46,14 +46,14 @@ public class AsyncMcpResourceListChangedMethodCallbackTests {
 
 		private List<McpSchema.Resource> lastUpdatedResources;
 
-		@McpResourceListChanged
+		@McpResourceListChanged(clients = "client1")
 		public Mono<Void> handleResourceListChanged(List<McpSchema.Resource> updatedResources) {
 			return Mono.fromRunnable(() -> {
 				this.lastUpdatedResources = updatedResources;
 			});
 		}
 
-		@McpResourceListChanged
+		@McpResourceListChanged(clients = "client1")
 		public void handleResourceListChangedVoid(List<McpSchema.Resource> updatedResources) {
 			this.lastUpdatedResources = updatedResources;
 		}
@@ -65,27 +65,27 @@ public class AsyncMcpResourceListChangedMethodCallbackTests {
 	 */
 	static class InvalidMethods {
 
-		@McpResourceListChanged
+		@McpResourceListChanged(clients = "client1")
 		public String invalidReturnType(List<McpSchema.Resource> updatedResources) {
 			return "Invalid";
 		}
 
-		@McpResourceListChanged
+		@McpResourceListChanged(clients = "client1")
 		public Mono<String> invalidMonoReturnType(List<McpSchema.Resource> updatedResources) {
 			return Mono.just("Invalid");
 		}
 
-		@McpResourceListChanged
+		@McpResourceListChanged(clients = "client1")
 		public Mono<Void> invalidParameterCount(List<McpSchema.Resource> updatedResources, String extra) {
 			return Mono.empty();
 		}
 
-		@McpResourceListChanged
+		@McpResourceListChanged(clients = "client1")
 		public Mono<Void> invalidParameterType(String invalidType) {
 			return Mono.empty();
 		}
 
-		@McpResourceListChanged
+		@McpResourceListChanged(clients = "client1")
 		public Mono<Void> noParameters() {
 			return Mono.empty();
 		}
@@ -239,7 +239,7 @@ public class AsyncMcpResourceListChangedMethodCallbackTests {
 		// Test class that throws an exception in the method
 		class ThrowingMethod {
 
-			@McpResourceListChanged
+			@McpResourceListChanged(clients = "client1")
 			public Mono<Void> handleResourceListChanged(List<McpSchema.Resource> updatedResources) {
 				return Mono.fromRunnable(() -> {
 					throw new RuntimeException("Test exception");
@@ -264,7 +264,7 @@ public class AsyncMcpResourceListChangedMethodCallbackTests {
 		// Test class that throws an exception in a void method
 		class ThrowingVoidMethod {
 
-			@McpResourceListChanged
+			@McpResourceListChanged(clients = "client1")
 			public void handleResourceListChanged(List<McpSchema.Resource> updatedResources) {
 				throw new RuntimeException("Test exception");
 			}

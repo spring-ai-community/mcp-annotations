@@ -101,7 +101,7 @@ public class SyncMcpSamplingProvider {
 						.sampling(samplingAnnotation)
 						.build();
 
-					return new SyncSamplingSpecification(samplingAnnotation.clientId(), methodCallback);
+					return new SyncSamplingSpecification(samplingAnnotation.clients(), methodCallback);
 				})
 				.toList())
 			.flatMap(List::stream)

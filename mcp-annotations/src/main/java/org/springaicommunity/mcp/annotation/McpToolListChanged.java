@@ -28,14 +28,14 @@ import java.lang.annotation.Target;
  *
  * <p>
  * Example usage: <pre>{@code
- * &#64;McpToolListChanged
+ * &#64;McpToolListChanged(clients = "test-client")
  * public void onToolListChanged(List<McpSchema.Tool> updatedTools) {
  *     // Handle tool list change notification with the updated tools
  *     logger.info("Tool list updated, now contains {} tools", updatedTools.size());
  *     // Process the updated tool list
  * }
  *
- * &#64;McpToolListChanged
+ * &#64;McpToolListChanged(clients = "test-client")
  * public Mono<Void> onToolListChangedAsync(List<McpSchema.Tool> updatedTools) {
  *     // Handle tool list change notification asynchronously
  *     return processUpdatedTools(updatedTools);
@@ -53,12 +53,10 @@ import java.lang.annotation.Target;
 public @interface McpToolListChanged {
 
 	/**
-	 * Used as connection or client identifier to select the MCP client that the tool
-	 * change listener is associated with. If not specified, the listener is applied to
-	 * all clients and will receive notifications from any connected MCP server that
-	 * supports tool list change notifications.
-	 * @return the client identifier, or empty string to listen to all clients
+	 * Used as connection or client identifier to select the MCP clients that the tool
+	 * change listener is associated with.
+	 * @return the client identifiers, or empty array to listen to all clients
 	 */
-	String clientId() default "";
+	String[] clients();
 
 }
