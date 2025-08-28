@@ -4,6 +4,7 @@
 
 package org.springaicommunity.mcp.method.progress;
 
+import java.util.Objects;
 import java.util.function.Consumer;
 
 import io.modelcontextprotocol.spec.McpSchema.ProgressNotification;
@@ -16,4 +17,13 @@ import io.modelcontextprotocol.spec.McpSchema.ProgressNotification;
  * @author Christian Tzolov
  */
 public record SyncProgressSpecification(String clientId, Consumer<ProgressNotification> progressHandler) {
+
+	public SyncProgressSpecification {
+		Objects.requireNonNull(clientId, "clientId must not be null");
+		if (clientId.trim().isEmpty()) {
+			throw new IllegalArgumentException("clientId must not be empty");
+		}
+		Objects.requireNonNull(progressHandler, "progressHandler must not be null");
+	}
+
 }
