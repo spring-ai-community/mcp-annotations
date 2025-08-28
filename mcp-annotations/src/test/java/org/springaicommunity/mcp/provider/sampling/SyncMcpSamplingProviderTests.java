@@ -32,7 +32,7 @@ public class SyncMcpSamplingProviderTests {
 		// Create a class with only one valid sampling method
 		class SingleValidMethod {
 
-			@McpSampling
+			@McpSampling(clientId = "test-client")
 			public CreateMessageResult handleSamplingRequest(CreateMessageRequest request) {
 				return CreateMessageResult.builder()
 					.role(io.modelcontextprotocol.spec.McpSchema.Role.ASSISTANT)
