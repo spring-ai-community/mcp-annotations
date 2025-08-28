@@ -25,7 +25,7 @@ public class AsyncMcpSamplingMethodCallbackExample {
 	 * @param request The sampling request
 	 * @return The sampling result as a Mono
 	 */
-	@McpSampling(clientId = "test-client")
+	@McpSampling(clients = "test-client")
 	public Mono<CreateMessageResult> handleAsyncSamplingRequest(CreateMessageRequest request) {
 		// Process the request asynchronously and return a result
 		return Mono.just(CreateMessageResult.builder()
@@ -40,7 +40,7 @@ public class AsyncMcpSamplingMethodCallbackExample {
 	 * @param request The sampling request
 	 * @return The sampling result directly
 	 */
-	@McpSampling(clientId = "test-client")
+	@McpSampling(clients = "test-client")
 	public CreateMessageResult handleDirectSamplingRequest(CreateMessageRequest request) {
 		// Process the request and return a direct result
 		return CreateMessageResult.builder()
@@ -55,7 +55,7 @@ public class AsyncMcpSamplingMethodCallbackExample {
 	 * @param request The sampling request
 	 * @return A Mono with an invalid type
 	 */
-	@McpSampling(clientId = "test-client")
+	@McpSampling(clients = "test-client")
 	public Mono<String> invalidMonoReturnType(CreateMessageRequest request) {
 		return Mono.just("This method has an invalid return type");
 	}
@@ -65,7 +65,7 @@ public class AsyncMcpSamplingMethodCallbackExample {
 	 * @param invalidParam An invalid parameter type
 	 * @return The sampling result as a Mono
 	 */
-	@McpSampling(clientId = "test-client")
+	@McpSampling(clients = "test-client")
 	public Mono<CreateMessageResult> invalidParameterType(String invalidParam) {
 		return Mono.just(CreateMessageResult.builder()
 			.role(Role.ASSISTANT)
@@ -78,7 +78,7 @@ public class AsyncMcpSamplingMethodCallbackExample {
 	 * Example method with no parameters.
 	 * @return The sampling result as a Mono
 	 */
-	@McpSampling(clientId = "test-client")
+	@McpSampling(clients = "test-client")
 	public Mono<CreateMessageResult> noParameters() {
 		return Mono.just(CreateMessageResult.builder()
 			.role(Role.ASSISTANT)
@@ -93,7 +93,7 @@ public class AsyncMcpSamplingMethodCallbackExample {
 	 * @param extraParam An extra parameter
 	 * @return The sampling result as a Mono
 	 */
-	@McpSampling(clientId = "test-client")
+	@McpSampling(clients = "test-client")
 	public Mono<CreateMessageResult> tooManyParameters(CreateMessageRequest request, String extraParam) {
 		return Mono.just(CreateMessageResult.builder()
 			.role(Role.ASSISTANT)

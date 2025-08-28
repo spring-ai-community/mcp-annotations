@@ -100,7 +100,7 @@ public class SyncMcpElicitationProvider {
 						.elicitation(elicitationAnnotation)
 						.build();
 
-					return new SyncElicitationSpecification(elicitationAnnotation.clientId(), methodCallback);
+					return new SyncElicitationSpecification(elicitationAnnotation.clients(), methodCallback);
 				})
 				.toList())
 			.flatMap(List::stream)

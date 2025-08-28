@@ -18,20 +18,20 @@ import io.modelcontextprotocol.spec.McpSchema.ElicitResult;
  */
 public class SyncMcpElicitationMethodCallbackExample {
 
-	@McpElicitation(clientId = "my-client-id")
+	@McpElicitation(clients = "my-client-id")
 	public ElicitResult handleElicitationRequest(ElicitRequest request) {
 		// Example implementation that accepts the request and returns some content
 		return new ElicitResult(ElicitResult.Action.ACCEPT,
 				Map.of("userInput", "Example user input", "confirmed", true));
 	}
 
-	@McpElicitation(clientId = "my-client-id")
+	@McpElicitation(clients = "my-client-id")
 	public ElicitResult handleDeclineElicitationRequest(ElicitRequest request) {
 		// Example implementation that declines the request
 		return new ElicitResult(ElicitResult.Action.DECLINE, null);
 	}
 
-	@McpElicitation(clientId = "my-client-id")
+	@McpElicitation(clients = "my-client-id")
 	public ElicitResult handleCancelElicitationRequest(ElicitRequest request) {
 		// Example implementation that cancels the request
 		return new ElicitResult(ElicitResult.Action.CANCEL, null);
@@ -39,22 +39,22 @@ public class SyncMcpElicitationMethodCallbackExample {
 
 	// Test methods for invalid scenarios
 
-	@McpElicitation(clientId = "my-client-id")
+	@McpElicitation(clients = "my-client-id")
 	public String invalidReturnType(ElicitRequest request) {
 		return "Invalid return type";
 	}
 
-	@McpElicitation(clientId = "my-client-id")
+	@McpElicitation(clients = "my-client-id")
 	public ElicitResult invalidParameterType(String request) {
 		return new ElicitResult(ElicitResult.Action.ACCEPT, Map.of("test", "value"));
 	}
 
-	@McpElicitation(clientId = "my-client-id")
+	@McpElicitation(clients = "my-client-id")
 	public ElicitResult noParameters() {
 		return new ElicitResult(ElicitResult.Action.ACCEPT, Map.of("test", "value"));
 	}
 
-	@McpElicitation(clientId = "my-client-id")
+	@McpElicitation(clients = "my-client-id")
 	public ElicitResult tooManyParameters(ElicitRequest request, String extra) {
 		return new ElicitResult(ElicitResult.Action.ACCEPT, Map.of("test", "value"));
 	}

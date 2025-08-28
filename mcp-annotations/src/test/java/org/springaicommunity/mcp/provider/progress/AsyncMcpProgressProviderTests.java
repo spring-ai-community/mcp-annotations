@@ -37,25 +37,25 @@ public class AsyncMcpProgressProviderTests {
 
 		private String lastTotal;
 
-		@McpProgress(clientId = "my-client-id")
+		@McpProgress(clients = "my-client-id")
 		public void handleProgressVoid(ProgressNotification notification) {
 			this.lastNotification = notification;
 		}
 
-		@McpProgress(clientId = "my-client-id")
+		@McpProgress(clients = "my-client-id")
 		public Mono<Void> handleProgressMono(ProgressNotification notification) {
 			this.lastNotification = notification;
 			return Mono.empty();
 		}
 
-		@McpProgress(clientId = "my-client-id")
+		@McpProgress(clients = "my-client-id")
 		public void handleProgressWithParams(Double progress, String progressToken, String total) {
 			this.lastProgress = progress;
 			this.lastProgressToken = progressToken;
 			this.lastTotal = total;
 		}
 
-		@McpProgress(clientId = "my-client-id")
+		@McpProgress(clients = "my-client-id")
 		public Mono<Void> handleProgressWithParamsMono(Double progress, String progressToken, String total) {
 			this.lastProgress = progress;
 			this.lastProgressToken = progressToken;
@@ -63,7 +63,7 @@ public class AsyncMcpProgressProviderTests {
 			return Mono.empty();
 		}
 
-		@McpProgress(clientId = "my-client-id")
+		@McpProgress(clients = "my-client-id")
 		public void handleProgressWithPrimitiveDouble(double progress, String progressToken, String total) {
 			this.lastProgress = progress;
 			this.lastProgressToken = progressToken;
@@ -77,13 +77,13 @@ public class AsyncMcpProgressProviderTests {
 		}
 
 		// This method has invalid return type and should be ignored
-		@McpProgress(clientId = "my-client-id")
+		@McpProgress(clients = "my-client-id")
 		public String invalidReturnType(ProgressNotification notification) {
 			return "Invalid";
 		}
 
 		// This method has invalid Mono return type and should be ignored
-		@McpProgress(clientId = "my-client-id")
+		@McpProgress(clients = "my-client-id")
 		public Mono<String> invalidMonoReturnType(ProgressNotification notification) {
 			return Mono.just("Invalid");
 		}
@@ -171,8 +171,8 @@ public class AsyncMcpProgressProviderTests {
 
 		List<AsyncProgressSpecification> specifications = provider.getProgressSpecifications();
 
-		// All specifications should have non-empty clientId
-		assertThat(specifications).allMatch(spec -> !spec.clientId().isEmpty());
+		// All specifications should have non-empty client Ids
+		assertThat(specifications).allMatch(spec -> spec.clients().length > 0);
 	}
 
 	@Test
@@ -180,7 +180,7 @@ public class AsyncMcpProgressProviderTests {
 		// Test class with method that throws an exception
 		class ErrorHandler {
 
-			@McpProgress(clientId = "my-client-id")
+			@McpProgress(clients = "my-client-id")
 			public Mono<Void> handleProgressWithError(ProgressNotification notification) {
 				return Mono.error(new RuntimeException("Test error"));
 			}

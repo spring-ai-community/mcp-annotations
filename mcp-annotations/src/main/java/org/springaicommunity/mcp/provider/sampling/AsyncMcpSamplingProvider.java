@@ -101,7 +101,7 @@ public class AsyncMcpSamplingProvider {
 						.sampling(samplingAnnotation)
 						.build();
 
-					return new AsyncSamplingSpecification(samplingAnnotation.clientId(), methodCallback);
+					return new AsyncSamplingSpecification(samplingAnnotation.clients(), methodCallback);
 				})
 				.toList())
 			.flatMap(List::stream)

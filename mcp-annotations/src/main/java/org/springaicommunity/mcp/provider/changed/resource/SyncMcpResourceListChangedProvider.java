@@ -93,7 +93,7 @@ public class SyncMcpResourceListChangedProvider {
 						.resourceListChanged(resourceListChangedAnnotation)
 						.build();
 
-					return new SyncResourceListChangedSpecification(resourceListChangedAnnotation.clientId(),
+					return new SyncResourceListChangedSpecification(resourceListChangedAnnotation.clients(),
 							methodCallback);
 				})
 				.toList())

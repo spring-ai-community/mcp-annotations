@@ -91,7 +91,7 @@ public class SyncMcpToolListChangedProvider {
 						.toolListChanged(toolListChangedAnnotation)
 						.build();
 
-					return new SyncToolListChangedSpecification(toolListChangedAnnotation.clientId(), methodCallback);
+					return new SyncToolListChangedSpecification(toolListChangedAnnotation.clients(), methodCallback);
 				})
 				.toList())
 			.flatMap(List::stream)

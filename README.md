@@ -94,10 +94,10 @@ Each operation type has both synchronous and asynchronous implementations, allow
 ### Annotations
 
 #### Client
-- **`@McpLogging`** - Annotates methods that handle logging message notifications from MCP servers (requires `clientId` parameter)
-- **`@McpSampling`** - Annotates methods that handle sampling requests from MCP servers (requires `clientId` parameter)
-- **`@McpElicitation`** - Annotates methods that handle elicitation requests to gather additional information from users (requires `clientId` parameter)
-- **`@McpProgress`** - Annotates methods that handle progress notifications for long-running operations (requires `clientId` parameter)
+- **`@McpLogging`** - Annotates methods that handle logging message notifications from MCP servers (requires `clients` parameter)
+- **`@McpSampling`** - Annotates methods that handle sampling requests from MCP servers (requires `clients` parameter)
+- **`@McpElicitation`** - Annotates methods that handle elicitation requests to gather additional information from users (requires `clients` parameter)
+- **`@McpProgress`** - Annotates methods that handle progress notifications for long-running operations (requires `clients` parameter)
 - **`@McpToolListChanged`** - Annotates methods that handle tool list change notifications from MCP servers
 - **`@McpResourceListChanged`** - Annotates methods that handle resource list change notifications from MCP servers
 - **`@McpPromptListChanged`** - Annotates methods that handle prompt list change notifications from MCP servers
@@ -905,10 +905,10 @@ public class LoggingHandler {
 
     /**
      * Handle logging message notifications with a single parameter.
-     * Note: clientId is now required for all @McpLogging annotations.
+     * Note: clients are required for all @McpLogging annotations.
      * @param notification The logging message notification
      */
-    @McpLogging(clientId = "default-client")
+    @McpLogging(clients = "default-client")
     public void handleLoggingMessage(LoggingMessageNotification notification) {
         System.out.println("Received logging message: " + notification.level() + " - " + notification.logger() + " - "
                 + notification.data());
@@ -916,12 +916,12 @@ public class LoggingHandler {
 
     /**
      * Handle logging message notifications with individual parameters.
-     * Note: clientId is now required for all @McpLogging annotations.
+     * Note: clients are required for all @McpLogging annotations.
      * @param level The logging level
      * @param logger The logger name
      * @param data The log message data
      */
-    @McpLogging(clientId = "default-client")
+    @McpLogging(clients = "default-client")
     public void handleLoggingMessageWithParams(LoggingLevel level, String logger, String data) {
         System.out.println("Received logging message with params: " + level + " - " + logger + " - " + data);
     }
@@ -930,7 +930,7 @@ public class LoggingHandler {
      * Handle logging message notifications for a specific client.
      * @param notification The logging message notification
      */
-    @McpLogging(clientId = "client-1")
+    @McpLogging(clients = "client-1")
     public void handleClient1LoggingMessage(LoggingMessageNotification notification) {
         System.out.println("Client-1 logging message: " + notification.level() + " - " + notification.data());
     }
@@ -939,7 +939,7 @@ public class LoggingHandler {
      * Handle logging message notifications for another specific client.
      * @param notification The logging message notification
      */
-    @McpLogging(clientId = "client-2")
+    @McpLogging(clients = "client-2")
     public void handleClient2LoggingMessage(LoggingMessageNotification notification) {
         System.out.println("Client-2 logging message: " + notification.level() + " - " + notification.data());
     }
@@ -971,11 +971,11 @@ public class SamplingHandler {
 
     /**
      * Handle sampling requests with a synchronous implementation.
-     * Note: clientId is now required for all @McpSampling annotations.
+     * Note: clients are required for all @McpSampling annotations.
      * @param request The create message request
      * @return The create message result
      */
-    @McpSampling(clientId = "default-client")
+    @McpSampling(clients = "default-client")
     public CreateMessageResult handleSamplingRequest(CreateMessageRequest request) {
         // Process the request and generate a response
         return CreateMessageResult.builder()
@@ -990,7 +990,7 @@ public class SamplingHandler {
      * @param request The create message request
      * @return The create message result
      */
-    @McpSampling(clientId = "client-1")
+    @McpSampling(clients = "client-1")
     public CreateMessageResult handleClient1SamplingRequest(CreateMessageRequest request) {
         return CreateMessageResult.builder()
             .role(Role.ASSISTANT)
@@ -1004,11 +1004,11 @@ public class AsyncSamplingHandler {
 
     /**
      * Handle sampling requests with an asynchronous implementation.
-     * Note: clientId is now required for all @McpSampling annotations.
+     * Note: clients are required for all @McpSampling annotations.
      * @param request The create message request
      * @return A Mono containing the create message result
      */
-    @McpSampling(clientId = "default-client")
+    @McpSampling(clients = "default-client")
     public Mono<CreateMessageResult> handleAsyncSamplingRequest(CreateMessageRequest request) {
         return Mono.just(CreateMessageResult.builder()
             .role(Role.ASSISTANT)
@@ -1022,7 +1022,7 @@ public class AsyncSamplingHandler {
      * @param request The create message request
      * @return A Mono containing the create message result
      */
-    @McpSampling(clientId = "client-2")
+    @McpSampling(clients = "client-2")
     public Mono<CreateMessageResult> handleClient2AsyncSamplingRequest(CreateMessageRequest request) {
         return Mono.just(CreateMessageResult.builder()
             .role(Role.ASSISTANT)
@@ -1079,10 +1079,10 @@ public class ProgressHandler {
 
     /**
      * Handle progress notifications with a single parameter.
-     * Note: clientId is now required for all @McpProgress annotations.
+     * Note: clients are required for all @McpProgress annotations.
      * @param notification The progress notification
      */
-    @McpProgress(clientId = "default-client")
+    @McpProgress(clients = "default-client")
     public void handleProgressNotification(ProgressNotification notification) {
         System.out.println(String.format("Progress: %.2f%% - %s", 
             notification.progress() * 100, 
@@ -1091,13 +1091,13 @@ public class ProgressHandler {
 
     /**
      * Handle progress notifications with individual parameters.
-     * Note: clientId is now required for all @McpProgress annotations.
+     * Note: clients are required for all @McpProgress annotations.
      * @param progressToken The progress token identifying the operation
      * @param progress The current progress (0.0 to 1.0)
      * @param total Optional total value for the operation
      * @param message Optional progress message
      */
-    @McpProgress(clientId = "default-client")
+    @McpProgress(clients = "default-client")
     public void handleProgressWithParams(String progressToken, double progress, Double total, String message) {
         if (total != null) {
             System.out.println(String.format("Progress [%s]: %.0f/%.0f - %s", 
@@ -1112,7 +1112,7 @@ public class ProgressHandler {
      * Handle progress notifications for a specific client.
      * @param notification The progress notification
      */
-    @McpProgress(clientId = "client-1")
+    @McpProgress(clients = "client-1")
     public void handleClient1Progress(ProgressNotification notification) {
         System.out.println(String.format("Client-1 Progress: %.2f%% - %s", 
             notification.progress() * 100, 
@@ -1144,7 +1144,7 @@ public class AsyncProgressHandler {
      * @param message Optional message
      * @return A Mono that completes when the notification is handled
      */
-    @McpProgress(clientId = "client-2")
+    @McpProgress(clients = "client-2")
     public Mono<Void> handleClient2AsyncProgress(
             String progressToken, 
             double progress, 
@@ -1215,7 +1215,7 @@ public class ToolListChangedHandler {
      * Handle tool list change notifications for a specific client.
      * @param updatedTools The updated list of tools after the change
      */
-    @McpToolListChanged(clientId = "client-1")
+    @McpToolListChanged(clients = "client-1")
     public void handleClient1ToolListChanged(List<McpSchema.Tool> updatedTools) {
         System.out.println("Client-1 tool list updated with " + updatedTools.size() + " tools");
         // Process the updated tool list for client-1
@@ -1226,16 +1226,16 @@ public class ToolListChangedHandler {
      * Handle tool list change notifications for another specific client.
      * @param updatedTools The updated list of tools after the change
      */
-    @McpToolListChanged(clientId = "client-2")
+    @McpToolListChanged(clients = "client-2")
     public void handleClient2ToolListChanged(List<McpSchema.Tool> updatedTools) {
         System.out.println("Client-2 tool list updated with " + updatedTools.size() + " tools");
         // Process the updated tool list for client-2
         updateClientToolCache("client-2", updatedTools);
     }
 
-    private void updateClientToolCache(String clientId, List<McpSchema.Tool> tools) {
+    private void updateClientToolCache(String[] clients, List<McpSchema.Tool> tools) {
         // Implementation to update tool cache for specific client
-        System.out.println("Updated tool cache for " + clientId + " with " + tools.size() + " tools");
+        System.out.println("Updated tool cache for " + clients + " with " + tools.size() + " tools");
     }
 }
 
@@ -1260,7 +1260,7 @@ public class AsyncToolListChangedHandler {
      * @param updatedTools The updated list of tools after the change
      * @return A Mono that completes when the notification is handled
      */
-    @McpToolListChanged(clientId = "client-2")
+    @McpToolListChanged(clients = "client-2")
     public Mono<Void> handleClient2AsyncToolListChanged(List<McpSchema.Tool> updatedTools) {
         return Mono.fromRunnable(() -> {
             System.out.println("Client-2 async tool list update: " + updatedTools.size() + " tools");
@@ -1274,9 +1274,9 @@ public class AsyncToolListChangedHandler {
         System.out.println("Processing tool list update with " + tools.size() + " tools");
     }
 
-    private void processClientToolListUpdate(String clientId, List<McpSchema.Tool> tools) {
+    private void processClientToolListUpdate(String[] clients, List<McpSchema.Tool> tools) {
         // Implementation to process tool list update for specific client
-        System.out.println("Processing tool list update for " + clientId + " with " + tools.size() + " tools");
+        System.out.println("Processing tool list update for " + clients + " with " + tools.size() + " tools");
     }
 }
 
@@ -1333,7 +1333,7 @@ public class ResourceListChangedHandler {
      * Handle resource list change notifications for a specific client.
      * @param updatedResources The updated list of resources after the change
      */
-    @McpResourceListChanged(clientId = "client-1")
+    @McpResourceListChanged(clients = "client-1")
     public void handleClient1ResourceListChanged(List<McpSchema.Resource> updatedResources) {
         System.out.println("Client-1 resource list updated with " + updatedResources.size() + " resources");
         // Process the updated resource list for client-1
@@ -1344,16 +1344,16 @@ public class ResourceListChangedHandler {
      * Handle resource list change notifications for another specific client.
      * @param updatedResources The updated list of resources after the change
      */
-    @McpResourceListChanged(clientId = "client-2")
+    @McpResourceListChanged(clients = "client-2")
     public void handleClient2ResourceListChanged(List<McpSchema.Resource> updatedResources) {
         System.out.println("Client-2 resource list updated with " + updatedResources.size() + " resources");
         // Process the updated resource list for client-2
         updateClientResourceCache("client-2", updatedResources);
     }
 
-    private void updateClientResourceCache(String clientId, List<McpSchema.Resource> resources) {
+    private void updateClientResourceCache(String[] clients, List<McpSchema.Resource> resources) {
         // Implementation to update resource cache for specific client
-        System.out.println("Updated resource cache for " + clientId + " with " + resources.size() + " resources");
+        System.out.println("Updated resource cache for " + clients + " with " + resources.size() + " resources");
     }
 }
 
@@ -1378,7 +1378,7 @@ public class AsyncResourceListChangedHandler {
      * @param updatedResources The updated list of resources after the change
      * @return A Mono that completes when the notification is handled
      */
-    @McpResourceListChanged(clientId = "client-2")
+    @McpResourceListChanged(clients = "client-2")
     public Mono<Void> handleClient2AsyncResourceListChanged(List<McpSchema.Resource> updatedResources) {
         return Mono.fromRunnable(() -> {
             System.out.println("Client-2 async resource list update: " + updatedResources.size() + " resources");
@@ -1392,9 +1392,9 @@ public class AsyncResourceListChangedHandler {
         System.out.println("Processing resource list update with " + resources.size() + " resources");
     }
 
-    private void processClientResourceListUpdate(String clientId, List<McpSchema.Resource> resources) {
+    private void processClientResourceListUpdate(String[] clients, List<McpSchema.Resource> resources) {
         // Implementation to process resource list update for specific client
-        System.out.println("Processing resource list update for " + clientId + " with " + resources.size() + " resources");
+        System.out.println("Processing resource list update for " + clients + " with " + resources.size() + " resources");
     }
 }
 
@@ -1451,7 +1451,7 @@ public class PromptListChangedHandler {
      * Handle prompt list change notifications for a specific client.
      * @param updatedPrompts The updated list of prompts after the change
      */
-    @McpPromptListChanged(clientId = "client-1")
+    @McpPromptListChanged(clients = "client-1")
     public void handleClient1PromptListChanged(List<McpSchema.Prompt> updatedPrompts) {
         System.out.println("Client-1 prompt list updated with " + updatedPrompts.size() + " prompts");
         // Process the updated prompt list for client-1
@@ -1462,16 +1462,16 @@ public class PromptListChangedHandler {
      * Handle prompt list change notifications for another specific client.
      * @param updatedPrompts The updated list of prompts after the change
      */
-    @McpPromptListChanged(clientId = "client-2")
+    @McpPromptListChanged(clients = "client-2")
     public void handleClient2PromptListChanged(List<McpSchema.Prompt> updatedPrompts) {
         System.out.println("Client-2 prompt list updated with " + updatedPrompts.size() + " prompts");
         // Process the updated prompt list for client-2
         updateClientPromptCache("client-2", updatedPrompts);
     }
 
-    private void updateClientPromptCache(String clientId, List<McpSchema.Prompt> prompts) {
+    private void updateClientPromptCache(String[] clients, List<McpSchema.Prompt> prompts) {
         // Implementation to update prompt cache for specific client
-        System.out.println("Updated prompt cache for " + clientId + " with " + prompts.size() + " prompts");
+        System.out.println("Updated prompt cache for " + clients + " with " + prompts.size() + " prompts");
     }
 }
 
@@ -1496,7 +1496,7 @@ public class AsyncPromptListChangedHandler {
      * @param updatedPrompts The updated list of prompts after the change
      * @return A Mono that completes when the notification is handled
      */
-    @McpPromptListChanged(clientId = "client-2")
+    @McpPromptListChanged(clients = "client-2")
     public Mono<Void> handleClient2AsyncPromptListChanged(List<McpSchema.Prompt> updatedPrompts) {
         return Mono.fromRunnable(() -> {
             System.out.println("Client-2 async prompt list update: " + updatedPrompts.size() + " prompts");
@@ -1510,9 +1510,9 @@ public class AsyncPromptListChangedHandler {
         System.out.println("Processing prompt list update with " + prompts.size() + " prompts");
     }
 
-    private void processClientPromptListUpdate(String clientId, List<McpSchema.Prompt> prompts) {
+    private void processClientPromptListUpdate(String[] clients, List<McpSchema.Prompt> prompts) {
         // Implementation to process prompt list update for specific client
-        System.out.println("Processing prompt list update for " + clientId + " with " + prompts.size() + " prompts");
+        System.out.println("Processing prompt list update for " + clients + " with " + prompts.size() + " prompts");
     }
 }
 
@@ -1555,11 +1555,11 @@ public class ElicitationHandler {
 
     /**
      * Handle elicitation requests with a synchronous implementation.
-     * Note: clientId is required for all @McpElicitation annotations.
+     * Note: clients are required for all @McpElicitation annotations.
      * @param request The elicitation request
      * @return The elicitation result
      */
-    @McpElicitation(clientId = "default-client")
+    @McpElicitation(clients = "default-client")
     public ElicitResult handleElicitationRequest(ElicitRequest request) {
         // Example implementation that accepts the request and returns user data
         // In a real implementation, this would present a form to the user
@@ -1593,11 +1593,11 @@ public class ElicitationHandler {
 
     /**
      * Handle elicitation requests that should be declined.
-     * Note: clientId is now required for all @McpElicitation annotations.
+     * Note: clients are required for all @McpElicitation annotations.
      * @param request The elicitation request
      * @return The elicitation result with decline action
      */
-    @McpElicitation(clientId = "default-client")
+    @McpElicitation(clients = "default-client")
     public ElicitResult handleDeclineElicitationRequest(ElicitRequest request) {
         // Example of declining an elicitation request
         return new ElicitResult(ElicitResult.Action.DECLINE, null);
@@ -1608,7 +1608,7 @@ public class ElicitationHandler {
      * @param request The elicitation request
      * @return The elicitation result
      */
-    @McpElicitation(clientId = "client-1")
+    @McpElicitation(clients = "client-1")
     public ElicitResult handleClient1ElicitationRequest(ElicitRequest request) {
         Map<String, Object> userData = new HashMap<>();
         userData.put("client", "client-1");
@@ -1621,11 +1621,11 @@ public class AsyncElicitationHandler {
 
     /**
      * Handle elicitation requests with an asynchronous implementation.
-     * Note: clientId is required for all @McpElicitation annotations.
+     * Note: clients are required for all @McpElicitation annotations.
      * @param request The elicitation request
      * @return A Mono containing the elicitation result
      */
-    @McpElicitation(clientId = "default-client")
+    @McpElicitation(clients = "default-client")
     public Mono<ElicitResult> handleAsyncElicitationRequest(ElicitRequest request) {
         return Mono.fromCallable(() -> {
             // Simulate async processing of the elicitation request
@@ -1643,11 +1643,11 @@ public class AsyncElicitationHandler {
 
     /**
      * Handle elicitation requests that might be cancelled.
-     * Note: clientId is required for all @McpElicitation annotations.
+     * Note: clients are required for all @McpElicitation annotations.
      * @param request The elicitation request
      * @return A Mono containing the elicitation result with cancel action
      */
-    @McpElicitation(clientId = "default-client")
+    @McpElicitation(clients = "default-client")
     public Mono<ElicitResult> handleCancelElicitationRequest(ElicitRequest request) {
         return Mono.just(new ElicitResult(ElicitResult.Action.CANCEL, null));
     }
@@ -1657,7 +1657,7 @@ public class AsyncElicitationHandler {
      * @param request The elicitation request
      * @return A Mono containing the elicitation result
      */
-    @McpElicitation(clientId = "client-2")
+    @McpElicitation(clients = "client-2")
     public Mono<ElicitResult> handleClient2AsyncElicitationRequest(ElicitRequest request) {
         return Mono.fromCallable(() -> {
             Map<String, Object> userData = new HashMap<>();
