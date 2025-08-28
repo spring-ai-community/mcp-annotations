@@ -112,7 +112,7 @@ The Spring integration module provides seamless integration with Spring AI and S
 
 #### Client
 - **`@McpLogging`** - Annotates methods that handle logging message notifications from MCP servers (requires `clientId` parameter)
-- **`@McpSampling`** - Annotates methods that handle sampling requests from MCP servers
+- **`@McpSampling`** - Annotates methods that handle sampling requests from MCP servers (requires `clientId` parameter)
 - **`@McpElicitation`** - Annotates methods that handle elicitation requests to gather additional information from users (requires `clientId` parameter)
 - **`@McpProgress`** - Annotates methods that handle progress notifications for long-running operations (requires `clientId` parameter)
 - **`@McpToolListChanged`** - Annotates methods that handle tool list change notifications from MCP servers
@@ -997,10 +997,11 @@ public class SamplingHandler {
 
     /**
      * Handle sampling requests with a synchronous implementation.
+     * Note: clientId is now required for all @McpSampling annotations.
      * @param request The create message request
      * @return The create message result
      */
-    @McpSampling
+    @McpSampling(clientId = "default-client")
     public CreateMessageResult handleSamplingRequest(CreateMessageRequest request) {
         // Process the request and generate a response
         return CreateMessageResult.builder()
@@ -1029,10 +1030,11 @@ public class AsyncSamplingHandler {
 
     /**
      * Handle sampling requests with an asynchronous implementation.
+     * Note: clientId is now required for all @McpSampling annotations.
      * @param request The create message request
      * @return A Mono containing the create message result
      */
-    @McpSampling
+    @McpSampling(clientId = "default-client")
     public Mono<CreateMessageResult> handleAsyncSamplingRequest(CreateMessageRequest request) {
         return Mono.just(CreateMessageResult.builder()
             .role(Role.ASSISTANT)
