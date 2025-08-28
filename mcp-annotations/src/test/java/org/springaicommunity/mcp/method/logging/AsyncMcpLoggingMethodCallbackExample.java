@@ -29,7 +29,7 @@ public class AsyncMcpLoggingMethodCallbackExample {
 	 * @param notification The logging message notification
 	 * @return A Mono that completes when the processing is done
 	 */
-	@McpLogging
+	@McpLogging(clientId = "test-client")
 	public Mono<Void> handleLoggingMessage(LoggingMessageNotification notification) {
 		return Mono.fromRunnable(() -> {
 			System.out.println("Received logging message: " + notification.level() + " - " + notification.logger()
@@ -45,7 +45,7 @@ public class AsyncMcpLoggingMethodCallbackExample {
 	 * @param data The log message data
 	 * @return A Mono that completes when the processing is done
 	 */
-	@McpLogging
+	@McpLogging(clientId = "test-client")
 	public Mono<Void> handleLoggingMessageWithParams(LoggingLevel level, String logger, String data) {
 		return Mono.fromRunnable(() -> {
 			System.out.println("Received logging message with params: " + level + " - " + logger + " - " + data);
@@ -56,7 +56,7 @@ public class AsyncMcpLoggingMethodCallbackExample {
 	 * Example method that accepts a LoggingMessageNotification with void return type.
 	 * @param notification The logging message notification
 	 */
-	@McpLogging
+	@McpLogging(clientId = "test-client")
 	public void handleLoggingMessageVoid(LoggingMessageNotification notification) {
 		System.out.println("Received logging message (void): " + notification.level() + " - " + notification.logger()
 				+ " - " + notification.data());
