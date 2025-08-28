@@ -21,9 +21,9 @@ import java.lang.annotation.Target;
  *
  * <p>
  * Example usage: <pre>{@code
- * &#64;McpProgress
+ * &#64;McpProgress(clientId = "my-client-id")
  * public void handleProgressMessage(ProgressNotification notification) {
- *     // Handle the notification *
+ *     // Handle the progress notification
  * }</pre>
  *
  * @author Christian Tzolov
@@ -36,9 +36,9 @@ import java.lang.annotation.Target;
 public @interface McpProgress {
 
 	/**
-	 * Used as connection or client identifier to select the MCP client, the logging
-	 * consumer is associated with. If not specified, is applied to all clients.
+	 * Used as connection or client identifier to select the MCP client, the progress
+	 * consumer is associated with.
 	 */
-	String clientId() default "";
+	String clientId();
 
 }
