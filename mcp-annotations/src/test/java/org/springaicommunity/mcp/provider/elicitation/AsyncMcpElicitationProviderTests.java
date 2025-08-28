@@ -69,7 +69,7 @@ public class AsyncMcpElicitationProviderTests {
 
 	public static class TestElicitationHandler {
 
-		@McpElicitation
+		@McpElicitation(clientId = "my-client-id")
 		public Mono<ElicitResult> handleElicitation(ElicitRequest request) {
 			return Mono.just(new ElicitResult(ElicitResult.Action.ACCEPT,
 					Map.of("name", "Async Test User", "message", request.message())));
@@ -79,7 +79,7 @@ public class AsyncMcpElicitationProviderTests {
 
 	public static class SyncElicitationHandler {
 
-		@McpElicitation
+		@McpElicitation(clientId = "my-client-id")
 		public ElicitResult handleElicitation(ElicitRequest request) {
 			return new ElicitResult(ElicitResult.Action.ACCEPT,
 					Map.of("name", "Sync Test User", "message", request.message()));
@@ -89,12 +89,12 @@ public class AsyncMcpElicitationProviderTests {
 
 	public static class MultipleElicitationHandler {
 
-		@McpElicitation
+		@McpElicitation(clientId = "my-client-id")
 		public Mono<ElicitResult> handleElicitation1(ElicitRequest request) {
 			return Mono.just(new ElicitResult(ElicitResult.Action.ACCEPT, Map.of("handler", "1")));
 		}
 
-		@McpElicitation
+		@McpElicitation(clientId = "my-client-id")
 		public Mono<ElicitResult> handleElicitation2(ElicitRequest request) {
 			return Mono.just(new ElicitResult(ElicitResult.Action.ACCEPT, Map.of("handler", "2")));
 		}
