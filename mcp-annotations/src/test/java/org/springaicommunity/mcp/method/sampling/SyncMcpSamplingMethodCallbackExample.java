@@ -24,7 +24,7 @@ public class SyncMcpSamplingMethodCallbackExample {
 	 * @param request The sampling request
 	 * @return The sampling result
 	 */
-	@McpSampling
+	@McpSampling(clientId = "test-client")
 	public CreateMessageResult handleSamplingRequest(CreateMessageRequest request) {
 		// Process the request and return a result
 		return CreateMessageResult.builder()
@@ -39,7 +39,7 @@ public class SyncMcpSamplingMethodCallbackExample {
 	 * @param request The sampling request
 	 * @return A string (invalid return type)
 	 */
-	@McpSampling
+	@McpSampling(clientId = "test-client")
 	public String invalidReturnType(CreateMessageRequest request) {
 		return "This method has an invalid return type";
 	}
@@ -49,7 +49,7 @@ public class SyncMcpSamplingMethodCallbackExample {
 	 * @param invalidParam An invalid parameter type
 	 * @return The sampling result
 	 */
-	@McpSampling
+	@McpSampling(clientId = "test-client")
 	public CreateMessageResult invalidParameterType(String invalidParam) {
 		return CreateMessageResult.builder()
 			.role(Role.ASSISTANT)
@@ -62,7 +62,7 @@ public class SyncMcpSamplingMethodCallbackExample {
 	 * Example method with no parameters.
 	 * @return The sampling result
 	 */
-	@McpSampling
+	@McpSampling(clientId = "test-client")
 	public CreateMessageResult noParameters() {
 		return CreateMessageResult.builder()
 			.role(Role.ASSISTANT)
@@ -77,7 +77,7 @@ public class SyncMcpSamplingMethodCallbackExample {
 	 * @param extraParam An extra parameter
 	 * @return The sampling result
 	 */
-	@McpSampling
+	@McpSampling(clientId = "test-client")
 	public CreateMessageResult tooManyParameters(CreateMessageRequest request, String extraParam) {
 		return CreateMessageResult.builder()
 			.role(Role.ASSISTANT)
