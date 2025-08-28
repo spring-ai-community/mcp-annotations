@@ -113,7 +113,7 @@ The Spring integration module provides seamless integration with Spring AI and S
 #### Client
 - **`@McpLogging`** - Annotates methods that handle logging message notifications from MCP servers (requires `clientId` parameter)
 - **`@McpSampling`** - Annotates methods that handle sampling requests from MCP servers
-- **`@McpElicitation`** - Annotates methods that handle elicitation requests to gather additional information from users
+- **`@McpElicitation`** - Annotates methods that handle elicitation requests to gather additional information from users (requires `clientId` parameter)
 - **`@McpProgress`** - Annotates methods that handle progress notifications for long-running operations (requires `clientId` parameter)
 - **`@McpToolListChanged`** - Annotates methods that handle tool list change notifications from MCP servers
 - **`@McpResourceListChanged`** - Annotates methods that handle resource list change notifications from MCP servers
@@ -1579,10 +1579,11 @@ public class ElicitationHandler {
 
     /**
      * Handle elicitation requests with a synchronous implementation.
+     * Note: clientId is required for all @McpElicitation annotations.
      * @param request The elicitation request
      * @return The elicitation result
      */
-    @McpElicitation
+    @McpElicitation(clientId = "default-client")
     public ElicitResult handleElicitationRequest(ElicitRequest request) {
         // Example implementation that accepts the request and returns user data
         // In a real implementation, this would present a form to the user
@@ -1616,10 +1617,11 @@ public class ElicitationHandler {
 
     /**
      * Handle elicitation requests that should be declined.
+     * Note: clientId is now required for all @McpElicitation annotations.
      * @param request The elicitation request
      * @return The elicitation result with decline action
      */
-    @McpElicitation
+    @McpElicitation(clientId = "default-client")
     public ElicitResult handleDeclineElicitationRequest(ElicitRequest request) {
         // Example of declining an elicitation request
         return new ElicitResult(ElicitResult.Action.DECLINE, null);
@@ -1643,10 +1645,11 @@ public class AsyncElicitationHandler {
 
     /**
      * Handle elicitation requests with an asynchronous implementation.
+     * Note: clientId is required for all @McpElicitation annotations.
      * @param request The elicitation request
      * @return A Mono containing the elicitation result
      */
-    @McpElicitation
+    @McpElicitation(clientId = "default-client")
     public Mono<ElicitResult> handleAsyncElicitationRequest(ElicitRequest request) {
         return Mono.fromCallable(() -> {
             // Simulate async processing of the elicitation request
@@ -1664,10 +1667,11 @@ public class AsyncElicitationHandler {
 
     /**
      * Handle elicitation requests that might be cancelled.
+     * Note: clientId is required for all @McpElicitation annotations.
      * @param request The elicitation request
      * @return A Mono containing the elicitation result with cancel action
      */
-    @McpElicitation
+    @McpElicitation(clientId = "default-client")
     public Mono<ElicitResult> handleCancelElicitationRequest(ElicitRequest request) {
         return Mono.just(new ElicitResult(ElicitResult.Action.CANCEL, null));
     }

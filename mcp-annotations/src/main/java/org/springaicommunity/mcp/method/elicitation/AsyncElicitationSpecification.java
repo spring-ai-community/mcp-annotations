@@ -4,6 +4,7 @@
 
 package org.springaicommunity.mcp.method.elicitation;
 
+import java.util.Objects;
 import java.util.function.Function;
 
 import io.modelcontextprotocol.spec.McpSchema.ElicitRequest;
@@ -12,5 +13,13 @@ import reactor.core.publisher.Mono;
 
 public record AsyncElicitationSpecification(String clientId,
 		Function<ElicitRequest, Mono<ElicitResult>> elicitationHandler) {
+
+	public AsyncElicitationSpecification {
+		Objects.requireNonNull(clientId, "clientId must not be null");
+		if (clientId.trim().isEmpty()) {
+			throw new IllegalArgumentException("clientId must not be empty");
+		}
+		Objects.requireNonNull(elicitationHandler, "elicitationHandler must not be null");
+	}
 
 }
