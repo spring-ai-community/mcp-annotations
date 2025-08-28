@@ -15,10 +15,9 @@ The MCP Annotations project provides annotation-based method handling for [Model
 - [Building from Source](#building-from-source)
 - [Contributing](#contributing)
 
-This project consists of two main modules:
+This project consists of one module:
 
 1. **mcp-annotations** - Core annotations and method handling for MCP operations. Depends only on MCP Java SDK. 
-2. **mcp-annotations-spring** - Spring AI integration for MCP annotations
 
 ## Overview
 
@@ -36,23 +35,11 @@ To use the MCP Annotations core module in your project, add the following depend
 <dependency>
     <groupId>org.springaicommunity</groupId>
     <artifactId>mcp-annotations</artifactId>
-    <version>0.2.0-SNAPSHOT</version>
+    <version>0.2.0</version>
 </dependency>
 ```
 
-### (DEPRECATED) Spring Integration Module 
-
-This module is moved to Spring AI
-
-To use the Spring integration module, add the following dependency:
-
-```xml
-<dependency>
-    <groupId>org.springaicommunity</groupId>
-    <artifactId>mcp-annotations-spring</artifactId>
-    <version>0.2.0-SNAPSHOT</version>
-</dependency>
-```
+or version `0.3.0-SNAPSHOT` for current main branch.
 
 ### Snapshot repositories
 
@@ -101,10 +88,6 @@ The core module provides a set of annotations and callback implementations for p
 4. **Progress** - For handling progress notifications during long-running operations
 
 Each operation type has both synchronous and asynchronous implementations, allowing for flexible integration with different application architectures.
-
-### (DEPRECATED) Spring Integration Module (mcp-annotations-spring)
-
-The Spring integration module provides seamless integration with Spring AI and Spring Framework applications. It handles Spring-specific concerns such as AOP proxies and integrates with Spring AI's model abstractions.
 
 ## Key Components
 
@@ -234,15 +217,6 @@ The project includes provider classes that scan for annotated methods and create
 - `AsyncStatelessMcpResourceProvider` - Processes `@McpResource` annotations for asynchronous stateless operations
 - `SyncStatelessMcpToolProvider` - Processes `@McpTool` annotations for synchronous stateless operations
 - `AsyncStatelessMcpToolProvider` - Processes `@McpTool` annotations for asynchronous stateless operations
-
-### (DEPRECATED) Spring Integration
-
-Deprecated.The Spring integration module is moved to the Spring AI
-
-- `AsyncMcpAnnotationProviders` - Handles Spring-specific concerns when processing asynchronous MCP annotations
-- `SyncMcpAnnotationProviders` - Handles Spring-specific concerns when processing synchronous MCP annotations
-- Integration with Spring AOP proxies
-- Support for Spring AI model abstractions
 
 ## Usage Examples
 
