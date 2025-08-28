@@ -15,10 +15,9 @@ The MCP Annotations project provides annotation-based method handling for [Model
 - [Building from Source](#building-from-source)
 - [Contributing](#contributing)
 
-This project consists of two main modules:
+This project consists of one module:
 
 1. **mcp-annotations** - Core annotations and method handling for MCP operations. Depends only on MCP Java SDK. 
-2. **mcp-annotations-spring** - Spring AI integration for MCP annotations
 
 ## Overview
 
@@ -36,21 +35,11 @@ To use the MCP Annotations core module in your project, add the following depend
 <dependency>
     <groupId>org.springaicommunity</groupId>
     <artifactId>mcp-annotations</artifactId>
-    <version>0.2.0-SNAPSHOT</version>
+    <version>0.2.0</version>
 </dependency>
 ```
 
-### Spring Integration Module
-
-To use the Spring integration module, add the following dependency:
-
-```xml
-<dependency>
-    <groupId>org.springaicommunity</groupId>
-    <artifactId>mcp-annotations-spring</artifactId>
-    <version>0.2.0-SNAPSHOT</version>
-</dependency>
-```
+or version `0.3.0-SNAPSHOT` for current main branch.
 
 ### Snapshot repositories
 
@@ -100,19 +89,15 @@ The core module provides a set of annotations and callback implementations for p
 
 Each operation type has both synchronous and asynchronous implementations, allowing for flexible integration with different application architectures.
 
-### Spring Integration Module (mcp-annotations-spring)
-
-The Spring integration module provides seamless integration with Spring AI and Spring Framework applications. It handles Spring-specific concerns such as AOP proxies and integrates with Spring AI's model abstractions.
-
 ## Key Components
 
 ### Annotations
 
 #### Client
-- **`@McpLogging`** - Annotates methods that handle logging message notifications from MCP servers
-- **`@McpSampling`** - Annotates methods that handle sampling requests from MCP servers
-- **`@McpElicitation`** - Annotates methods that handle elicitation requests to gather additional information from users
-- **`@McpProgress`** - Annotates methods that handle progress notifications for long-running operations
+- **`@McpLogging`** - Annotates methods that handle logging message notifications from MCP servers (requires `clientId` parameter)
+- **`@McpSampling`** - Annotates methods that handle sampling requests from MCP servers (requires `clientId` parameter)
+- **`@McpElicitation`** - Annotates methods that handle elicitation requests to gather additional information from users (requires `clientId` parameter)
+- **`@McpProgress`** - Annotates methods that handle progress notifications for long-running operations (requires `clientId` parameter)
 - **`@McpToolListChanged`** - Annotates methods that handle tool list change notifications from MCP servers
 - **`@McpResourceListChanged`** - Annotates methods that handle resource list change notifications from MCP servers
 - **`@McpPromptListChanged`** - Annotates methods that handle prompt list change notifications from MCP servers
@@ -232,15 +217,6 @@ The project includes provider classes that scan for annotated methods and create
 - `AsyncStatelessMcpResourceProvider` - Processes `@McpResource` annotations for asynchronous stateless operations
 - `SyncStatelessMcpToolProvider` - Processes `@McpTool` annotations for synchronous stateless operations
 - `AsyncStatelessMcpToolProvider` - Processes `@McpTool` annotations for asynchronous stateless operations
-
-### Spring Integration
-
-The Spring integration module provides:
-
-- `AsyncMcpAnnotationProviders` - Handles Spring-specific concerns when processing asynchronous MCP annotations
-- `SyncMcpAnnotationProviders` - Handles Spring-specific concerns when processing synchronous MCP annotations
-- Integration with Spring AOP proxies
-- Support for Spring AI model abstractions
 
 ## Usage Examples
 
@@ -929,9 +905,10 @@ public class LoggingHandler {
 
     /**
      * Handle logging message notifications with a single parameter.
+     * Note: clientId is now required for all @McpLogging annotations.
      * @param notification The logging message notification
      */
-    @McpLogging
+    @McpLogging(clientId = "default-client")
     public void handleLoggingMessage(LoggingMessageNotification notification) {
         System.out.println("Received logging message: " + notification.level() + " - " + notification.logger() + " - "
                 + notification.data());
@@ -939,11 +916,12 @@ public class LoggingHandler {
 
     /**
      * Handle logging message notifications with individual parameters.
+     * Note: clientId is now required for all @McpLogging annotations.
      * @param level The logging level
      * @param logger The logger name
      * @param data The log message data
      */
-    @McpLogging
+    @McpLogging(clientId = "default-client")
     public void handleLoggingMessageWithParams(LoggingLevel level, String logger, String data) {
         System.out.println("Received logging message with params: " + level + " - " + logger + " - " + data);
     }
@@ -993,10 +971,11 @@ public class SamplingHandler {
 
     /**
      * Handle sampling requests with a synchronous implementation.
+     * Note: clientId is now required for all @McpSampling annotations.
      * @param request The create message request
      * @return The create message result
      */
-    @McpSampling
+    @McpSampling(clientId = "default-client")
     public CreateMessageResult handleSamplingRequest(CreateMessageRequest request) {
         // Process the request and generate a response
         return CreateMessageResult.builder()
@@ -1025,10 +1004,11 @@ public class AsyncSamplingHandler {
 
     /**
      * Handle sampling requests with an asynchronous implementation.
+     * Note: clientId is now required for all @McpSampling annotations.
      * @param request The create message request
      * @return A Mono containing the create message result
      */
-    @McpSampling
+    @McpSampling(clientId = "default-client")
     public Mono<CreateMessageResult> handleAsyncSamplingRequest(CreateMessageRequest request) {
         return Mono.just(CreateMessageResult.builder()
             .role(Role.ASSISTANT)
@@ -1099,9 +1079,10 @@ public class ProgressHandler {
 
     /**
      * Handle progress notifications with a single parameter.
+     * Note: clientId is now required for all @McpProgress annotations.
      * @param notification The progress notification
      */
-    @McpProgress
+    @McpProgress(clientId = "default-client")
     public void handleProgressNotification(ProgressNotification notification) {
         System.out.println(String.format("Progress: %.2f%% - %s", 
             notification.progress() * 100, 
@@ -1110,12 +1091,13 @@ public class ProgressHandler {
 
     /**
      * Handle progress notifications with individual parameters.
+     * Note: clientId is now required for all @McpProgress annotations.
      * @param progressToken The progress token identifying the operation
      * @param progress The current progress (0.0 to 1.0)
      * @param total Optional total value for the operation
      * @param message Optional progress message
      */
-    @McpProgress
+    @McpProgress(clientId = "default-client")
     public void handleProgressWithParams(String progressToken, double progress, Double total, String message) {
         if (total != null) {
             System.out.println(String.format("Progress [%s]: %.0f/%.0f - %s", 
@@ -1573,10 +1555,11 @@ public class ElicitationHandler {
 
     /**
      * Handle elicitation requests with a synchronous implementation.
+     * Note: clientId is required for all @McpElicitation annotations.
      * @param request The elicitation request
      * @return The elicitation result
      */
-    @McpElicitation
+    @McpElicitation(clientId = "default-client")
     public ElicitResult handleElicitationRequest(ElicitRequest request) {
         // Example implementation that accepts the request and returns user data
         // In a real implementation, this would present a form to the user
@@ -1610,10 +1593,11 @@ public class ElicitationHandler {
 
     /**
      * Handle elicitation requests that should be declined.
+     * Note: clientId is now required for all @McpElicitation annotations.
      * @param request The elicitation request
      * @return The elicitation result with decline action
      */
-    @McpElicitation
+    @McpElicitation(clientId = "default-client")
     public ElicitResult handleDeclineElicitationRequest(ElicitRequest request) {
         // Example of declining an elicitation request
         return new ElicitResult(ElicitResult.Action.DECLINE, null);
@@ -1637,10 +1621,11 @@ public class AsyncElicitationHandler {
 
     /**
      * Handle elicitation requests with an asynchronous implementation.
+     * Note: clientId is required for all @McpElicitation annotations.
      * @param request The elicitation request
      * @return A Mono containing the elicitation result
      */
-    @McpElicitation
+    @McpElicitation(clientId = "default-client")
     public Mono<ElicitResult> handleAsyncElicitationRequest(ElicitRequest request) {
         return Mono.fromCallable(() -> {
             // Simulate async processing of the elicitation request
@@ -1658,10 +1643,11 @@ public class AsyncElicitationHandler {
 
     /**
      * Handle elicitation requests that might be cancelled.
+     * Note: clientId is required for all @McpElicitation annotations.
      * @param request The elicitation request
      * @return A Mono containing the elicitation result with cancel action
      */
-    @McpElicitation
+    @McpElicitation(clientId = "default-client")
     public Mono<ElicitResult> handleCancelElicitationRequest(ElicitRequest request) {
         return Mono.just(new ElicitResult(ElicitResult.Action.CANCEL, null));
     }
@@ -1899,153 +1885,6 @@ public class StatelessMcpServerFactory {
 }
 ```
 
-### Spring Integration Example
-
-```java
-@Configuration
-public class McpConfig {
-    
-    @Bean
-    public List<SyncCompletionSpecification> syncCompletionSpecifications(
-            List<AutocompleteProvider> completeProviders) {
-        return SyncMcpAnnotationProviders.completeSpecifications(completeProviders);
-    }
-    
-    @Bean
-    public List<McpStatelessServerFeatures.SyncCompletionSpecification> syncStatelessCompleteSpecifications(
-            List<StatelessAutocompleteProvider> statelessCompleteProviders) {
-        return SyncMcpAnnotationProviders.statelessCompleteSpecifications(statelessCompleteProviders);
-    }
-    
-    @Bean
-    public List<SyncPromptSpecification> syncPromptSpecifications(
-            List<PromptProvider> promptProviders) {
-        return SyncMcpAnnotationProviders.promptSpecifications(promptProviders);
-    }
-    
-    @Bean
-    public List<SyncResourceSpecification> syncResourceSpecifications(
-            List<ResourceProvider> resourceProviders) {
-        return SyncMcpAnnotationProviders.resourceSpecifications(resourceProviders);
-    }
-    
-    @Bean
-    public List<SyncToolSpecification> syncToolSpecifications(
-            List<CalculatorToolProvider> toolProviders) {
-        return SyncMcpAnnotationProviders.toolSpecifications(toolProviders);
-    }
-    
-    @Bean
-    public List<AsyncToolSpecification> asyncToolSpecifications(
-            List<AsyncToolProvider> asyncToolProviders) {
-        return AsyncMcpAnnotationProviders.toolSpecifications(asyncToolProviders);
-    }
-    
-    @Bean
-    public List<SyncLoggingSpecification> syncLoggingSpecifications(
-            List<LoggingHandler> loggingHandlers) {
-        return SyncMcpAnnotationProviders.loggingSpecifications(loggingHandlers);
-    }
-    
-    @Bean
-    public List<AsyncLoggingSpecification> asyncLoggingSpecifications(
-            List<AsyncLoggingHandler> asyncLoggingHandlers) {
-        return AsyncMcpAnnotationProviders.loggingSpecifications(asyncLoggingHandlers);
-    }
-    
-    @Bean
-    public List<SyncSamplingSpecification> syncSamplingSpecifications(
-            List<SamplingHandler> samplingHandlers) {
-        return SyncMcpAnnotationProviders.samplingSpecifications(samplingHandlers);
-    }
-    
-    @Bean
-    public List<AsyncSamplingSpecification> asyncSamplingSpecifications(
-            List<AsyncSamplingHandler> asyncSamplingHandlers) {
-        return AsyncMcpAnnotationProviders.samplingSpecifications(asyncSamplingHandlers);
-    }
-    
-    @Bean
-    public List<SyncElicitationSpecification> syncElicitationSpecifications(
-            List<ElicitationHandler> elicitationHandlers) {
-        return SyncMcpAnnotationProviders.elicitationSpecifications(elicitationHandlers);
-    }
-    
-    @Bean
-    public List<AsyncElicitationSpecification> asyncElicitationSpecifications(
-            List<AsyncElicitationHandler> asyncElicitationHandlers) {
-        return AsyncMcpAnnotationProviders.elicitationSpecifications(asyncElicitationHandlers);
-    }
-    
-    @Bean
-    public List<SyncProgressSpecification> syncProgressSpecifications(
-            List<ProgressHandler> progressHandlers) {
-        return SyncMcpAnnotationProviders.progressSpecifications(progressHandlers);
-    }
-    
-    @Bean
-    public List<AsyncProgressSpecification> asyncProgressSpecifications(
-            List<AsyncProgressHandler> asyncProgressHandlers) {
-        return AsyncMcpAnnotationProviders.progressSpecifications(asyncProgressHandlers);
-    }
-    
-    @Bean
-    public List<SyncToolListChangedSpecification> syncToolListChangedSpecifications(
-            List<ToolListChangedHandler> toolListChangedHandlers) {
-        return SyncMcpAnnotationProviders.toolListChangedSpecifications(toolListChangedHandlers);
-    }
-    
-    @Bean
-    public List<AsyncToolListChangedSpecification> asyncToolListChangedSpecifications(
-            List<AsyncToolListChangedHandler> asyncToolListChangedHandlers) {
-        return AsyncMcpAnnotationProviders.toolListChangedSpecifications(asyncToolListChangedHandlers);
-    }
-    
-    @Bean
-    public List<SyncResourceListChangedSpecification> syncResourceListChangedSpecifications(
-            List<ResourceListChangedHandler> resourceListChangedHandlers) {
-        return SyncMcpAnnotationProviders.resourceListChangedSpecifications(resourceListChangedHandlers);
-    }
-    
-    @Bean
-    public List<AsyncResourceListChangedSpecification> asyncResourceListChangedSpecifications(
-            List<AsyncResourceListChangedHandler> asyncResourceListChangedHandlers) {
-        return AsyncMcpAnnotationProviders.resourceListChangedSpecifications(asyncResourceListChangedHandlers);
-    }
-    
-    @Bean
-    public List<SyncPromptListChangedSpecification> syncPromptListChangedSpecifications(
-            List<PromptListChangedHandler> promptListChangedHandlers) {
-        return SyncMcpAnnotationProviders.promptListChangedSpecifications(promptListChangedHandlers);
-    }
-    
-    @Bean
-    public List<AsyncPromptListChangedSpecification> asyncPromptListChangedSpecifications(
-            List<AsyncPromptListChangedHandler> asyncPromptListChangedHandlers) {
-        return AsyncMcpAnnotationProviders.promptListChangedSpecifications(asyncPromptListChangedHandlers);
-    }
-    
-    // Stateless Spring Integration Examples
-    
-    @Bean
-    public List<McpStatelessServerFeatures.SyncToolSpecification> syncStatelessToolSpecifications(
-            List<StatelessCalculatorProvider> statelessToolProviders) {
-        return SyncMcpAnnotationProviders.statelessToolSpecifications(statelessToolProviders);
-    }
-    
-    @Bean
-    public List<McpStatelessServerFeatures.SyncPromptSpecification> syncStatelessPromptSpecifications(
-            List<StatelessPromptProvider> statelessPromptProviders) {
-        return SyncMcpAnnotationProviders.statelessPromptSpecifications(statelessPromptProviders);
-    }
-    
-    @Bean
-    public List<McpStatelessServerFeatures.SyncResourceSpecification> syncStatelessResourceSpecifications(
-            List<StatelessResourceProvider> statelessResourceProviders) {
-        return SyncMcpAnnotationProviders.statelessResourceSpecifications(statelessResourceProviders);
-    }
-}
-```
 
 ## Features
 
@@ -2062,15 +1901,12 @@ public class McpConfig {
 - **Sampling support** - Handle sampling requests from MCP servers
 - **Progress notification support** - Handle progress notifications for long-running operations
 - **Tool list changed support** - Handle tool list change notifications from MCP servers when tools are dynamically added, removed, or modified
-- **Spring integration** - Seamless integration with Spring Framework and Spring AI, including support for both stateful and stateless operations
-- **AOP proxy support** - Proper handling of Spring AOP proxies when processing annotations
 
 ## Requirements
 
 - Java 17 or higher
 - Reactor Core (for async operations)
 - MCP Java SDK 0.12.0-SNAPSHOT or higher
-- Spring Framework and Spring AI (for mcp-annotations-spring module)
 
 ## Building from Source
 

@@ -27,7 +27,7 @@ public class SyncMcpLoggingMethodCallbackExample {
 	 * Example method that accepts a LoggingMessageNotification.
 	 * @param notification The logging message notification
 	 */
-	@McpLogging
+	@McpLogging(clientId = "test-client")
 	public void handleLoggingMessage(LoggingMessageNotification notification) {
 		System.out.println("Received logging message: " + notification.level() + " - " + notification.logger() + " - "
 				+ notification.data());
@@ -39,7 +39,7 @@ public class SyncMcpLoggingMethodCallbackExample {
 	 * @param logger The logger name
 	 * @param data The log message data
 	 */
-	@McpLogging
+	@McpLogging(clientId = "test-client")
 	public void handleLoggingMessageWithParams(LoggingLevel level, String logger, String data) {
 		System.out.println("Received logging message with params: " + level + " - " + logger + " - " + data);
 	}

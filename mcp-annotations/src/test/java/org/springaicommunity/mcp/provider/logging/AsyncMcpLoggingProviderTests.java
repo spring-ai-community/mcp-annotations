@@ -38,14 +38,14 @@ public class AsyncMcpLoggingProviderTests {
 
 		private String lastData;
 
-		@McpLogging
+		@McpLogging(clientId = "test-client")
 		public Mono<Void> handleLoggingMessage(LoggingMessageNotification notification) {
 			return Mono.fromRunnable(() -> {
 				this.lastNotification = notification;
 			});
 		}
 
-		@McpLogging
+		@McpLogging(clientId = "test-client")
 		public Mono<Void> handleLoggingMessageWithParams(LoggingLevel level, String logger, String data) {
 			return Mono.fromRunnable(() -> {
 				this.lastLevel = level;
@@ -54,7 +54,7 @@ public class AsyncMcpLoggingProviderTests {
 			});
 		}
 
-		@McpLogging
+		@McpLogging(clientId = "test-client")
 		public void handleLoggingMessageVoid(LoggingMessageNotification notification) {
 			this.lastNotification = notification;
 		}

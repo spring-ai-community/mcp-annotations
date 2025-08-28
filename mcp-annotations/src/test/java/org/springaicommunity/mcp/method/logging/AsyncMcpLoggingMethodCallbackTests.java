@@ -41,14 +41,14 @@ public class AsyncMcpLoggingMethodCallbackTests {
 
 		private String lastData;
 
-		@McpLogging
+		@McpLogging(clientId = "test-client")
 		public Mono<Void> handleLoggingMessage(LoggingMessageNotification notification) {
 			return Mono.fromRunnable(() -> {
 				this.lastNotification = notification;
 			});
 		}
 
-		@McpLogging
+		@McpLogging(clientId = "test-client")
 		public Mono<Void> handleLoggingMessageWithParams(LoggingLevel level, String logger, String data) {
 			return Mono.fromRunnable(() -> {
 				this.lastLevel = level;
@@ -57,7 +57,7 @@ public class AsyncMcpLoggingMethodCallbackTests {
 			});
 		}
 
-		@McpLogging
+		@McpLogging(clientId = "test-client")
 		public void handleLoggingMessageVoid(LoggingMessageNotification notification) {
 			this.lastNotification = notification;
 		}
@@ -69,27 +69,27 @@ public class AsyncMcpLoggingMethodCallbackTests {
 	 */
 	static class InvalidMethods {
 
-		@McpLogging
+		@McpLogging(clientId = "test-client")
 		public String invalidReturnType(LoggingMessageNotification notification) {
 			return "Invalid";
 		}
 
-		@McpLogging
+		@McpLogging(clientId = "test-client")
 		public Mono<String> invalidMonoReturnType(LoggingMessageNotification notification) {
 			return Mono.just("Invalid");
 		}
 
-		@McpLogging
+		@McpLogging(clientId = "test-client")
 		public Mono<Void> invalidParameterCount(LoggingMessageNotification notification, String extra) {
 			return Mono.empty();
 		}
 
-		@McpLogging
+		@McpLogging(clientId = "test-client")
 		public Mono<Void> invalidParameterType(String invalidType) {
 			return Mono.empty();
 		}
 
-		@McpLogging
+		@McpLogging(clientId = "test-client")
 		public Mono<Void> invalidParameterTypes(String level, int logger, boolean data) {
 			return Mono.empty();
 		}
