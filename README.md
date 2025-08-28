@@ -111,7 +111,7 @@ The Spring integration module provides seamless integration with Spring AI and S
 ### Annotations
 
 #### Client
-- **`@McpLogging`** - Annotates methods that handle logging message notifications from MCP servers
+- **`@McpLogging`** - Annotates methods that handle logging message notifications from MCP servers (requires `clientId` parameter)
 - **`@McpSampling`** - Annotates methods that handle sampling requests from MCP servers
 - **`@McpElicitation`** - Annotates methods that handle elicitation requests to gather additional information from users
 - **`@McpProgress`** - Annotates methods that handle progress notifications for long-running operations
@@ -931,9 +931,10 @@ public class LoggingHandler {
 
     /**
      * Handle logging message notifications with a single parameter.
+     * Note: clientId is now required for all @McpLogging annotations.
      * @param notification The logging message notification
      */
-    @McpLogging
+    @McpLogging(clientId = "default-client")
     public void handleLoggingMessage(LoggingMessageNotification notification) {
         System.out.println("Received logging message: " + notification.level() + " - " + notification.logger() + " - "
                 + notification.data());
@@ -941,11 +942,12 @@ public class LoggingHandler {
 
     /**
      * Handle logging message notifications with individual parameters.
+     * Note: clientId is now required for all @McpLogging annotations.
      * @param level The logging level
      * @param logger The logger name
      * @param data The log message data
      */
-    @McpLogging
+    @McpLogging(clientId = "default-client")
     public void handleLoggingMessageWithParams(LoggingLevel level, String logger, String data) {
         System.out.println("Received logging message with params: " + level + " - " + logger + " - " + data);
     }
