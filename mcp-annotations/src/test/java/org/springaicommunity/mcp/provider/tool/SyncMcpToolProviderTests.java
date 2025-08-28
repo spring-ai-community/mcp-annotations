@@ -47,6 +47,13 @@ public class SyncMcpToolProviderTests {
 	}
 
 	@Test
+	void testConstructorWithInvalidToolGroups() {
+		assertThatThrownBy(() -> new SyncMcpToolProvider(List.of(new Object()), List.class))
+			.isInstanceOf(IllegalArgumentException.class)
+			.hasMessageContaining(" is not an instance of java.util.List");
+	}
+
+	@Test
 	void testGetToolSpecificationsWithSingleValidTool() {
 		// Create a class with only one valid tool method
 		class SingleValidTool {
@@ -197,6 +204,102 @@ public class SyncMcpToolProviderTests {
 		assertThat(toolSpecs).hasSize(2);
 		assertThat(toolSpecs.get(0).tool().name()).isIn("tool1", "tool2");
 		assertThat(toolSpecs.get(1).tool().name()).isIn("tool1", "tool2");
+		assertThat(toolSpecs.get(0).tool().name()).isNotEqualTo(toolSpecs.get(1).tool().name());
+	}
+
+	@Test
+	void testGetToolSpecificationsWithMultipleToolMethodsToolGroup() {
+		class MultipleToolMethods {
+
+			@McpTool(name = "tool1", description = "First tool")
+			public String firstTool(String input) {
+				return "First: " + input;
+			}
+
+			@McpTool(name = "tool2", description = "Second tool")
+			public String secondTool(String input) {
+				return "Second: " + input;
+			}
+
+		}
+
+		MultipleToolMethods toolObject = new MultipleToolMethods();
+		SyncMcpToolProvider provider = new SyncMcpToolProvider(List.of(toolObject), MultipleToolMethods.class);
+
+		List<SyncToolSpecification> toolSpecs = provider.getToolSpecifications();
+
+		assertThat(toolSpecs).hasSize(2);
+		assertThat(toolSpecs.get(0).tool().name()).isIn(MultipleToolMethods.class.getName() + ".tool1",
+				MultipleToolMethods.class.getName() + ".tool2");
+		assertThat(toolSpecs.get(1).tool().name()).isIn(MultipleToolMethods.class.getName() + ".tool1",
+				MultipleToolMethods.class.getName() + ".tool2");
+		assertThat(toolSpecs.get(0).tool().name()).isNotEqualTo(toolSpecs.get(1).tool().name());
+	}
+
+	interface MultipleToolMethodsIntf {
+
+		@McpTool(name = "tool1", description = "First tool")
+		public String firstTool(String input);
+
+		@McpTool(name = "tool2", description = "Second tool")
+		public String secondTool(String input);
+
+	}
+
+	@Test
+	void testGetToolSpecificationsWithMultipleToolMethodsInterfaceToolGroup() {
+		class MultipleToolMethods implements MultipleToolMethodsIntf {
+
+			public String firstTool(String input) {
+				return "First: " + input;
+			}
+
+			public String secondTool(String input) {
+				return "Second: " + input;
+			}
+
+		}
+
+		MultipleToolMethods toolObject = new MultipleToolMethods();
+		SyncMcpToolProvider provider = new SyncMcpToolProvider(List.of(toolObject), MultipleToolMethodsIntf.class);
+
+		List<SyncToolSpecification> toolSpecs = provider.getToolSpecifications();
+
+		assertThat(toolSpecs).hasSize(2);
+		assertThat(toolSpecs.get(0).tool().name()).isIn(MultipleToolMethodsIntf.class.getName() + ".tool1",
+				MultipleToolMethodsIntf.class.getName() + ".tool2");
+		assertThat(toolSpecs.get(1).tool().name()).isIn(MultipleToolMethodsIntf.class.getName() + ".tool1",
+				MultipleToolMethodsIntf.class.getName() + ".tool2");
+		assertThat(toolSpecs.get(0).tool().name()).isNotEqualTo(toolSpecs.get(1).tool().name());
+	}
+
+	@Test
+	void testGetToolSpecificationsWithMultipleToolMethodsInterfaceToolGroupMultipleObjects() {
+		class MultipleToolMethods implements MultipleToolMethodsIntf {
+
+			public String firstTool(String input) {
+				return "First: " + input;
+			}
+
+			public String secondTool(String input) {
+				return "Second: " + input;
+			}
+
+		}
+
+		MultipleToolMethods toolObject1 = new MultipleToolMethods();
+		MultipleToolMethods toolObject2 = new MultipleToolMethods();
+
+		SyncMcpToolProvider provider = new SyncMcpToolProvider(List.of(toolObject1, toolObject2),
+				MultipleToolMethodsIntf.class);
+
+		List<SyncToolSpecification> toolSpecs = provider.getToolSpecifications();
+
+		assertThat(toolSpecs).hasSize(2);
+		assertThat(toolSpecs.get(0).tool().name()).isIn(MultipleToolMethodsIntf.class.getName() + ".tool1",
+				MultipleToolMethodsIntf.class.getName() + ".tool2");
+		assertThat(toolSpecs.get(1).tool().name()).isIn(MultipleToolMethodsIntf.class.getName() + ".tool1",
+				MultipleToolMethodsIntf.class.getName() + ".tool2");
 		assertThat(toolSpecs.get(0).tool().name()).isNotEqualTo(toolSpecs.get(1).tool().name());
 	}
 
