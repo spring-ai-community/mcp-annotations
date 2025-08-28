@@ -114,7 +114,7 @@ The Spring integration module provides seamless integration with Spring AI and S
 - **`@McpLogging`** - Annotates methods that handle logging message notifications from MCP servers (requires `clientId` parameter)
 - **`@McpSampling`** - Annotates methods that handle sampling requests from MCP servers
 - **`@McpElicitation`** - Annotates methods that handle elicitation requests to gather additional information from users
-- **`@McpProgress`** - Annotates methods that handle progress notifications for long-running operations
+- **`@McpProgress`** - Annotates methods that handle progress notifications for long-running operations (requires `clientId` parameter)
 - **`@McpToolListChanged`** - Annotates methods that handle tool list change notifications from MCP servers
 - **`@McpResourceListChanged`** - Annotates methods that handle resource list change notifications from MCP servers
 - **`@McpPromptListChanged`** - Annotates methods that handle prompt list change notifications from MCP servers
@@ -1103,9 +1103,10 @@ public class ProgressHandler {
 
     /**
      * Handle progress notifications with a single parameter.
+     * Note: clientId is now required for all @McpProgress annotations.
      * @param notification The progress notification
      */
-    @McpProgress
+    @McpProgress(clientId = "default-client")
     public void handleProgressNotification(ProgressNotification notification) {
         System.out.println(String.format("Progress: %.2f%% - %s", 
             notification.progress() * 100, 
@@ -1114,12 +1115,13 @@ public class ProgressHandler {
 
     /**
      * Handle progress notifications with individual parameters.
+     * Note: clientId is now required for all @McpProgress annotations.
      * @param progressToken The progress token identifying the operation
      * @param progress The current progress (0.0 to 1.0)
      * @param total Optional total value for the operation
      * @param message Optional progress message
      */
-    @McpProgress
+    @McpProgress(clientId = "default-client")
     public void handleProgressWithParams(String progressToken, double progress, Double total, String message) {
         if (total != null) {
             System.out.println(String.format("Progress [%s]: %.0f/%.0f - %s", 
