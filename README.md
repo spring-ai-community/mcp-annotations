@@ -42,14 +42,14 @@ To use the MCP Annotations core module in your project, add the following depend
 Also select the JAVA MCP SDK dependency:
 
 ```xml
-    <dependency>
-        <groupId>io.modelcontextprotocol.sdk</groupId>
-        <artifactId>mcp</artifactId>
-        <version>0.11.3</version>
-    </dependency>
+<dependency>
+    <groupId>io.modelcontextprotocol.sdk</groupId>
+    <artifactId>mcp</artifactId>
+    <version>0.11.3</version>
+</dependency>
 ```
 
-### Snapshot repositories
+#### Snapshot repositories
 
 To use the mcp-annotations snapshot version you need to add the following repositories to your Maven POM:
 
