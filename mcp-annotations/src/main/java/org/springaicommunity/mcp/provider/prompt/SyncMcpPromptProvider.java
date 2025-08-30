@@ -20,12 +20,11 @@ import java.lang.reflect.Method;
 import java.util.List;
 import java.util.stream.Stream;
 
-import org.springaicommunity.mcp.annotation.McpPrompt;
-import org.springaicommunity.mcp.annotation.PromptAdaptor;
-import org.springaicommunity.mcp.method.prompt.SyncMcpPromptMethodCallback;
-
 import io.modelcontextprotocol.server.McpServerFeatures.SyncPromptSpecification;
 import io.modelcontextprotocol.util.Assert;
+import org.springaicommunity.mcp.adapter.PromptAdapter;
+import org.springaicommunity.mcp.annotation.McpPrompt;
+import org.springaicommunity.mcp.method.prompt.SyncMcpPromptMethodCallback;
 import reactor.core.publisher.Mono;
 
 /**
@@ -47,7 +46,7 @@ public class SyncMcpPromptProvider {
 				.filter(method -> !Mono.class.isAssignableFrom(method.getReturnType()))
 				.map(mcpPromptMethod -> {
 					var promptAnnotation = mcpPromptMethod.getAnnotation(McpPrompt.class);
-					var mcpPrompt = PromptAdaptor.asPrompt(promptAnnotation, mcpPromptMethod);
+					var mcpPrompt = PromptAdapter.asPrompt(promptAnnotation, mcpPromptMethod);
 
 					var methodCallback = SyncMcpPromptMethodCallback.builder()
 						.method(mcpPromptMethod)

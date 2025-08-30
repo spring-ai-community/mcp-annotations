@@ -21,18 +21,17 @@ import java.util.List;
 import java.util.function.BiFunction;
 import java.util.stream.Stream;
 
-import org.reactivestreams.Publisher;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springaicommunity.mcp.annotation.CompleteAdapter;
-import org.springaicommunity.mcp.annotation.McpComplete;
-import org.springaicommunity.mcp.method.complete.AsyncStatelessMcpCompleteMethodCallback;
-
 import io.modelcontextprotocol.server.McpStatelessServerFeatures.AsyncCompletionSpecification;
 import io.modelcontextprotocol.server.McpTransportContext;
 import io.modelcontextprotocol.spec.McpSchema.CompleteRequest;
 import io.modelcontextprotocol.spec.McpSchema.CompleteResult;
 import io.modelcontextprotocol.util.Assert;
+import org.reactivestreams.Publisher;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springaicommunity.mcp.adapter.CompleteAdapter;
+import org.springaicommunity.mcp.annotation.McpComplete;
+import org.springaicommunity.mcp.method.complete.AsyncStatelessMcpCompleteMethodCallback;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
