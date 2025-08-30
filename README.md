@@ -72,18 +72,18 @@ To use the mcp-annotations snapshot version you need to add the following reposi
 ### Spring AI Integration
 For a complete out-of-the-box experience, use the [Spring AI MCP Annotation auto-configurations](https://docs.spring.io/spring-ai/reference/1.1-SNAPSHOT/api/mcp/mcp-annotations-overview.html).
 
-### Core Module (mcp-annotations)
+## mcp-annotations
 
 The core module provides a set of annotations and callback implementations for primary MCP operations.
 
-#### For MCP Servers: 
+### For MCP Servers: 
 
 1. **Complete** - For auto-completion functionality in prompts and URI templates
 2. **Prompt** - For generating prompt messages
 3. **Resource** - For accessing resources via URI templates
 4. **Tool** - For implementing MCP tools with automatic JSON schema generation
 
-#### For MCP Clients:
+### For MCP Clients:
 
 1. **Logging Consumer** - For handling logging message notifications
 2. **Sampling** - For handling sampling requests
