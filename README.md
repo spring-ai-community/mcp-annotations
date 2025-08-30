@@ -39,7 +39,15 @@ To use the MCP Annotations core module in your project, add the following depend
 </dependency>
 ```
 
-or version `0.3.0-SNAPSHOT` for current main branch.
+Also select the JAVA MCP SDK dependency:
+
+```xml
+    <dependency>
+        <groupId>io.modelcontextprotocol.sdk</groupId>
+        <artifactId>mcp</artifactId>
+        <version>0.11.3</version>
+    </dependency>
+```
 
 ### Snapshot repositories
 
@@ -47,14 +55,6 @@ To use the mcp-annotations snapshot version you need to add the following reposi
 
 ```xml
 <repositories>
-  <repository>
-    <id>spring-snapshots</id>
-    <name>Spring Snapshots</name>
-    <url>https://repo.spring.io/snapshot</url>
-    <releases>
-      <enabled>false</enabled>
-    </releases>
-  </repository>
   <repository>
     <name>Central Portal Snapshots</name>
     <id>central-portal-snapshots</id>
@@ -68,6 +68,9 @@ To use the mcp-annotations snapshot version you need to add the following reposi
   </repository>
 </repositories>
 ```
+
+### Spring AI Integration
+For a complete out-of-the-box experience, use the [Spring AI MCP Annotation auto-configurations](https://docs.spring.io/spring-ai/reference/1.1-SNAPSHOT/api/mcp/mcp-annotations-overview.html).
 
 ### Core Module (mcp-annotations)
 
