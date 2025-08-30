@@ -10,11 +10,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.BiFunction;
 
-import org.springaicommunity.mcp.annotation.McpArg;
-import org.springaicommunity.mcp.annotation.McpPrompt;
-import org.springaicommunity.mcp.annotation.PromptAdaptor;
-import org.springaicommunity.mcp.method.prompt.AsyncMcpPromptMethodCallback;
-
 import io.modelcontextprotocol.server.McpAsyncServerExchange;
 import io.modelcontextprotocol.spec.McpSchema.GetPromptRequest;
 import io.modelcontextprotocol.spec.McpSchema.GetPromptResult;
@@ -22,6 +17,9 @@ import io.modelcontextprotocol.spec.McpSchema.Prompt;
 import io.modelcontextprotocol.spec.McpSchema.PromptMessage;
 import io.modelcontextprotocol.spec.McpSchema.Role;
 import io.modelcontextprotocol.spec.McpSchema.TextContent;
+import org.springaicommunity.mcp.adapter.PromptAdapter;
+import org.springaicommunity.mcp.annotation.McpArg;
+import org.springaicommunity.mcp.annotation.McpPrompt;
 import reactor.core.publisher.Mono;
 
 /**
@@ -191,7 +189,7 @@ public class AsyncMcpPromptMethodCallbackExample {
 		McpPrompt promptAnnotation = asyncGreetingMethod.getAnnotation(McpPrompt.class);
 
 		// Convert the annotation to a Prompt object with argument information
-		Prompt prompt = PromptAdaptor.asPrompt(promptAnnotation, asyncGreetingMethod);
+		Prompt prompt = PromptAdapter.asPrompt(promptAnnotation, asyncGreetingMethod);
 
 		// Create the callback
 		BiFunction<McpAsyncServerExchange, GetPromptRequest, Mono<GetPromptResult>> callback = AsyncMcpPromptMethodCallback
@@ -235,7 +233,7 @@ public class AsyncMcpPromptMethodCallbackExample {
 		McpPrompt promptAnnotation = asyncStringMethod.getAnnotation(McpPrompt.class);
 
 		// Convert the annotation to a Prompt object with argument information
-		Prompt prompt = PromptAdaptor.asPrompt(promptAnnotation, asyncStringMethod);
+		Prompt prompt = PromptAdapter.asPrompt(promptAnnotation, asyncStringMethod);
 
 		// Create the callback
 		BiFunction<McpAsyncServerExchange, GetPromptRequest, Mono<GetPromptResult>> callback = AsyncMcpPromptMethodCallback
@@ -278,7 +276,7 @@ public class AsyncMcpPromptMethodCallbackExample {
 		McpPrompt promptAnnotation = asyncStringListMethod.getAnnotation(McpPrompt.class);
 
 		// Convert the annotation to a Prompt object with argument information
-		Prompt prompt = PromptAdaptor.asPrompt(promptAnnotation, asyncStringListMethod);
+		Prompt prompt = PromptAdapter.asPrompt(promptAnnotation, asyncStringListMethod);
 
 		// Create the callback
 		BiFunction<McpAsyncServerExchange, GetPromptRequest, Mono<GetPromptResult>> callback = AsyncMcpPromptMethodCallback

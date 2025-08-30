@@ -21,17 +21,16 @@ import java.util.List;
 import java.util.function.BiFunction;
 import java.util.stream.Stream;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springaicommunity.mcp.annotation.McpPrompt;
-import org.springaicommunity.mcp.annotation.PromptAdaptor;
-import org.springaicommunity.mcp.method.prompt.SyncStatelessMcpPromptMethodCallback;
-
 import io.modelcontextprotocol.server.McpStatelessServerFeatures.SyncPromptSpecification;
 import io.modelcontextprotocol.server.McpTransportContext;
 import io.modelcontextprotocol.spec.McpSchema.GetPromptRequest;
 import io.modelcontextprotocol.spec.McpSchema.GetPromptResult;
 import io.modelcontextprotocol.util.Assert;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springaicommunity.mcp.adapter.PromptAdapter;
+import org.springaicommunity.mcp.annotation.McpPrompt;
+import org.springaicommunity.mcp.method.prompt.SyncStatelessMcpPromptMethodCallback;
 import reactor.core.publisher.Mono;
 
 /**
@@ -71,7 +70,7 @@ public class SyncStatelessMcpPromptProvider {
 				.filter(method -> !Mono.class.isAssignableFrom(method.getReturnType()))
 				.map(mcpPromptMethod -> {
 					var promptAnnotation = mcpPromptMethod.getAnnotation(McpPrompt.class);
-					var mcpPrompt = PromptAdaptor.asPrompt(promptAnnotation, mcpPromptMethod);
+					var mcpPrompt = PromptAdapter.asPrompt(promptAnnotation, mcpPromptMethod);
 
 					BiFunction<McpTransportContext, GetPromptRequest, GetPromptResult> methodCallback = SyncStatelessMcpPromptMethodCallback
 						.builder()

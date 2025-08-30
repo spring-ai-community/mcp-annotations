@@ -9,11 +9,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.BiFunction;
 
-import org.springaicommunity.mcp.annotation.McpArg;
-import org.springaicommunity.mcp.annotation.McpPrompt;
-import org.springaicommunity.mcp.annotation.PromptAdaptor;
-import org.springaicommunity.mcp.method.prompt.SyncMcpPromptMethodCallback;
-
 import io.modelcontextprotocol.server.McpSyncServerExchange;
 import io.modelcontextprotocol.spec.McpSchema.GetPromptRequest;
 import io.modelcontextprotocol.spec.McpSchema.GetPromptResult;
@@ -21,6 +16,9 @@ import io.modelcontextprotocol.spec.McpSchema.Prompt;
 import io.modelcontextprotocol.spec.McpSchema.PromptMessage;
 import io.modelcontextprotocol.spec.McpSchema.Role;
 import io.modelcontextprotocol.spec.McpSchema.TextContent;
+import org.springaicommunity.mcp.adapter.PromptAdapter;
+import org.springaicommunity.mcp.annotation.McpArg;
+import org.springaicommunity.mcp.annotation.McpPrompt;
 
 /**
  * Example demonstrating how to use the SyncMcpPromptMethodCallback.
@@ -196,7 +194,7 @@ public class SyncMcpPromptMethodCallbackExample {
 		McpPrompt promptAnnotation = greetingMethod.getAnnotation(McpPrompt.class);
 
 		// Convert the annotation to a Prompt object with argument information
-		Prompt prompt = PromptAdaptor.asPrompt(promptAnnotation, greetingMethod);
+		Prompt prompt = PromptAdapter.asPrompt(promptAnnotation, greetingMethod);
 
 		// Create the callback
 		BiFunction<McpSyncServerExchange, GetPromptRequest, GetPromptResult> callback = SyncMcpPromptMethodCallback
@@ -235,7 +233,7 @@ public class SyncMcpPromptMethodCallbackExample {
 		McpPrompt promptAnnotation = singleMessageMethod.getAnnotation(McpPrompt.class);
 
 		// Convert the annotation to a Prompt object with argument information
-		Prompt prompt = PromptAdaptor.asPrompt(promptAnnotation, singleMessageMethod);
+		Prompt prompt = PromptAdapter.asPrompt(promptAnnotation, singleMessageMethod);
 
 		// Create the callback
 		BiFunction<McpSyncServerExchange, GetPromptRequest, GetPromptResult> callback = SyncMcpPromptMethodCallback
@@ -273,7 +271,7 @@ public class SyncMcpPromptMethodCallbackExample {
 		McpPrompt promptAnnotation = stringListMethod.getAnnotation(McpPrompt.class);
 
 		// Convert the annotation to a Prompt object with argument information
-		Prompt prompt = PromptAdaptor.asPrompt(promptAnnotation, stringListMethod);
+		Prompt prompt = PromptAdapter.asPrompt(promptAnnotation, stringListMethod);
 
 		// Create the callback
 		BiFunction<McpSyncServerExchange, GetPromptRequest, GetPromptResult> callback = SyncMcpPromptMethodCallback

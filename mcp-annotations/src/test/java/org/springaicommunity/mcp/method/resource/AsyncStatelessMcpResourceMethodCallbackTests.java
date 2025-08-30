@@ -18,11 +18,10 @@ import io.modelcontextprotocol.spec.McpSchema.TextResourceContents;
 import io.modelcontextprotocol.util.McpUriTemplateManager;
 import io.modelcontextprotocol.util.McpUriTemplateManagerFactory;
 import org.junit.jupiter.api.Test;
+import org.springaicommunity.mcp.adapter.ResourceAdapter;
 import org.springaicommunity.mcp.annotation.McpMeta;
 import org.springaicommunity.mcp.annotation.McpProgressToken;
 import org.springaicommunity.mcp.annotation.McpResource;
-import org.springaicommunity.mcp.annotation.ResourceAdaptor;
-
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
@@ -232,7 +231,7 @@ public class AsyncStatelessMcpResourceMethodCallbackTests {
 			.builder()
 			.method(method)
 			.bean(provider)
-			.resource(ResourceAdaptor.asResource(createMockMcpResource()))
+			.resource(ResourceAdapter.asResource(createMockMcpResource()))
 			.build();
 
 		McpTransportContext context = mock(McpTransportContext.class);
@@ -260,7 +259,7 @@ public class AsyncStatelessMcpResourceMethodCallbackTests {
 			.builder()
 			.method(method)
 			.bean(provider)
-			.resource(ResourceAdaptor.asResource(createMockMcpResource()))
+			.resource(ResourceAdapter.asResource(createMockMcpResource()))
 			.build();
 
 		McpTransportContext context = mock(McpTransportContext.class);
@@ -288,7 +287,7 @@ public class AsyncStatelessMcpResourceMethodCallbackTests {
 			.builder()
 			.method(method)
 			.bean(provider)
-			.resource(ResourceAdaptor.asResource(resourceAnnotation))
+			.resource(ResourceAdapter.asResource(resourceAnnotation))
 			.build();
 
 		McpTransportContext context = mock(McpTransportContext.class);
@@ -316,7 +315,7 @@ public class AsyncStatelessMcpResourceMethodCallbackTests {
 			.builder()
 			.method(method)
 			.bean(provider)
-			.resource(ResourceAdaptor.asResource(createMockMcpResource()))
+			.resource(ResourceAdapter.asResource(createMockMcpResource()))
 			.build();
 
 		McpTransportContext context = mock(McpTransportContext.class);
@@ -344,7 +343,7 @@ public class AsyncStatelessMcpResourceMethodCallbackTests {
 			.builder()
 			.method(method)
 			.bean(provider)
-			.resource(ResourceAdaptor.asResource(createMockMcpResource()))
+			.resource(ResourceAdapter.asResource(createMockMcpResource()))
 			.build();
 
 		McpTransportContext context = mock(McpTransportContext.class);
@@ -372,7 +371,7 @@ public class AsyncStatelessMcpResourceMethodCallbackTests {
 			.builder()
 			.method(method)
 			.bean(provider)
-			.resource(ResourceAdaptor.asResource(resourceAnnotation))
+			.resource(ResourceAdapter.asResource(resourceAnnotation))
 			.build();
 
 		McpTransportContext context = mock(McpTransportContext.class);
@@ -399,7 +398,7 @@ public class AsyncStatelessMcpResourceMethodCallbackTests {
 			.builder()
 			.method(method)
 			.bean(provider)
-			.resource(ResourceAdaptor.asResource(createMockMcpResource()))
+			.resource(ResourceAdapter.asResource(createMockMcpResource()))
 			.build();
 
 		McpTransportContext context = mock(McpTransportContext.class);
@@ -427,7 +426,7 @@ public class AsyncStatelessMcpResourceMethodCallbackTests {
 			.builder()
 			.method(method)
 			.bean(provider)
-			.resource(ResourceAdaptor.asResource(resourceAnnotation))
+			.resource(ResourceAdapter.asResource(resourceAnnotation))
 			.build();
 
 		McpTransportContext context = mock(McpTransportContext.class);
@@ -456,7 +455,7 @@ public class AsyncStatelessMcpResourceMethodCallbackTests {
 			.builder()
 			.method(method)
 			.bean(provider)
-			.resource(ResourceAdaptor.asResource(resourceAnnotation))
+			.resource(ResourceAdapter.asResource(resourceAnnotation))
 			.build();
 
 		McpTransportContext context = mock(McpTransportContext.class);
@@ -539,7 +538,7 @@ public class AsyncStatelessMcpResourceMethodCallbackTests {
 		assertThatThrownBy(() -> AsyncStatelessMcpResourceMethodCallback.builder()
 			.method(method)
 			.bean(provider)
-			.resource(ResourceAdaptor.asResource(mockResourceAnnotation))
+			.resource(ResourceAdapter.asResource(mockResourceAnnotation))
 			.build()).isInstanceOf(IllegalArgumentException.class)
 			.hasMessageContaining("Method must have parameters for all URI variables");
 	}
@@ -554,7 +553,7 @@ public class AsyncStatelessMcpResourceMethodCallbackTests {
 			.builder()
 			.method(method)
 			.bean(provider)
-			.resource(ResourceAdaptor.asResource(createMockMcpResource()))
+			.resource(ResourceAdapter.asResource(createMockMcpResource()))
 			.build();
 
 		McpTransportContext context = mock(McpTransportContext.class);
@@ -577,7 +576,7 @@ public class AsyncStatelessMcpResourceMethodCallbackTests {
 			.builder()
 			.method(method)
 			.bean(provider)
-			.resource(ResourceAdaptor.asResource(createMockMcpResource()))
+			.resource(ResourceAdapter.asResource(createMockMcpResource()))
 			.build();
 
 		McpTransportContext context = mock(McpTransportContext.class);
@@ -612,7 +611,7 @@ public class AsyncStatelessMcpResourceMethodCallbackTests {
 			.builder()
 			.method(method)
 			.bean(provider)
-			.resource(ResourceAdaptor.asResource(createMockMcpResource()))
+			.resource(ResourceAdapter.asResource(createMockMcpResource()))
 			.uriTemplateManagerFactory(new McpUriTemplateManagerFactory() {
 				public McpUriTemplateManager create(String uriTemplate) {
 					return mockUriTemplateManager;
@@ -637,7 +636,7 @@ public class AsyncStatelessMcpResourceMethodCallbackTests {
 		AsyncStatelessMcpResourceMethodCallback callback = AsyncStatelessMcpResourceMethodCallback.builder()
 			.method(method)
 			.bean(provider)
-			.resource(ResourceAdaptor.asResource(createMockMcpResource()))
+			.resource(ResourceAdapter.asResource(createMockMcpResource()))
 			.build();
 
 		// Test that McpTransportContext is recognized as context type
@@ -681,7 +680,7 @@ public class AsyncStatelessMcpResourceMethodCallbackTests {
 			.builder()
 			.method(method)
 			.bean(provider)
-			.resource(ResourceAdaptor.asResource(resourceAnnotation))
+			.resource(ResourceAdapter.asResource(resourceAnnotation))
 			.build();
 
 		McpTransportContext context = mock(McpTransportContext.class);
@@ -707,7 +706,7 @@ public class AsyncStatelessMcpResourceMethodCallbackTests {
 			.builder()
 			.method(method)
 			.bean(provider)
-			.resource(ResourceAdaptor.asResource(createMockMcpResource()))
+			.resource(ResourceAdapter.asResource(createMockMcpResource()))
 			.build();
 
 		McpTransportContext context = mock(McpTransportContext.class);
@@ -734,7 +733,7 @@ public class AsyncStatelessMcpResourceMethodCallbackTests {
 			.builder()
 			.method(method)
 			.bean(provider)
-			.resource(ResourceAdaptor.asResource(createMockMcpResource()))
+			.resource(ResourceAdapter.asResource(createMockMcpResource()))
 			.build();
 
 		McpTransportContext context = mock(McpTransportContext.class);
@@ -761,7 +760,7 @@ public class AsyncStatelessMcpResourceMethodCallbackTests {
 			.builder()
 			.method(method)
 			.bean(provider)
-			.resource(ResourceAdaptor.asResource(createMockMcpResource()))
+			.resource(ResourceAdapter.asResource(createMockMcpResource()))
 			.build();
 
 		McpTransportContext context = mock(McpTransportContext.class);
@@ -787,7 +786,7 @@ public class AsyncStatelessMcpResourceMethodCallbackTests {
 			.builder()
 			.method(method)
 			.bean(provider)
-			.resource(ResourceAdaptor.asResource(createMockMcpResource()))
+			.resource(ResourceAdapter.asResource(createMockMcpResource()))
 			.build();
 
 		McpTransportContext context = mock(McpTransportContext.class);
@@ -815,7 +814,7 @@ public class AsyncStatelessMcpResourceMethodCallbackTests {
 			.builder()
 			.method(method)
 			.bean(provider)
-			.resource(ResourceAdaptor.asResource(resourceAnnotation))
+			.resource(ResourceAdapter.asResource(resourceAnnotation))
 			.build();
 
 		McpTransportContext context = mock(McpTransportContext.class);
@@ -842,7 +841,7 @@ public class AsyncStatelessMcpResourceMethodCallbackTests {
 			.builder()
 			.method(method)
 			.bean(provider)
-			.resource(ResourceAdaptor.asResource(createMockMcpResource()))
+			.resource(ResourceAdapter.asResource(createMockMcpResource()))
 			.build();
 
 		McpTransportContext context = mock(McpTransportContext.class);
@@ -870,7 +869,7 @@ public class AsyncStatelessMcpResourceMethodCallbackTests {
 			.builder()
 			.method(method)
 			.bean(provider)
-			.resource(ResourceAdaptor.asResource(createMockMcpResource()))
+			.resource(ResourceAdapter.asResource(createMockMcpResource()))
 			.build();
 
 		McpTransportContext context = mock(McpTransportContext.class);
@@ -902,7 +901,7 @@ public class AsyncStatelessMcpResourceMethodCallbackTests {
 		assertThatThrownBy(() -> AsyncStatelessMcpResourceMethodCallback.builder()
 			.method(method)
 			.bean(provider)
-			.resource(ResourceAdaptor.asResource(createMockMcpResource()))
+			.resource(ResourceAdapter.asResource(createMockMcpResource()))
 			.build()).isInstanceOf(IllegalArgumentException.class)
 			.hasMessageContaining("Method cannot have more than one McpMeta parameter");
 	}

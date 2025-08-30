@@ -7,12 +7,10 @@ package org.springaicommunity.mcp.method.resource;
 import java.lang.reflect.Method;
 import java.util.List;
 
-import org.springaicommunity.mcp.annotation.McpResource;
-import org.springaicommunity.mcp.annotation.ResourceAdaptor;
-import org.springaicommunity.mcp.method.resource.SyncMcpResourceMethodCallback;
-
 import io.modelcontextprotocol.spec.McpSchema.ReadResourceRequest;
 import io.modelcontextprotocol.spec.McpSchema.ReadResourceResult;
+import org.springaicommunity.mcp.adapter.ResourceAdapter;
+import org.springaicommunity.mcp.annotation.McpResource;
 
 /**
  * Simple test to verify that McpResourceMethodCallback requires a non-empty URI in the
@@ -108,7 +106,7 @@ public class McpResourceUriValidationTest {
 				SyncMcpResourceMethodCallback.builder()
 					.method(validMethod)
 					.bean(provider)
-					.resource(ResourceAdaptor.asResource(validAnnotation))
+					.resource(ResourceAdapter.asResource(validAnnotation))
 					.build();
 				System.out.println("  PASS: Successfully created callback with valid URI");
 			}
@@ -122,7 +120,7 @@ public class McpResourceUriValidationTest {
 				SyncMcpResourceMethodCallback.builder()
 					.method(validMethod)
 					.bean(provider)
-					.resource(ResourceAdaptor.asResource(createMockResourceWithEmptyUri()))
+					.resource(ResourceAdapter.asResource(createMockResourceWithEmptyUri()))
 					.build();
 				System.out.println("  FAIL: Should have thrown exception for empty URI");
 			}
@@ -136,7 +134,7 @@ public class McpResourceUriValidationTest {
 				SyncMcpResourceMethodCallback.builder()
 					.method(validMethod)
 					.bean(provider)
-					.resource(ResourceAdaptor.asResource(createMockResourceWithValidUri()))
+					.resource(ResourceAdapter.asResource(createMockResourceWithValidUri()))
 					.build();
 				System.out.println("  PASS: Successfully created callback with valid URI");
 			}
