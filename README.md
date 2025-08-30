@@ -1,6 +1,7 @@
 # MCP Annotations
 
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+[![Maven Central](https://img.shields.io/maven-central/v/org.springaicommunity/mcp-annotations.svg?label=Maven%20Central)](https://central.sonatype.com/artifact/org.springaicommunity/mcp-annotations)
 [![Java Version](https://img.shields.io/badge/Java-17%2B-orange)](https://www.oracle.com/java/technologies/javase/jdk17-archive-downloads.html)
 
 The MCP Annotations project provides annotation-based method handling for [Model Context Protocol (MCP)](https://github.com/modelcontextprotocol/spec) servers in Java. It simplifies the creation and registration of MCP server methods through a clean, declarative approach using Java annotations.
@@ -8,6 +9,7 @@ The MCP Annotations project provides annotation-based method handling for [Model
 ## Table of Contents
 - [Overview](#overview)
 - [Installation](#installation)
+- [Spring AI MCP](#spring-ai-mcp)
 - [Key Components](#key-components)
 - [Usage Examples](#usage-examples)
 - [Features](#features)
@@ -67,8 +69,11 @@ To use the mcp-annotations snapshot version you need to add the following reposi
 </repositories>
 ```
 
-## Spring AI Integration
+## Spring AI MCP
 For a complete out-of-the-box experience, use the [Spring AI MCP Annotation Auto-configurations](https://docs.spring.io/spring-ai/reference/1.1-SNAPSHOT/api/mcp/mcp-annotations-overview.html) integration.
+
+Please check the [Spring AI MCP Annotations Example](https://github.com/spring-projects/spring-ai-examples/tree/main/model-context-protocol/mcp-annotations).
+ 
 
 ## mcp-annotations
 
