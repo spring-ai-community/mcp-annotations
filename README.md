@@ -27,8 +27,6 @@ This library builds on top of the [MCP Java SDK](https://github.com/modelcontext
 
 ## Installation
 
-### Core Module
-
 To use the MCP Annotations core module in your project, add the following dependency to your Maven POM file:
 
 ```xml
@@ -39,7 +37,7 @@ To use the MCP Annotations core module in your project, add the following depend
 </dependency>
 ```
 
-Also select the JAVA MCP SDK dependency:
+and a Java MCP SDK dependency:
 
 ```xml
 <dependency>
@@ -49,7 +47,7 @@ Also select the JAVA MCP SDK dependency:
 </dependency>
 ```
 
-#### Snapshot repositories
+### Snapshot repositories
 
 To use the mcp-annotations snapshot version you need to add the following repositories to your Maven POM:
 
@@ -69,8 +67,8 @@ To use the mcp-annotations snapshot version you need to add the following reposi
 </repositories>
 ```
 
-### Spring AI Integration
-For a complete out-of-the-box experience, use the [Spring AI MCP Annotation auto-configurations](https://docs.spring.io/spring-ai/reference/1.1-SNAPSHOT/api/mcp/mcp-annotations-overview.html).
+## Spring AI Integration
+For a complete out-of-the-box experience, use the [Spring AI MCP Annotation Auto-configurations](https://docs.spring.io/spring-ai/reference/1.1-SNAPSHOT/api/mcp/mcp-annotations-overview.html) integration.
 
 ## mcp-annotations
 
