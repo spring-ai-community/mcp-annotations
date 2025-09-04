@@ -6,7 +6,7 @@
 
 	<groupId>org.springaicommunity</groupId>
 	<artifactId>mcp-annotations-parent</artifactId>
-	<version>0.3.0-SNAPSHOT</version>
+	<version>0.4.0-SNAPSHOT</version>
 
 	<packaging>pom</packaging>
 	<url>https://github.com/spring-ai-community/mcp-annotations</url>
@@ -56,7 +56,7 @@
 		<maven.compiler.source>17</maven.compiler.source>
 		<maven.compiler.target>17</maven.compiler.target>
 
-		<mcp.java.sdk.version>0.11.3</mcp.java.sdk.version>
+		<mcp.java.sdk.version>0.12.0</mcp.java.sdk.version>
 
 		<jsonschema.version>4.38.0</jsonschema.version>
 		<swagger-annotations.version>2.2.36</swagger-annotations.version>

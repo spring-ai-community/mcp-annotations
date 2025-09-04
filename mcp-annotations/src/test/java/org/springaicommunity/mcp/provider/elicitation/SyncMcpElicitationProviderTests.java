@@ -46,7 +46,7 @@ public class SyncMcpElicitationProviderTests {
 
 	public static class TestElicitationHandler {
 
-		@McpElicitation(clientId = "my-client-id")
+		@McpElicitation(clients = "my-client-id")
 		public ElicitResult handleElicitation(ElicitRequest request) {
 			return new ElicitResult(ElicitResult.Action.ACCEPT,
 					Map.of("name", "Test User", "message", request.message()));
@@ -56,12 +56,12 @@ public class SyncMcpElicitationProviderTests {
 
 	public static class MultipleElicitationHandler {
 
-		@McpElicitation(clientId = "my-client-id")
+		@McpElicitation(clients = "my-client-id")
 		public ElicitResult handleElicitation1(ElicitRequest request) {
 			return new ElicitResult(ElicitResult.Action.ACCEPT, Map.of("handler", "1"));
 		}
 
-		@McpElicitation(clientId = "my-client-id")
+		@McpElicitation(clients = "my-client-id")
 		public ElicitResult handleElicitation2(ElicitRequest request) {
 			return new ElicitResult(ElicitResult.Action.ACCEPT, Map.of("handler", "2"));
 		}

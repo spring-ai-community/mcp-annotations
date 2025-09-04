@@ -36,14 +36,14 @@ public class AsyncMcpToolListChangedMethodCallbackTests {
 
 		private List<McpSchema.Tool> lastUpdatedTools;
 
-		@McpToolListChanged
+		@McpToolListChanged(clients = { "client1", "client2" })
 		public Mono<Void> handleToolListChanged(List<McpSchema.Tool> updatedTools) {
 			return Mono.fromRunnable(() -> {
 				this.lastUpdatedTools = updatedTools;
 			});
 		}
 
-		@McpToolListChanged
+		@McpToolListChanged(clients = { "client1", "client2" })
 		public void handleToolListChangedVoid(List<McpSchema.Tool> updatedTools) {
 			this.lastUpdatedTools = updatedTools;
 		}
@@ -55,27 +55,27 @@ public class AsyncMcpToolListChangedMethodCallbackTests {
 	 */
 	static class InvalidMethods {
 
-		@McpToolListChanged
+		@McpToolListChanged(clients = "client1")
 		public String invalidReturnType(List<McpSchema.Tool> updatedTools) {
 			return "Invalid";
 		}
 
-		@McpToolListChanged
+		@McpToolListChanged(clients = "client1")
 		public Mono<String> invalidMonoReturnType(List<McpSchema.Tool> updatedTools) {
 			return Mono.just("Invalid");
 		}
 
-		@McpToolListChanged
+		@McpToolListChanged(clients = "client1")
 		public Mono<Void> invalidParameterCount(List<McpSchema.Tool> updatedTools, String extra) {
 			return Mono.empty();
 		}
 
-		@McpToolListChanged
+		@McpToolListChanged(clients = "client1")
 		public Mono<Void> invalidParameterType(String invalidType) {
 			return Mono.empty();
 		}
 
-		@McpToolListChanged
+		@McpToolListChanged(clients = "client1")
 		public Mono<Void> noParameters() {
 			return Mono.empty();
 		}
@@ -229,7 +229,7 @@ public class AsyncMcpToolListChangedMethodCallbackTests {
 		// Test class that throws an exception in the method
 		class ThrowingMethod {
 
-			@McpToolListChanged
+			@McpToolListChanged(clients = "client1")
 			public Mono<Void> handleToolListChanged(List<McpSchema.Tool> updatedTools) {
 				return Mono.fromRunnable(() -> {
 					throw new RuntimeException("Test exception");
@@ -254,7 +254,7 @@ public class AsyncMcpToolListChangedMethodCallbackTests {
 		// Test class that throws an exception in a void method
 		class ThrowingVoidMethod {
 
-			@McpToolListChanged
+			@McpToolListChanged(clients = "client1")
 			public void handleToolListChanged(List<McpSchema.Tool> updatedTools) {
 				throw new RuntimeException("Test exception");
 			}

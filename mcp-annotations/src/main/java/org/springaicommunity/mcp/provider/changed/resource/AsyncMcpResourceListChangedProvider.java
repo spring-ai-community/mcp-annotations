@@ -94,7 +94,7 @@ public class AsyncMcpResourceListChangedProvider {
 						.bean(consumerObject)
 						.build();
 
-					return new AsyncResourceListChangedSpecification(resourceListChangedAnnotation.clientId(),
+					return new AsyncResourceListChangedSpecification(resourceListChangedAnnotation.clients(),
 							methodCallback);
 				})
 				.toList())

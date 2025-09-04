@@ -34,7 +34,7 @@ public class SyncMcpPromptListChangedMethodCallbackTests {
 
 		private List<McpSchema.Prompt> lastUpdatedPrompts;
 
-		@McpPromptListChanged
+		@McpPromptListChanged(clients = "my-client-id")
 		public void handlePromptListChanged(List<McpSchema.Prompt> updatedPrompts) {
 			this.lastUpdatedPrompts = updatedPrompts;
 		}
@@ -46,22 +46,22 @@ public class SyncMcpPromptListChangedMethodCallbackTests {
 	 */
 	static class InvalidMethods {
 
-		@McpPromptListChanged
+		@McpPromptListChanged(clients = "my-client-id")
 		public String invalidReturnType(List<McpSchema.Prompt> updatedPrompts) {
 			return "Invalid";
 		}
 
-		@McpPromptListChanged
+		@McpPromptListChanged(clients = "my-client-id")
 		public void invalidParameterCount(List<McpSchema.Prompt> updatedPrompts, String extra) {
 			// Invalid parameter count
 		}
 
-		@McpPromptListChanged
+		@McpPromptListChanged(clients = "my-client-id")
 		public void invalidParameterType(String invalidType) {
 			// Invalid parameter type
 		}
 
-		@McpPromptListChanged
+		@McpPromptListChanged(clients = "my-client-id")
 		public void noParameters() {
 			// No parameters
 		}
@@ -180,7 +180,7 @@ public class SyncMcpPromptListChangedMethodCallbackTests {
 		// Test class that throws an exception in the method
 		class ThrowingMethod {
 
-			@McpPromptListChanged
+			@McpPromptListChanged(clients = "my-client-id")
 			public void handlePromptListChanged(List<McpSchema.Prompt> updatedPrompts) {
 				throw new RuntimeException("Test exception");
 			}

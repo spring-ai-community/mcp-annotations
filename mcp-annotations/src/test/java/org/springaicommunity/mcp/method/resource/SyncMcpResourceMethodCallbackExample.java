@@ -18,11 +18,9 @@ import io.modelcontextprotocol.spec.McpSchema.ReadResourceRequest;
 import io.modelcontextprotocol.spec.McpSchema.ReadResourceResult;
 import io.modelcontextprotocol.spec.McpSchema.ResourceContents;
 import io.modelcontextprotocol.spec.McpSchema.TextResourceContents;
-
 import org.mockito.Mockito;
+import org.springaicommunity.mcp.adapter.ResourceAdapter;
 import org.springaicommunity.mcp.annotation.McpResource;
-import org.springaicommunity.mcp.annotation.ResourceAdaptor;
-import org.springaicommunity.mcp.method.resource.SyncMcpResourceMethodCallback;
 
 /**
  * Example demonstrating how to use the {@link SyncMcpResourceMethodCallback} with
@@ -256,7 +254,7 @@ public class SyncMcpResourceMethodCallbackExample {
 						.builder()
 						.method(method)
 						.bean(profileProvider)
-						.resource(ResourceAdaptor.asResource(resourceAnnotation))
+						.resource(ResourceAdapter.asResource(resourceAnnotation))
 						.build();
 
 					// Register the callback with the URI pattern from the annotation

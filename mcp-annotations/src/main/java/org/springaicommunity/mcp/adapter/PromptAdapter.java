@@ -1,7 +1,7 @@
 /*
 * Copyright 2025 - 2025 the original author or authors.
 */
-package org.springaicommunity.mcp.annotation;
+package org.springaicommunity.mcp.adapter;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
@@ -10,15 +10,17 @@ import java.util.List;
 
 import io.modelcontextprotocol.spec.McpSchema;
 import io.modelcontextprotocol.util.Assert;
+import org.springaicommunity.mcp.annotation.McpArg;
+import org.springaicommunity.mcp.annotation.McpPrompt;
 
 /**
  * Utility class for adapting between McpPrompt annotations and McpSchema.Prompt objects.
  *
  * @author Christian Tzolov
  */
-public class PromptAdaptor {
+public class PromptAdapter {
 
-	private PromptAdaptor() {
+	private PromptAdapter() {
 	}
 
 	/**

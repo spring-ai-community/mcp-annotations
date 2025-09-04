@@ -90,7 +90,7 @@ public class AsyncMcpLoggingProvider {
 						.loggingConsumer(loggingConsumerAnnotation)
 						.build();
 
-					return new AsyncLoggingSpecification(loggingConsumerAnnotation.clientId(), methodCallback);
+					return new AsyncLoggingSpecification(loggingConsumerAnnotation.clients(), methodCallback);
 				})
 				.toList())
 			.flatMap(List::stream)

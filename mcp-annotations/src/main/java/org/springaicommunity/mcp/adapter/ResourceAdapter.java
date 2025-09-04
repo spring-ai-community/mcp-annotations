@@ -1,16 +1,17 @@
 /*
 * Copyright 2025 - 2025 the original author or authors.
 */
-package org.springaicommunity.mcp.annotation;
+package org.springaicommunity.mcp.adapter;
 
 import io.modelcontextprotocol.spec.McpSchema;
+import org.springaicommunity.mcp.annotation.McpResource;
 
 /**
  * @author Christian Tzolov
  */
-public class ResourceAdaptor {
+public class ResourceAdapter {
 
-	private ResourceAdaptor() {
+	private ResourceAdapter() {
 	}
 
 	public static McpSchema.Resource asResource(McpResource mcpResource) {

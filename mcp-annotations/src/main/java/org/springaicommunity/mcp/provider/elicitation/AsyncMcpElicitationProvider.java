@@ -101,7 +101,7 @@ public class AsyncMcpElicitationProvider {
 						.elicitation(elicitationAnnotation)
 						.build();
 
-					return new AsyncElicitationSpecification(elicitationAnnotation.clientId(), methodCallback);
+					return new AsyncElicitationSpecification(elicitationAnnotation.clients(), methodCallback);
 				})
 				.toList())
 			.flatMap(List::stream)

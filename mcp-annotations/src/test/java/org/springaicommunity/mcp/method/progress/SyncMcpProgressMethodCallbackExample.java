@@ -28,7 +28,7 @@ public class SyncMcpProgressMethodCallbackExample {
 		 * Handle progress notification with the full notification object.
 		 * @param notification the progress notification
 		 */
-		@McpProgress(clientId = "my-client-id")
+		@McpProgress(clients = "my-client-id")
 		public void handleProgressNotification(ProgressNotification notification) {
 			notificationCount++;
 			System.out.printf("Progress Update #%d: Token=%s, Progress=%.2f%%, Total=%.0f, Message=%s%n",
@@ -42,7 +42,7 @@ public class SyncMcpProgressMethodCallbackExample {
 		 * @param progressToken the progress token identifier
 		 * @param total the total value as string
 		 */
-		@McpProgress(clientId = "my-client-id")
+		@McpProgress(clients = "my-client-id")
 		public void handleProgressWithParams(Double progress, String progressToken, String total) {
 			System.out.printf("Progress: %.2f%% for token %s (Total: %s)%n", progress * 100, progressToken, total);
 		}
@@ -53,7 +53,7 @@ public class SyncMcpProgressMethodCallbackExample {
 		 * @param progressToken the progress token identifier
 		 * @param total the total value as string
 		 */
-		@McpProgress(clientId = "my-client-id")
+		@McpProgress(clients = "my-client-id")
 		public void handleProgressPrimitive(double progress, String progressToken, String total) {
 			System.out.printf("Processing: %.1f%% complete (Token: %s)%n", progress * 100, progressToken);
 		}

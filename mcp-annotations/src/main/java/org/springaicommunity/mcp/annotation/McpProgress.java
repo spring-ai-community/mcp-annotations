@@ -37,8 +37,8 @@ public @interface McpProgress {
 
 	/**
 	 * Used as connection or client identifier to select the MCP client, the progress
-	 * consumer is associated with.
+	 * consumer is associated with. At least one client identifier must be specified.
 	 */
-	String clientId();
+	String[] clients();
 
 }

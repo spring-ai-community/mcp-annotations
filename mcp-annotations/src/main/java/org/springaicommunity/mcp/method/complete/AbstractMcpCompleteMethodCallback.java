@@ -9,11 +9,6 @@ import java.lang.reflect.Parameter;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.springaicommunity.mcp.annotation.CompleteAdapter;
-import org.springaicommunity.mcp.annotation.McpComplete;
-import org.springaicommunity.mcp.annotation.McpMeta;
-import org.springaicommunity.mcp.annotation.McpProgressToken;
-
 import io.modelcontextprotocol.spec.McpSchema;
 import io.modelcontextprotocol.spec.McpSchema.CompleteReference;
 import io.modelcontextprotocol.spec.McpSchema.CompleteRequest;
@@ -21,6 +16,10 @@ import io.modelcontextprotocol.util.Assert;
 import io.modelcontextprotocol.util.DeafaultMcpUriTemplateManagerFactory;
 import io.modelcontextprotocol.util.McpUriTemplateManager;
 import io.modelcontextprotocol.util.McpUriTemplateManagerFactory;
+import org.springaicommunity.mcp.adapter.CompleteAdapter;
+import org.springaicommunity.mcp.annotation.McpComplete;
+import org.springaicommunity.mcp.annotation.McpMeta;
+import org.springaicommunity.mcp.annotation.McpProgressToken;
 
 /**
  * Abstract base class for creating callbacks around complete methods.

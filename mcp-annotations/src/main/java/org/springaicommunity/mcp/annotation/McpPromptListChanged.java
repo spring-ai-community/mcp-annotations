@@ -28,14 +28,14 @@ import java.lang.annotation.Target;
  *
  * <p>
  * Example usage: <pre>{@code
- * &#64;McpPromptListChanged
+ * &#64;McpPromptListChanged(clients = "test-client")
  * public void onPromptListChanged(List<McpSchema.Prompt> updatedPrompts) {
  *     // Handle prompt list change notification with the updated prompts
  *     logger.info("Prompt list updated, now contains {} prompts", updatedPrompts.size());
  *     // Process the updated prompt list
  * }
  *
- * &#64;McpPromptListChanged
+ * &#64;McpPromptListChanged(clients = "test-client")
  * public Mono<Void> onPromptListChangedAsync(List<McpSchema.Prompt> updatedPrompts) {
  *     // Handle prompt list change notification asynchronously
  *     return processUpdatedPrompts(updatedPrompts);
@@ -54,11 +54,10 @@ public @interface McpPromptListChanged {
 
 	/**
 	 * Used as connection or client identifier to select the MCP client that the prompt
-	 * change listener is associated with. If not specified, the listener is applied to
-	 * all clients and will receive notifications from any connected MCP server that
-	 * supports prompt list change notifications.
+	 * change listener is associated with. At least one client identifier must be
+	 * specified.
 	 * @return the client identifier, or empty string to listen to all clients
 	 */
-	String clientId() default "";
+	String[] clients();
 
 }

@@ -20,16 +20,15 @@ import java.lang.reflect.Method;
 import java.util.List;
 import java.util.stream.Stream;
 
-import org.reactivestreams.Publisher;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springaicommunity.mcp.annotation.CompleteAdapter;
-import org.springaicommunity.mcp.annotation.McpComplete;
-import org.springaicommunity.mcp.method.complete.AsyncMcpCompleteMethodCallback;
-
 import io.modelcontextprotocol.server.McpAsyncServerExchange;
 import io.modelcontextprotocol.server.McpServerFeatures.AsyncCompletionSpecification;
 import io.modelcontextprotocol.util.Assert;
+import org.reactivestreams.Publisher;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springaicommunity.mcp.adapter.CompleteAdapter;
+import org.springaicommunity.mcp.annotation.McpComplete;
+import org.springaicommunity.mcp.method.complete.AsyncMcpCompleteMethodCallback;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 

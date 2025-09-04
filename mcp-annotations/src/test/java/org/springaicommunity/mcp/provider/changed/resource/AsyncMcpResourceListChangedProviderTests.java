@@ -8,6 +8,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.List;
 import java.util.function.Function;
+import java.util.stream.Stream;
 
 import org.junit.jupiter.api.Test;
 import org.springaicommunity.mcp.annotation.McpResourceListChanged;
@@ -45,21 +46,21 @@ public class AsyncMcpResourceListChangedProviderTests {
 
 		private List<McpSchema.Resource> lastUpdatedResources;
 
-		@McpResourceListChanged
+		@McpResourceListChanged(clients = "client1")
 		public Mono<Void> handleResourceListChanged(List<McpSchema.Resource> updatedResources) {
 			return Mono.fromRunnable(() -> {
 				this.lastUpdatedResources = updatedResources;
 			});
 		}
 
-		@McpResourceListChanged(clientId = "test-client")
+		@McpResourceListChanged(clients = "test-client")
 		public Mono<Void> handleResourceListChangedWithClientId(List<McpSchema.Resource> updatedResources) {
 			return Mono.fromRunnable(() -> {
 				this.lastUpdatedResources = updatedResources;
 			});
 		}
 
-		@McpResourceListChanged
+		@McpResourceListChanged(clients = "client1")
 		public void handleResourceListChangedVoid(List<McpSchema.Resource> updatedResources) {
 			this.lastUpdatedResources = updatedResources;
 		}
@@ -118,9 +119,9 @@ public class AsyncMcpResourceListChangedProviderTests {
 		assertThat(specifications).hasSize(3);
 
 		// Check client IDs
-		List<String> clientIds = specifications.stream().map(AsyncResourceListChangedSpecification::clientId).toList();
+		List<String> clientIds = specifications.stream().map(spec -> spec.clients()).flatMap(Stream::of).toList();
 
-		assertThat(clientIds).containsExactlyInAnyOrder("", "test-client", "");
+		assertThat(clientIds).containsExactlyInAnyOrder("client1", "test-client", "client1");
 	}
 
 	@Test
@@ -187,12 +188,12 @@ public class AsyncMcpResourceListChangedProviderTests {
 	 */
 	static class InvalidReturnTypeHandler {
 
-		@McpResourceListChanged
+		@McpResourceListChanged(clients = "client1")
 		public String invalidReturnType(List<McpSchema.Resource> updatedResources) {
 			return "Invalid";
 		}
 
-		@McpResourceListChanged
+		@McpResourceListChanged(clients = "client1")
 		public int anotherInvalidReturnType(List<McpSchema.Resource> updatedResources) {
 			return 42;
 		}
@@ -217,19 +218,19 @@ public class AsyncMcpResourceListChangedProviderTests {
 
 		private List<McpSchema.Resource> lastUpdatedResources;
 
-		@McpResourceListChanged
+		@McpResourceListChanged(clients = "client1")
 		public Mono<Void> validMethod(List<McpSchema.Resource> updatedResources) {
 			return Mono.fromRunnable(() -> {
 				this.lastUpdatedResources = updatedResources;
 			});
 		}
 
-		@McpResourceListChanged
+		@McpResourceListChanged(clients = "client1")
 		public void validVoidMethod(List<McpSchema.Resource> updatedResources) {
 			this.lastUpdatedResources = updatedResources;
 		}
 
-		@McpResourceListChanged
+		@McpResourceListChanged(clients = "client1")
 		public String invalidMethod(List<McpSchema.Resource> updatedResources) {
 			return "Invalid";
 		}

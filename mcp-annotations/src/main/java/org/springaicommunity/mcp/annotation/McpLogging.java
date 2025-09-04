@@ -52,9 +52,9 @@ import java.lang.annotation.Target;
 public @interface McpLogging {
 
 	/**
-	 * Used as connection or client identifier to select the MCP clients, the logging
-	 * consumer is associated with. At least one client ID must be specified.
+	 * Used as connection or clients identifier to select the MCP clients, the logging
+	 * consumer is associated with. At least one client identifier must be specified.
 	 */
-	String clientId();
+	String[] clients();
 
 }

@@ -1,12 +1,13 @@
 /*
 * Copyright 2025 - 2025 the original author or authors.
 */
-package org.springaicommunity.mcp.annotation;
+package org.springaicommunity.mcp.adapter;
 
 import java.lang.reflect.Method;
 
 import io.modelcontextprotocol.spec.McpSchema;
 import io.modelcontextprotocol.util.Assert;
+import org.springaicommunity.mcp.annotation.McpComplete;
 
 /**
  * Utility class for adapting between McpComplete annotations and

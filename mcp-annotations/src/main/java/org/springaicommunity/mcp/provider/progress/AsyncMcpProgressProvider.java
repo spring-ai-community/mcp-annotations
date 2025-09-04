@@ -106,7 +106,7 @@ public class AsyncMcpProgressProvider {
 						.progress(progressAnnotation)
 						.build();
 
-					return new AsyncProgressSpecification(progressAnnotation.clientId(), methodCallback);
+					return new AsyncProgressSpecification(progressAnnotation.clients(), methodCallback);
 				})
 				.toList())
 			.flatMap(List::stream)

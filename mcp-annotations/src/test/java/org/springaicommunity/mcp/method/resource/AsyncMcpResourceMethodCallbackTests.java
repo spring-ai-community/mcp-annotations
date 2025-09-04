@@ -18,11 +18,10 @@ import io.modelcontextprotocol.spec.McpSchema.TextResourceContents;
 import io.modelcontextprotocol.util.McpUriTemplateManager;
 import io.modelcontextprotocol.util.McpUriTemplateManagerFactory;
 import org.junit.jupiter.api.Test;
+import org.springaicommunity.mcp.adapter.ResourceAdapter;
 import org.springaicommunity.mcp.annotation.McpMeta;
 import org.springaicommunity.mcp.annotation.McpProgressToken;
 import org.springaicommunity.mcp.annotation.McpResource;
-import org.springaicommunity.mcp.annotation.ResourceAdaptor;
-
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
@@ -276,7 +275,7 @@ public class AsyncMcpResourceMethodCallbackTests {
 			.builder()
 			.method(method)
 			.bean(provider)
-			.resource(ResourceAdaptor.asResource(createMockMcpResource()))
+			.resource(ResourceAdapter.asResource(createMockMcpResource()))
 			.build();
 
 		McpAsyncServerExchange exchange = mock(McpAsyncServerExchange.class);
@@ -304,7 +303,7 @@ public class AsyncMcpResourceMethodCallbackTests {
 			.builder()
 			.method(method)
 			.bean(provider)
-			.resource(ResourceAdaptor.asResource(createMockMcpResource()))
+			.resource(ResourceAdapter.asResource(createMockMcpResource()))
 			.build();
 
 		McpAsyncServerExchange exchange = mock(McpAsyncServerExchange.class);
@@ -332,7 +331,7 @@ public class AsyncMcpResourceMethodCallbackTests {
 			.builder()
 			.method(method)
 			.bean(provider)
-			.resource(ResourceAdaptor.asResource(resourceAnnotation))
+			.resource(ResourceAdapter.asResource(resourceAnnotation))
 			.build();
 
 		McpAsyncServerExchange exchange = mock(McpAsyncServerExchange.class);
@@ -360,7 +359,7 @@ public class AsyncMcpResourceMethodCallbackTests {
 			.builder()
 			.method(method)
 			.bean(provider)
-			.resource(ResourceAdaptor.asResource(createMockMcpResource()))
+			.resource(ResourceAdapter.asResource(createMockMcpResource()))
 			.build();
 
 		McpAsyncServerExchange exchange = mock(McpAsyncServerExchange.class);
@@ -388,7 +387,7 @@ public class AsyncMcpResourceMethodCallbackTests {
 			.builder()
 			.method(method)
 			.bean(provider)
-			.resource(ResourceAdaptor.asResource(createMockMcpResource()))
+			.resource(ResourceAdapter.asResource(createMockMcpResource()))
 			.build();
 
 		McpAsyncServerExchange exchange = mock(McpAsyncServerExchange.class);
@@ -416,7 +415,7 @@ public class AsyncMcpResourceMethodCallbackTests {
 			.builder()
 			.method(method)
 			.bean(provider)
-			.resource(ResourceAdaptor.asResource(resourceAnnotation))
+			.resource(ResourceAdapter.asResource(resourceAnnotation))
 			.build();
 
 		McpAsyncServerExchange exchange = mock(McpAsyncServerExchange.class);
@@ -442,7 +441,7 @@ public class AsyncMcpResourceMethodCallbackTests {
 			.builder()
 			.method(method)
 			.bean(provider)
-			.resource(ResourceAdaptor.asResource(createMockMcpResource()))
+			.resource(ResourceAdapter.asResource(createMockMcpResource()))
 			.build();
 
 		McpAsyncServerExchange exchange = mock(McpAsyncServerExchange.class);
@@ -470,7 +469,7 @@ public class AsyncMcpResourceMethodCallbackTests {
 			.builder()
 			.method(method)
 			.bean(provider)
-			.resource(ResourceAdaptor.asResource(resourceAnnotation))
+			.resource(ResourceAdapter.asResource(resourceAnnotation))
 			.build();
 
 		McpAsyncServerExchange exchange = mock(McpAsyncServerExchange.class);
@@ -499,7 +498,7 @@ public class AsyncMcpResourceMethodCallbackTests {
 			.builder()
 			.method(method)
 			.bean(provider)
-			.resource(ResourceAdaptor.asResource(resourceAnnotation))
+			.resource(ResourceAdapter.asResource(resourceAnnotation))
 			.build();
 
 		McpAsyncServerExchange exchange = mock(McpAsyncServerExchange.class);
@@ -578,7 +577,7 @@ public class AsyncMcpResourceMethodCallbackTests {
 		assertThatThrownBy(() -> AsyncMcpResourceMethodCallback.builder()
 			.method(method)
 			.bean(provider)
-			.resource(ResourceAdaptor.asResource(mockResourceAnnotation))
+			.resource(ResourceAdapter.asResource(mockResourceAnnotation))
 			.build()).isInstanceOf(IllegalArgumentException.class)
 			.hasMessageContaining("Method must have parameters for all URI variables");
 	}
@@ -592,7 +591,7 @@ public class AsyncMcpResourceMethodCallbackTests {
 			.builder()
 			.method(method)
 			.bean(provider)
-			.resource(ResourceAdaptor.asResource(createMockMcpResource()))
+			.resource(ResourceAdapter.asResource(createMockMcpResource()))
 			.build();
 
 		McpAsyncServerExchange exchange = mock(McpAsyncServerExchange.class);
@@ -614,7 +613,7 @@ public class AsyncMcpResourceMethodCallbackTests {
 			.builder()
 			.method(method)
 			.bean(provider)
-			.resource(ResourceAdaptor.asResource(createMockMcpResource()))
+			.resource(ResourceAdapter.asResource(createMockMcpResource()))
 			.build();
 
 		McpAsyncServerExchange exchange = mock(McpAsyncServerExchange.class);
@@ -649,7 +648,7 @@ public class AsyncMcpResourceMethodCallbackTests {
 			.builder()
 			.method(method)
 			.bean(provider)
-			.resource(ResourceAdaptor.asResource(createMockMcpResource()))
+			.resource(ResourceAdapter.asResource(createMockMcpResource()))
 			.uriTemplateManagerFactory(new McpUriTemplateManagerFactory() {
 				public McpUriTemplateManager create(String uriTemplate) {
 					return mockUriTemplateManager;
@@ -677,7 +676,7 @@ public class AsyncMcpResourceMethodCallbackTests {
 			.builder()
 			.method(method)
 			.bean(provider)
-			.resource(ResourceAdaptor.asResource(createMockMcpResource()))
+			.resource(ResourceAdapter.asResource(createMockMcpResource()))
 			.build();
 
 		McpAsyncServerExchange exchange = mock(McpAsyncServerExchange.class);
@@ -706,7 +705,7 @@ public class AsyncMcpResourceMethodCallbackTests {
 			.builder()
 			.method(method)
 			.bean(provider)
-			.resource(ResourceAdaptor.asResource(createMockMcpResource()))
+			.resource(ResourceAdapter.asResource(createMockMcpResource()))
 			.build();
 
 		McpAsyncServerExchange exchange = mock(McpAsyncServerExchange.class);
@@ -736,7 +735,7 @@ public class AsyncMcpResourceMethodCallbackTests {
 			.builder()
 			.method(method)
 			.bean(provider)
-			.resource(ResourceAdaptor.asResource(createMockMcpResource()))
+			.resource(ResourceAdapter.asResource(createMockMcpResource()))
 			.build();
 
 		McpAsyncServerExchange exchange = mock(McpAsyncServerExchange.class);
@@ -764,7 +763,7 @@ public class AsyncMcpResourceMethodCallbackTests {
 			.builder()
 			.method(method)
 			.bean(provider)
-			.resource(ResourceAdaptor.asResource(createMockMcpResource()))
+			.resource(ResourceAdapter.asResource(createMockMcpResource()))
 			.build();
 
 		McpAsyncServerExchange exchange = mock(McpAsyncServerExchange.class);
@@ -794,7 +793,7 @@ public class AsyncMcpResourceMethodCallbackTests {
 			.builder()
 			.method(method)
 			.bean(provider)
-			.resource(ResourceAdaptor.asResource(resourceAnnotation))
+			.resource(ResourceAdapter.asResource(resourceAnnotation))
 			.build();
 
 		McpAsyncServerExchange exchange = mock(McpAsyncServerExchange.class);
@@ -823,7 +822,7 @@ public class AsyncMcpResourceMethodCallbackTests {
 			.builder()
 			.method(method)
 			.bean(provider)
-			.resource(ResourceAdaptor.asResource(createMockMcpResource()))
+			.resource(ResourceAdapter.asResource(createMockMcpResource()))
 			.build();
 
 		McpAsyncServerExchange exchange = mock(McpAsyncServerExchange.class);
@@ -853,7 +852,7 @@ public class AsyncMcpResourceMethodCallbackTests {
 			.builder()
 			.method(method)
 			.bean(provider)
-			.resource(ResourceAdaptor.asResource(createMockMcpResource()))
+			.resource(ResourceAdapter.asResource(createMockMcpResource()))
 			.build();
 
 		McpAsyncServerExchange exchange = mock(McpAsyncServerExchange.class);
@@ -885,7 +884,7 @@ public class AsyncMcpResourceMethodCallbackTests {
 			.builder()
 			.method(method)
 			.bean(provider)
-			.resource(ResourceAdaptor.asResource(createMockMcpResource()))
+			.resource(ResourceAdapter.asResource(createMockMcpResource()))
 			.build();
 
 		McpAsyncServerExchange exchange = mock(McpAsyncServerExchange.class);
@@ -914,7 +913,7 @@ public class AsyncMcpResourceMethodCallbackTests {
 			.builder()
 			.method(method)
 			.bean(provider)
-			.resource(ResourceAdaptor.asResource(createMockMcpResource()))
+			.resource(ResourceAdapter.asResource(createMockMcpResource()))
 			.build();
 
 		McpAsyncServerExchange exchange = mock(McpAsyncServerExchange.class);
@@ -943,7 +942,7 @@ public class AsyncMcpResourceMethodCallbackTests {
 			.builder()
 			.method(method)
 			.bean(provider)
-			.resource(ResourceAdaptor.asResource(createMockMcpResource()))
+			.resource(ResourceAdapter.asResource(createMockMcpResource()))
 			.build();
 
 		McpAsyncServerExchange exchange = mock(McpAsyncServerExchange.class);
@@ -971,7 +970,7 @@ public class AsyncMcpResourceMethodCallbackTests {
 			.builder()
 			.method(method)
 			.bean(provider)
-			.resource(ResourceAdaptor.asResource(createMockMcpResource()))
+			.resource(ResourceAdapter.asResource(createMockMcpResource()))
 			.build();
 
 		McpAsyncServerExchange exchange = mock(McpAsyncServerExchange.class);
@@ -1001,7 +1000,7 @@ public class AsyncMcpResourceMethodCallbackTests {
 			.builder()
 			.method(method)
 			.bean(provider)
-			.resource(ResourceAdaptor.asResource(resourceAnnotation))
+			.resource(ResourceAdapter.asResource(resourceAnnotation))
 			.build();
 
 		McpAsyncServerExchange exchange = mock(McpAsyncServerExchange.class);
@@ -1030,7 +1029,7 @@ public class AsyncMcpResourceMethodCallbackTests {
 			.builder()
 			.method(method)
 			.bean(provider)
-			.resource(ResourceAdaptor.asResource(createMockMcpResource()))
+			.resource(ResourceAdapter.asResource(createMockMcpResource()))
 			.build();
 
 		McpAsyncServerExchange exchange = mock(McpAsyncServerExchange.class);
@@ -1060,7 +1059,7 @@ public class AsyncMcpResourceMethodCallbackTests {
 			.builder()
 			.method(method)
 			.bean(provider)
-			.resource(ResourceAdaptor.asResource(createMockMcpResource()))
+			.resource(ResourceAdapter.asResource(createMockMcpResource()))
 			.build();
 
 		McpAsyncServerExchange exchange = mock(McpAsyncServerExchange.class);
@@ -1092,7 +1091,7 @@ public class AsyncMcpResourceMethodCallbackTests {
 		assertThatThrownBy(() -> AsyncMcpResourceMethodCallback.builder()
 			.method(method)
 			.bean(provider)
-			.resource(ResourceAdaptor.asResource(createMockMcpResource()))
+			.resource(ResourceAdapter.asResource(createMockMcpResource()))
 			.build()).isInstanceOf(IllegalArgumentException.class)
 			.hasMessageContaining("Method cannot have more than one McpMeta parameter");
 	}

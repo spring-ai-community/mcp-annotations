@@ -36,14 +36,14 @@ public class AsyncMcpPromptListChangedMethodCallbackTests {
 
 		private List<McpSchema.Prompt> lastUpdatedPrompts;
 
-		@McpPromptListChanged
+		@McpPromptListChanged(clients = "my-client-id")
 		public Mono<Void> handlePromptListChanged(List<McpSchema.Prompt> updatedPrompts) {
 			return Mono.fromRunnable(() -> {
 				this.lastUpdatedPrompts = updatedPrompts;
 			});
 		}
 
-		@McpPromptListChanged
+		@McpPromptListChanged(clients = "my-client-id")
 		public void handlePromptListChangedVoid(List<McpSchema.Prompt> updatedPrompts) {
 			this.lastUpdatedPrompts = updatedPrompts;
 		}
@@ -55,27 +55,27 @@ public class AsyncMcpPromptListChangedMethodCallbackTests {
 	 */
 	static class InvalidMethods {
 
-		@McpPromptListChanged
+		@McpPromptListChanged(clients = "my-client-id")
 		public String invalidReturnType(List<McpSchema.Prompt> updatedPrompts) {
 			return "Invalid";
 		}
 
-		@McpPromptListChanged
+		@McpPromptListChanged(clients = "my-client-id")
 		public Mono<String> invalidMonoReturnType(List<McpSchema.Prompt> updatedPrompts) {
 			return Mono.just("Invalid");
 		}
 
-		@McpPromptListChanged
+		@McpPromptListChanged(clients = "my-client-id")
 		public Mono<Void> invalidParameterCount(List<McpSchema.Prompt> updatedPrompts, String extra) {
 			return Mono.empty();
 		}
 
-		@McpPromptListChanged
+		@McpPromptListChanged(clients = "my-client-id")
 		public Mono<Void> invalidParameterType(String invalidType) {
 			return Mono.empty();
 		}
 
-		@McpPromptListChanged
+		@McpPromptListChanged(clients = "my-client-id")
 		public Mono<Void> noParameters() {
 			return Mono.empty();
 		}
@@ -229,7 +229,7 @@ public class AsyncMcpPromptListChangedMethodCallbackTests {
 		// Test class that throws an exception in the method
 		class ThrowingMethod {
 
-			@McpPromptListChanged
+			@McpPromptListChanged(clients = "my-client-id")
 			public Mono<Void> handlePromptListChanged(List<McpSchema.Prompt> updatedPrompts) {
 				return Mono.fromRunnable(() -> {
 					throw new RuntimeException("Test exception");
@@ -254,7 +254,7 @@ public class AsyncMcpPromptListChangedMethodCallbackTests {
 		// Test class that throws an exception in a void method
 		class ThrowingVoidMethod {
 
-			@McpPromptListChanged
+			@McpPromptListChanged(clients = "my-client-id")
 			public void handlePromptListChanged(List<McpSchema.Prompt> updatedPrompts) {
 				throw new RuntimeException("Test exception");
 			}

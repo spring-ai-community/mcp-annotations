@@ -35,19 +35,19 @@ public class SyncMcpProgressProviderTests {
 
 		private String lastTotal;
 
-		@McpProgress(clientId = "my-client-id")
+		@McpProgress(clients = "my-client-id")
 		public void handleProgressNotification(ProgressNotification notification) {
 			this.lastNotification = notification;
 		}
 
-		@McpProgress(clientId = "my-client-id")
+		@McpProgress(clients = "my-client-id")
 		public void handleProgressWithParams(Double progress, String progressToken, String total) {
 			this.lastProgress = progress;
 			this.lastProgressToken = progressToken;
 			this.lastTotal = total;
 		}
 
-		@McpProgress(clientId = "my-client-id")
+		@McpProgress(clients = "my-client-id")
 		public void handleProgressWithPrimitiveDouble(double progress, String progressToken, String total) {
 			this.lastProgress = progress;
 			this.lastProgressToken = progressToken;
@@ -60,7 +60,7 @@ public class SyncMcpProgressProviderTests {
 		}
 
 		// This method has invalid return type and should be ignored
-		@McpProgress(clientId = "my-client-id")
+		@McpProgress(clients = "my-client-id")
 		public String invalidReturnType(ProgressNotification notification) {
 			return "Invalid";
 		}
@@ -145,8 +145,8 @@ public class SyncMcpProgressProviderTests {
 
 		List<SyncProgressSpecification> specifications = provider.getProgressSpecifications();
 
-		// All specifications should have non-empty clientId
-		assertThat(specifications).allMatch(spec -> !spec.clientId().isEmpty());
+		// All specifications should have at least one non-empty client Id
+		assertThat(specifications).allMatch(spec -> spec.clients().length > 0);
 	}
 
 }

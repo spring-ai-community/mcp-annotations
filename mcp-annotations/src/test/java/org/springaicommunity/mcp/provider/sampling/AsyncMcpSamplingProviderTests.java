@@ -35,7 +35,7 @@ public class AsyncMcpSamplingProviderTests {
 		// Create a class with only one valid sampling method
 		class SingleValidMethod {
 
-			@McpSampling(clientId = "test-client")
+			@McpSampling(clients = "test-client")
 			public Mono<CreateMessageResult> handleAsyncSamplingRequest(CreateMessageRequest request) {
 				return Mono.just(CreateMessageResult.builder()
 					.role(io.modelcontextprotocol.spec.McpSchema.Role.ASSISTANT)
@@ -77,7 +77,7 @@ public class AsyncMcpSamplingProviderTests {
 		// Create a class with only the direct result method
 		class DirectResultOnly {
 
-			@McpSampling(clientId = "test-client")
+			@McpSampling(clients = "test-client")
 			public CreateMessageResult handleDirectSamplingRequest(CreateMessageRequest request) {
 				return CreateMessageResult.builder()
 					.role(io.modelcontextprotocol.spec.McpSchema.Role.ASSISTANT)

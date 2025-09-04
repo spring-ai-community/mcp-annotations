@@ -33,7 +33,7 @@ public class AsyncMcpProgressMethodCallbackExample {
 		 * @param notification the progress notification
 		 * @return Mono completing when processing is done
 		 */
-		@McpProgress(clientId = "my-client-id")
+		@McpProgress(clients = "my-client-id")
 		public Mono<Void> handleProgressNotificationAsync(ProgressNotification notification) {
 			return Mono.fromRunnable(() -> {
 				int count = notificationCount.incrementAndGet();
@@ -51,7 +51,7 @@ public class AsyncMcpProgressMethodCallbackExample {
 		 * @param progressToken the progress token identifier
 		 * @param total the total value as string
 		 */
-		@McpProgress(clientId = "my-client-id")
+		@McpProgress(clients = "my-client-id")
 		public void handleProgressWithParams(Double progress, String progressToken, String total) {
 			System.out.printf("[Sync in Async] Progress: %.2f%% for token %s (Total: %s)%n", progress * 100,
 					progressToken, total);
@@ -64,7 +64,7 @@ public class AsyncMcpProgressMethodCallbackExample {
 		 * @param total the total value as string
 		 * @return Mono completing when processing is done
 		 */
-		@McpProgress(clientId = "my-client-id")
+		@McpProgress(clients = "my-client-id")
 		public Mono<Void> handleProgressWithParamsAsync(Double progress, String progressToken, String total) {
 			return Mono.fromRunnable(() -> {
 				System.out.printf("[Async Params] Progress: %.2f%% for token %s (Total: %s)%n", progress * 100,
@@ -78,7 +78,7 @@ public class AsyncMcpProgressMethodCallbackExample {
 		 * @param progressToken the progress token identifier
 		 * @param total the total value as string
 		 */
-		@McpProgress(clientId = "my-client-id")
+		@McpProgress(clients = "my-client-id")
 		public void handleProgressPrimitive(double progress, String progressToken, String total) {
 			System.out.printf("[Primitive] Processing: %.1f%% complete (Token: %s)%n", progress * 100, progressToken);
 		}

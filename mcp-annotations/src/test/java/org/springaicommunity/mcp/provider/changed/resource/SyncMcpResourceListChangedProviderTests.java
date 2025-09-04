@@ -8,6 +8,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.List;
 import java.util.function.Consumer;
+import java.util.stream.Stream;
 
 import org.junit.jupiter.api.Test;
 import org.springaicommunity.mcp.annotation.McpResourceListChanged;
@@ -43,12 +44,12 @@ public class SyncMcpResourceListChangedProviderTests {
 
 		private List<McpSchema.Resource> lastUpdatedResources;
 
-		@McpResourceListChanged
+		@McpResourceListChanged(clients = "client1")
 		public void handleResourceListChanged(List<McpSchema.Resource> updatedResources) {
 			this.lastUpdatedResources = updatedResources;
 		}
 
-		@McpResourceListChanged(clientId = "test-client")
+		@McpResourceListChanged(clients = "test-client")
 		public void handleResourceListChangedWithClientId(List<McpSchema.Resource> updatedResources) {
 			this.lastUpdatedResources = updatedResources;
 		}
@@ -101,9 +102,9 @@ public class SyncMcpResourceListChangedProviderTests {
 		assertThat(specifications).hasSize(2);
 
 		// Check client IDs
-		List<String> clientIds = specifications.stream().map(SyncResourceListChangedSpecification::clientId).toList();
+		List<String> clientIds = specifications.stream().map(spec -> spec.clients()).flatMap(Stream::of).toList();
 
-		assertThat(clientIds).containsExactlyInAnyOrder("", "test-client");
+		assertThat(clientIds).containsExactlyInAnyOrder("client1", "test-client");
 	}
 
 	@Test

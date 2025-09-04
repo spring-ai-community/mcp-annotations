@@ -8,6 +8,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.List;
 import java.util.function.Function;
+import java.util.stream.Stream;
 
 import org.junit.jupiter.api.Test;
 import org.springaicommunity.mcp.annotation.McpToolListChanged;
@@ -35,21 +36,21 @@ public class AsyncMcpToolListChangedProviderTests {
 
 		private List<McpSchema.Tool> lastUpdatedTools;
 
-		@McpToolListChanged
+		@McpToolListChanged(clients = "client1")
 		public Mono<Void> handleToolListChanged(List<McpSchema.Tool> updatedTools) {
 			return Mono.fromRunnable(() -> {
 				this.lastUpdatedTools = updatedTools;
 			});
 		}
 
-		@McpToolListChanged(clientId = "test-client")
+		@McpToolListChanged(clients = "test-client")
 		public Mono<Void> handleToolListChangedWithClientId(List<McpSchema.Tool> updatedTools) {
 			return Mono.fromRunnable(() -> {
 				this.lastUpdatedTools = updatedTools;
 			});
 		}
 
-		@McpToolListChanged
+		@McpToolListChanged(clients = "client1")
 		public void handleToolListChangedVoid(List<McpSchema.Tool> updatedTools) {
 			this.lastUpdatedTools = updatedTools;
 		}
@@ -108,9 +109,9 @@ public class AsyncMcpToolListChangedProviderTests {
 		assertThat(specifications).hasSize(3);
 
 		// Check client IDs
-		List<String> clientIds = specifications.stream().map(AsyncToolListChangedSpecification::clientId).toList();
+		List<String> clientIds = specifications.stream().map(spec -> spec.clients()).flatMap(Stream::of).toList();
 
-		assertThat(clientIds).containsExactlyInAnyOrder("", "test-client", "");
+		assertThat(clientIds).containsExactlyInAnyOrder("client1", "test-client", "client1");
 	}
 
 	@Test
@@ -176,12 +177,12 @@ public class AsyncMcpToolListChangedProviderTests {
 	 */
 	static class InvalidReturnTypeHandler {
 
-		@McpToolListChanged
+		@McpToolListChanged(clients = "client1")
 		public String invalidReturnType(List<McpSchema.Tool> updatedTools) {
 			return "Invalid";
 		}
 
-		@McpToolListChanged
+		@McpToolListChanged(clients = "client1")
 		public int anotherInvalidReturnType(List<McpSchema.Tool> updatedTools) {
 			return 42;
 		}
@@ -206,19 +207,19 @@ public class AsyncMcpToolListChangedProviderTests {
 
 		private List<McpSchema.Tool> lastUpdatedTools;
 
-		@McpToolListChanged
+		@McpToolListChanged(clients = "client1")
 		public Mono<Void> validMethod(List<McpSchema.Tool> updatedTools) {
 			return Mono.fromRunnable(() -> {
 				this.lastUpdatedTools = updatedTools;
 			});
 		}
 
-		@McpToolListChanged
+		@McpToolListChanged(clients = "client1")
 		public void validVoidMethod(List<McpSchema.Tool> updatedTools) {
 			this.lastUpdatedTools = updatedTools;
 		}
 
-		@McpToolListChanged
+		@McpToolListChanged(clients = "client1")
 		public String invalidMethod(List<McpSchema.Tool> updatedTools) {
 			return "Invalid";
 		}

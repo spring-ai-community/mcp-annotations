@@ -94,7 +94,7 @@ public class AsyncMcpPromptListChangedProvider {
 						.bean(consumerObject)
 						.build();
 
-					return new AsyncPromptListChangedSpecification(promptListChangedAnnotation.clientId(),
+					return new AsyncPromptListChangedSpecification(promptListChangedAnnotation.clients(),
 							methodCallback);
 				})
 				.toList())

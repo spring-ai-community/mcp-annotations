@@ -26,7 +26,7 @@ import org.junit.jupiter.api.Test;
 import org.springaicommunity.mcp.annotation.McpComplete;
 
 import io.modelcontextprotocol.server.McpStatelessServerFeatures.SyncCompletionSpecification;
-import io.modelcontextprotocol.server.McpTransportContext;
+import io.modelcontextprotocol.common.McpTransportContext;
 import io.modelcontextprotocol.spec.McpSchema.CompleteRequest;
 import io.modelcontextprotocol.spec.McpSchema.CompleteResult;
 import io.modelcontextprotocol.spec.McpSchema.CompleteResult.CompleteCompletion;

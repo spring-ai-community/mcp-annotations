@@ -28,14 +28,14 @@ import java.lang.annotation.Target;
  *
  * <p>
  * Example usage: <pre>{@code
- * &#64;McpResourceListChanged
+ * &#64;McpResourceListChanged(clients = "test-client")
  * public void onResourceListChanged(List<McpSchema.Resource> updatedResources) {
  *     // Handle resource list change notification with the updated resources
  *     logger.info("Resource list updated, now contains {} resources", updatedResources.size());
  *     // Process the updated resource list
  * }
  *
- * &#64;McpResourceListChanged
+ * &#64;McpResourceListChanged(clients = "test-client")
  * public Mono<Void> onResourceListChangedAsync(List<McpSchema.Resource> updatedResources) {
  *     // Handle resource list change notification asynchronously
  *     return processUpdatedResources(updatedResources);
@@ -53,12 +53,10 @@ import java.lang.annotation.Target;
 public @interface McpResourceListChanged {
 
 	/**
-	 * Used as connection or client identifier to select the MCP client that the resource
-	 * change listener is associated with. If not specified, the listener is applied to
-	 * all clients and will receive notifications from any connected MCP server that
-	 * supports resource list change notifications.
+	 * Used as connection or client identifier to select the MCP clients that the resource
+	 * change listener is associated with.
 	 * @return the client identifier, or empty string to listen to all clients
 	 */
-	String clientId() default "";
+	String[] clients();
 
 }

@@ -26,10 +26,10 @@ public class ElicitationSpecificationTests {
 	@Test
 	void testSyncElicitationSpecificationValidClientId() {
 		// Valid clientId should work
-		SyncElicitationSpecification spec = new SyncElicitationSpecification("valid-client-id",
+		SyncElicitationSpecification spec = new SyncElicitationSpecification(new String[] { "valid-client-id" },
 				request -> new ElicitResult(ElicitResult.Action.ACCEPT, Map.of("test", "value")));
 
-		assertThat(spec.clientId()).isEqualTo("valid-client-id");
+		assertThat(spec.clients()).containsExactly("valid-client-id");
 		assertThat(spec.elicitationHandler()).isNotNull();
 	}
 
@@ -38,28 +38,28 @@ public class ElicitationSpecificationTests {
 		assertThatThrownBy(() -> new SyncElicitationSpecification(null,
 				request -> new ElicitResult(ElicitResult.Action.ACCEPT, Map.of("test", "value"))))
 			.isInstanceOf(NullPointerException.class)
-			.hasMessage("clientId must not be null");
+			.hasMessage("clients must not be null");
 	}
 
 	@Test
 	void testSyncElicitationSpecificationEmptyClientId() {
-		assertThatThrownBy(() -> new SyncElicitationSpecification("",
+		assertThatThrownBy(() -> new SyncElicitationSpecification(new String[] { "" },
 				request -> new ElicitResult(ElicitResult.Action.ACCEPT, Map.of("test", "value"))))
 			.isInstanceOf(IllegalArgumentException.class)
-			.hasMessage("clientId must not be empty");
+			.hasMessage("clients must not be empty");
 	}
 
 	@Test
 	void testSyncElicitationSpecificationBlankClientId() {
-		assertThatThrownBy(() -> new SyncElicitationSpecification("   ",
+		assertThatThrownBy(() -> new SyncElicitationSpecification(new String[] { "   " },
 				request -> new ElicitResult(ElicitResult.Action.ACCEPT, Map.of("test", "value"))))
 			.isInstanceOf(IllegalArgumentException.class)
-			.hasMessage("clientId must not be empty");
+			.hasMessage("clients must not be empty");
 	}
 
 	@Test
 	void testSyncElicitationSpecificationNullHandler() {
-		assertThatThrownBy(() -> new SyncElicitationSpecification("valid-client-id", null))
+		assertThatThrownBy(() -> new SyncElicitationSpecification(new String[] { "valid-client-id" }, null))
 			.isInstanceOf(NullPointerException.class)
 			.hasMessage("elicitationHandler must not be null");
 	}
@@ -67,10 +67,10 @@ public class ElicitationSpecificationTests {
 	@Test
 	void testAsyncElicitationSpecificationValidClientId() {
 		// Valid clientId should work
-		AsyncElicitationSpecification spec = new AsyncElicitationSpecification("valid-client-id",
+		AsyncElicitationSpecification spec = new AsyncElicitationSpecification(new String[] { "valid-client-id" },
 				request -> Mono.just(new ElicitResult(ElicitResult.Action.ACCEPT, Map.of("test", "value"))));
 
-		assertThat(spec.clientId()).isEqualTo("valid-client-id");
+		assertThat(spec.clients()).containsExactly("valid-client-id");
 		assertThat(spec.elicitationHandler()).isNotNull();
 	}
 
@@ -79,35 +79,35 @@ public class ElicitationSpecificationTests {
 		assertThatThrownBy(() -> new AsyncElicitationSpecification(null,
 				request -> Mono.just(new ElicitResult(ElicitResult.Action.ACCEPT, Map.of("test", "value")))))
 			.isInstanceOf(NullPointerException.class)
-			.hasMessage("clientId must not be null");
+			.hasMessage("clients must not be null");
 	}
 
 	@Test
 	void testAsyncElicitationSpecificationEmptyClientId() {
-		assertThatThrownBy(() -> new AsyncElicitationSpecification("",
+		assertThatThrownBy(() -> new AsyncElicitationSpecification(new String[] { "" },
 				request -> Mono.just(new ElicitResult(ElicitResult.Action.ACCEPT, Map.of("test", "value")))))
 			.isInstanceOf(IllegalArgumentException.class)
-			.hasMessage("clientId must not be empty");
+			.hasMessage("clients must not be empty");
 	}
 
 	@Test
 	void testAsyncElicitationSpecificationBlankClientId() {
-		assertThatThrownBy(() -> new AsyncElicitationSpecification("   ",
+		assertThatThrownBy(() -> new AsyncElicitationSpecification(new String[] { "   " },
 				request -> Mono.just(new ElicitResult(ElicitResult.Action.ACCEPT, Map.of("test", "value")))))
 			.isInstanceOf(IllegalArgumentException.class)
-			.hasMessage("clientId must not be empty");
+			.hasMessage("clients must not be empty");
 	}
 
 	@Test
 	void testAsyncElicitationSpecificationNullHandler() {
-		assertThatThrownBy(() -> new AsyncElicitationSpecification("valid-client-id", null))
+		assertThatThrownBy(() -> new AsyncElicitationSpecification(new String[] { "valid-client-id" }, null))
 			.isInstanceOf(NullPointerException.class)
 			.hasMessage("elicitationHandler must not be null");
 	}
 
 	@Test
 	void testSyncElicitationSpecificationFunctionality() {
-		SyncElicitationSpecification spec = new SyncElicitationSpecification("test-client",
+		SyncElicitationSpecification spec = new SyncElicitationSpecification(new String[] { "test-client" },
 				request -> new ElicitResult(ElicitResult.Action.ACCEPT,
 						Map.of("message", request.message(), "clientId", "test-client")));
 
@@ -122,7 +122,7 @@ public class ElicitationSpecificationTests {
 
 	@Test
 	void testAsyncElicitationSpecificationFunctionality() {
-		AsyncElicitationSpecification spec = new AsyncElicitationSpecification("test-client",
+		AsyncElicitationSpecification spec = new AsyncElicitationSpecification(new String[] { "test-client" },
 				request -> Mono.just(new ElicitResult(ElicitResult.Action.ACCEPT,
 						Map.of("message", request.message(), "clientId", "test-client"))));
 

@@ -45,25 +45,25 @@ public class AsyncMcpProgressMethodCallbackTests {
 
 		private String lastTotal;
 
-		@McpProgress(clientId = "my-client-id")
+		@McpProgress(clients = "my-client-id")
 		public void handleProgressVoid(ProgressNotification notification) {
 			this.lastNotification = notification;
 		}
 
-		@McpProgress(clientId = "my-client-id")
+		@McpProgress(clients = "my-client-id")
 		public Mono<Void> handleProgressMono(ProgressNotification notification) {
 			this.lastNotification = notification;
 			return Mono.empty();
 		}
 
-		@McpProgress(clientId = "my-client-id")
+		@McpProgress(clients = "my-client-id")
 		public void handleProgressWithParams(Double progress, String progressToken, String total) {
 			this.lastProgress = progress;
 			this.lastProgressToken = progressToken;
 			this.lastTotal = total;
 		}
 
-		@McpProgress(clientId = "my-client-id")
+		@McpProgress(clients = "my-client-id")
 		public Mono<Void> handleProgressWithParamsMono(Double progress, String progressToken, String total) {
 			this.lastProgress = progress;
 			this.lastProgressToken = progressToken;
@@ -71,7 +71,7 @@ public class AsyncMcpProgressMethodCallbackTests {
 			return Mono.empty();
 		}
 
-		@McpProgress(clientId = "my-client-id")
+		@McpProgress(clients = "my-client-id")
 		public void handleProgressWithPrimitiveDouble(double progress, String progressToken, String total) {
 			this.lastProgress = progress;
 			this.lastProgressToken = progressToken;
@@ -85,42 +85,42 @@ public class AsyncMcpProgressMethodCallbackTests {
 	 */
 	static class InvalidMethods {
 
-		@McpProgress(clientId = "my-client-id")
+		@McpProgress(clients = "my-client-id")
 		public String invalidReturnType(ProgressNotification notification) {
 			return "Invalid";
 		}
 
-		@McpProgress(clientId = "my-client-id")
+		@McpProgress(clients = "my-client-id")
 		public Mono<String> invalidMonoReturnType(ProgressNotification notification) {
 			return Mono.just("Invalid");
 		}
 
-		@McpProgress(clientId = "my-client-id")
+		@McpProgress(clients = "my-client-id")
 		public void invalidParameterCount(ProgressNotification notification, String extra) {
 			// Invalid parameter count
 		}
 
-		@McpProgress(clientId = "my-client-id")
+		@McpProgress(clients = "my-client-id")
 		public void invalidParameterType(String invalidType) {
 			// Invalid parameter type
 		}
 
-		@McpProgress(clientId = "my-client-id")
+		@McpProgress(clients = "my-client-id")
 		public void invalidParameterTypes(String progress, int progressToken, boolean total) {
 			// Invalid parameter types
 		}
 
-		@McpProgress(clientId = "my-client-id")
+		@McpProgress(clients = "my-client-id")
 		public void invalidFirstParameterType(String progress, String progressToken, String total) {
 			// Invalid first parameter type
 		}
 
-		@McpProgress(clientId = "my-client-id")
+		@McpProgress(clients = "my-client-id")
 		public void invalidSecondParameterType(Double progress, int progressToken, String total) {
 			// Invalid second parameter type
 		}
 
-		@McpProgress(clientId = "my-client-id")
+		@McpProgress(clients = "my-client-id")
 		public void invalidThirdParameterType(Double progress, String progressToken, int total) {
 			// Invalid third parameter type
 		}

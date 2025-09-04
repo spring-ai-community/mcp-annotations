@@ -44,7 +44,7 @@ public class SyncMcpResourceListChangedMethodCallbackTests {
 
 		private List<McpSchema.Resource> lastUpdatedResources;
 
-		@McpResourceListChanged
+		@McpResourceListChanged(clients = "client1")
 		public void handleResourceListChanged(List<McpSchema.Resource> updatedResources) {
 			this.lastUpdatedResources = updatedResources;
 		}
@@ -56,22 +56,22 @@ public class SyncMcpResourceListChangedMethodCallbackTests {
 	 */
 	static class InvalidMethods {
 
-		@McpResourceListChanged
+		@McpResourceListChanged(clients = "client1")
 		public String invalidReturnType(List<McpSchema.Resource> updatedResources) {
 			return "Invalid";
 		}
 
-		@McpResourceListChanged
+		@McpResourceListChanged(clients = "client1")
 		public void invalidParameterCount(List<McpSchema.Resource> updatedResources, String extra) {
 			// Invalid parameter count
 		}
 
-		@McpResourceListChanged
+		@McpResourceListChanged(clients = "client1")
 		public void invalidParameterType(String invalidType) {
 			// Invalid parameter type
 		}
 
-		@McpResourceListChanged
+		@McpResourceListChanged(clients = "client1")
 		public void noParameters() {
 			// No parameters
 		}
@@ -190,7 +190,7 @@ public class SyncMcpResourceListChangedMethodCallbackTests {
 		// Test class that throws an exception in the method
 		class ThrowingMethod {
 
-			@McpResourceListChanged
+			@McpResourceListChanged(clients = "client1")
 			public void handleResourceListChanged(List<McpSchema.Resource> updatedResources) {
 				throw new RuntimeException("Test exception");
 			}

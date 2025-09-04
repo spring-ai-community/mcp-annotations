@@ -8,6 +8,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.List;
 import java.util.function.Function;
+import java.util.stream.Stream;
 
 import org.junit.jupiter.api.Test;
 import org.springaicommunity.mcp.annotation.McpPromptListChanged;
@@ -35,21 +36,21 @@ public class AsyncMcpPromptListChangedProviderTests {
 
 		private List<McpSchema.Prompt> lastUpdatedPrompts;
 
-		@McpPromptListChanged
+		@McpPromptListChanged(clients = "my-client-id")
 		public Mono<Void> handlePromptListChanged(List<McpSchema.Prompt> updatedPrompts) {
 			return Mono.fromRunnable(() -> {
 				this.lastUpdatedPrompts = updatedPrompts;
 			});
 		}
 
-		@McpPromptListChanged(clientId = "test-client")
+		@McpPromptListChanged(clients = "test-client")
 		public Mono<Void> handlePromptListChangedWithClientId(List<McpSchema.Prompt> updatedPrompts) {
 			return Mono.fromRunnable(() -> {
 				this.lastUpdatedPrompts = updatedPrompts;
 			});
 		}
 
-		@McpPromptListChanged
+		@McpPromptListChanged(clients = "my-client-id")
 		public void handlePromptListChangedVoid(List<McpSchema.Prompt> updatedPrompts) {
 			this.lastUpdatedPrompts = updatedPrompts;
 		}
@@ -108,9 +109,9 @@ public class AsyncMcpPromptListChangedProviderTests {
 		assertThat(specifications).hasSize(3);
 
 		// Check client IDs
-		List<String> clientIds = specifications.stream().map(AsyncPromptListChangedSpecification::clientId).toList();
+		List<String> clientIds = specifications.stream().map(spec -> spec.clients()).flatMap(Stream::of).toList();
 
-		assertThat(clientIds).containsExactlyInAnyOrder("", "test-client", "");
+		assertThat(clientIds).containsExactlyInAnyOrder("my-client-id", "test-client", "my-client-id");
 	}
 
 	@Test
@@ -176,12 +177,12 @@ public class AsyncMcpPromptListChangedProviderTests {
 	 */
 	static class InvalidReturnTypeHandler {
 
-		@McpPromptListChanged
+		@McpPromptListChanged(clients = "my-client-id")
 		public String invalidReturnType(List<McpSchema.Prompt> updatedPrompts) {
 			return "Invalid";
 		}
 
-		@McpPromptListChanged
+		@McpPromptListChanged(clients = "my-client-id")
 		public int anotherInvalidReturnType(List<McpSchema.Prompt> updatedPrompts) {
 			return 42;
 		}
@@ -206,19 +207,19 @@ public class AsyncMcpPromptListChangedProviderTests {
 
 		private List<McpSchema.Prompt> lastUpdatedPrompts;
 
-		@McpPromptListChanged
+		@McpPromptListChanged(clients = "my-client-id")
 		public Mono<Void> validMethod(List<McpSchema.Prompt> updatedPrompts) {
 			return Mono.fromRunnable(() -> {
 				this.lastUpdatedPrompts = updatedPrompts;
 			});
 		}
 
-		@McpPromptListChanged
+		@McpPromptListChanged(clients = "my-client-id")
 		public void validVoidMethod(List<McpSchema.Prompt> updatedPrompts) {
 			this.lastUpdatedPrompts = updatedPrompts;
 		}
 
-		@McpPromptListChanged
+		@McpPromptListChanged(clients = "my-client-id")
 		public String invalidMethod(List<McpSchema.Prompt> updatedPrompts) {
 			return "Invalid";
 		}

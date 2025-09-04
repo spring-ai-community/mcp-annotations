@@ -36,12 +36,12 @@ public class SyncMcpLoggingProviderTests {
 
 		private String lastData;
 
-		@McpLogging(clientId = "test-client")
+		@McpLogging(clients = "test-client")
 		public void handleLoggingMessage(LoggingMessageNotification notification) {
 			this.lastNotification = notification;
 		}
 
-		@McpLogging(clientId = "test-client")
+		@McpLogging(clients = "test-client")
 		public void handleLoggingMessageWithParams(LoggingLevel level, String logger, String data) {
 			this.lastLevel = level;
 			this.lastLogger = logger;
