@@ -22,7 +22,7 @@ import java.util.function.BiFunction;
 import java.util.stream.Stream;
 
 import io.modelcontextprotocol.server.McpStatelessServerFeatures.AsyncPromptSpecification;
-import io.modelcontextprotocol.server.McpTransportContext;
+import io.modelcontextprotocol.common.McpTransportContext;
 import io.modelcontextprotocol.spec.McpSchema.GetPromptRequest;
 import io.modelcontextprotocol.spec.McpSchema.GetPromptResult;
 import io.modelcontextprotocol.util.Assert;

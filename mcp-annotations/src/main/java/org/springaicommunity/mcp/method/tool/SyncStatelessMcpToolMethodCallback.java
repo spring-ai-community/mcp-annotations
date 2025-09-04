@@ -19,8 +19,7 @@ package org.springaicommunity.mcp.method.tool;
 import java.util.function.BiFunction;
 
 import org.springaicommunity.mcp.annotation.McpTool;
-
-import io.modelcontextprotocol.server.McpTransportContext;
+import io.modelcontextprotocol.common.McpTransportContext;
 import io.modelcontextprotocol.spec.McpSchema.CallToolRequest;
 import io.modelcontextprotocol.spec.McpSchema.CallToolResult;
 
