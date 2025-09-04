@@ -35,7 +35,7 @@ To use the MCP Annotations core module in your project, add the following depend
 <dependency>
     <groupId>org.springaicommunity</groupId>
     <artifactId>mcp-annotations</artifactId>
-    <version>0.2.0</version>
+    <version>0.3.0</version>
 </dependency>
 ```
 
@@ -45,7 +45,7 @@ and a Java MCP SDK dependency:
 <dependency>
     <groupId>io.modelcontextprotocol.sdk</groupId>
     <artifactId>mcp</artifactId>
-    <version>0.11.3</version>
+    <version>0.12.0</version>
 </dependency>
 ```
 
@@ -73,7 +73,6 @@ To use the mcp-annotations snapshot version you need to add the following reposi
 For a complete out-of-the-box experience, use the [Spring AI MCP Annotation Auto-configurations](https://docs.spring.io/spring-ai/reference/1.1-SNAPSHOT/api/mcp/mcp-annotations-overview.html) integration.
 
 Please check the [Spring AI MCP Annotations Example](https://github.com/spring-projects/spring-ai-examples/tree/main/model-context-protocol/mcp-annotations).
- 
 
 ## mcp-annotations
 
@@ -1912,7 +1911,7 @@ public class StatelessMcpServerFactory {
 
 - Java 17 or higher
 - Reactor Core (for async operations)
-- MCP Java SDK 0.12.0-SNAPSHOT or higher
+- MCP Java SDK 0.12.0 or higher
 
 ## Building from Source
 
