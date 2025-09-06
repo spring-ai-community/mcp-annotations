@@ -26,8 +26,8 @@ import java.util.Map;
 import org.junit.jupiter.api.Test;
 import org.springaicommunity.mcp.annotation.McpTool;
 
-import io.modelcontextprotocol.server.McpAsyncServerExchange;
-import io.modelcontextprotocol.server.McpServerFeatures.AsyncToolSpecification;
+import io.modelcontextprotocol.server.McpStatelessServerFeatures.AsyncToolSpecification;
+import io.modelcontextprotocol.common.McpTransportContext;
 import io.modelcontextprotocol.spec.McpSchema.CallToolRequest;
 import io.modelcontextprotocol.spec.McpSchema.CallToolResult;
 import io.modelcontextprotocol.spec.McpSchema.TextContent;
@@ -37,15 +37,15 @@ import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
 /**
- * Tests for {@link AsyncMcpToolProvider}.
+ * Tests for {@link AsyncStatelessMcpToolProvider}.
  *
  * @author Christian Tzolov
  */
-public class AsyncMcpToolProviderTests {
+public class AsyncStatelessMcpToolProviderTests {
 
 	@Test
 	void testConstructorWithNullToolObjects() {
-		assertThatThrownBy(() -> new AsyncMcpToolProvider(null)).isInstanceOf(IllegalArgumentException.class)
+		assertThatThrownBy(() -> new AsyncStatelessMcpToolProvider(null)).isInstanceOf(IllegalArgumentException.class)
 			.hasMessageContaining("toolObjects cannot be null");
 	}
 
@@ -62,7 +62,7 @@ public class AsyncMcpToolProviderTests {
 		}
 
 		SingleValidTool toolObject = new SingleValidTool();
-		AsyncMcpToolProvider provider = new AsyncMcpToolProvider(List.of(toolObject));
+		AsyncStatelessMcpToolProvider provider = new AsyncStatelessMcpToolProvider(List.of(toolObject));
 
 		List<AsyncToolSpecification> toolSpecs = provider.getToolSpecifications();
 
@@ -75,10 +75,10 @@ public class AsyncMcpToolProviderTests {
 		assertThat(toolSpec.tool().inputSchema()).isNotNull();
 		assertThat(toolSpec.callHandler()).isNotNull();
 
-		// Test that the handler works
-		McpAsyncServerExchange exchange = mock(McpAsyncServerExchange.class);
+		// Test that the handler works with McpTransportContext
+		McpTransportContext context = mock(McpTransportContext.class);
 		CallToolRequest request = new CallToolRequest("test-tool", Map.of("input", "hello"));
-		Mono<CallToolResult> result = toolSpec.callHandler().apply(exchange, request);
+		Mono<CallToolResult> result = toolSpec.callHandler().apply(context, request);
 
 		StepVerifier.create(result).assertNext(callToolResult -> {
 			assertThat(callToolResult).isNotNull();
@@ -101,7 +101,7 @@ public class AsyncMcpToolProviderTests {
 		}
 
 		CustomNameTool toolObject = new CustomNameTool();
-		AsyncMcpToolProvider provider = new AsyncMcpToolProvider(List.of(toolObject));
+		AsyncStatelessMcpToolProvider provider = new AsyncStatelessMcpToolProvider(List.of(toolObject));
 
 		List<AsyncToolSpecification> toolSpecs = provider.getToolSpecifications();
 
@@ -122,7 +122,7 @@ public class AsyncMcpToolProviderTests {
 		}
 
 		DefaultNameTool toolObject = new DefaultNameTool();
-		AsyncMcpToolProvider provider = new AsyncMcpToolProvider(List.of(toolObject));
+		AsyncStatelessMcpToolProvider provider = new AsyncStatelessMcpToolProvider(List.of(toolObject));
 
 		List<AsyncToolSpecification> toolSpecs = provider.getToolSpecifications();
 
@@ -143,7 +143,7 @@ public class AsyncMcpToolProviderTests {
 		}
 
 		EmptyNameTool toolObject = new EmptyNameTool();
-		AsyncMcpToolProvider provider = new AsyncMcpToolProvider(List.of(toolObject));
+		AsyncStatelessMcpToolProvider provider = new AsyncStatelessMcpToolProvider(List.of(toolObject));
 
 		List<AsyncToolSpecification> toolSpecs = provider.getToolSpecifications();
 
@@ -169,7 +169,7 @@ public class AsyncMcpToolProviderTests {
 		}
 
 		MixedReturnTool toolObject = new MixedReturnTool();
-		AsyncMcpToolProvider provider = new AsyncMcpToolProvider(List.of(toolObject));
+		AsyncStatelessMcpToolProvider provider = new AsyncStatelessMcpToolProvider(List.of(toolObject));
 
 		List<AsyncToolSpecification> toolSpecs = provider.getToolSpecifications();
 
@@ -195,7 +195,7 @@ public class AsyncMcpToolProviderTests {
 		}
 
 		FluxReturnTool toolObject = new FluxReturnTool();
-		AsyncMcpToolProvider provider = new AsyncMcpToolProvider(List.of(toolObject));
+		AsyncStatelessMcpToolProvider provider = new AsyncStatelessMcpToolProvider(List.of(toolObject));
 
 		List<AsyncToolSpecification> toolSpecs = provider.getToolSpecifications();
 
@@ -222,7 +222,7 @@ public class AsyncMcpToolProviderTests {
 		}
 
 		MultipleToolMethods toolObject = new MultipleToolMethods();
-		AsyncMcpToolProvider provider = new AsyncMcpToolProvider(List.of(toolObject));
+		AsyncStatelessMcpToolProvider provider = new AsyncStatelessMcpToolProvider(List.of(toolObject));
 
 		List<AsyncToolSpecification> toolSpecs = provider.getToolSpecifications();
 
@@ -254,7 +254,7 @@ public class AsyncMcpToolProviderTests {
 
 		FirstToolObject firstObject = new FirstToolObject();
 		SecondToolObject secondObject = new SecondToolObject();
-		AsyncMcpToolProvider provider = new AsyncMcpToolProvider(List.of(firstObject, secondObject));
+		AsyncStatelessMcpToolProvider provider = new AsyncStatelessMcpToolProvider(List.of(firstObject, secondObject));
 
 		List<AsyncToolSpecification> toolSpecs = provider.getToolSpecifications();
 
@@ -285,7 +285,7 @@ public class AsyncMcpToolProviderTests {
 		}
 
 		MixedMethods toolObject = new MixedMethods();
-		AsyncMcpToolProvider provider = new AsyncMcpToolProvider(List.of(toolObject));
+		AsyncStatelessMcpToolProvider provider = new AsyncStatelessMcpToolProvider(List.of(toolObject));
 
 		List<AsyncToolSpecification> toolSpecs = provider.getToolSpecifications();
 
@@ -307,7 +307,7 @@ public class AsyncMcpToolProviderTests {
 		}
 
 		ComplexParameterTool toolObject = new ComplexParameterTool();
-		AsyncMcpToolProvider provider = new AsyncMcpToolProvider(List.of(toolObject));
+		AsyncStatelessMcpToolProvider provider = new AsyncStatelessMcpToolProvider(List.of(toolObject));
 
 		List<AsyncToolSpecification> toolSpecs = provider.getToolSpecifications();
 
@@ -317,10 +317,10 @@ public class AsyncMcpToolProviderTests {
 		assertThat(toolSpecs.get(0).tool().inputSchema()).isNotNull();
 
 		// Test that the handler works with complex parameters
-		McpAsyncServerExchange exchange = mock(McpAsyncServerExchange.class);
+		McpTransportContext context = mock(McpTransportContext.class);
 		CallToolRequest request = new CallToolRequest("complex-tool",
 				Map.of("name", "John", "age", 30, "active", true, "tags", List.of("tag1", "tag2")));
-		Mono<CallToolResult> result = toolSpecs.get(0).callHandler().apply(exchange, request);
+		Mono<CallToolResult> result = toolSpecs.get(0).callHandler().apply(context, request);
 
 		StepVerifier.create(result).assertNext(callToolResult -> {
 			assertThat(callToolResult).isNotNull();
@@ -344,7 +344,7 @@ public class AsyncMcpToolProviderTests {
 		}
 
 		NoParameterTool toolObject = new NoParameterTool();
-		AsyncMcpToolProvider provider = new AsyncMcpToolProvider(List.of(toolObject));
+		AsyncStatelessMcpToolProvider provider = new AsyncStatelessMcpToolProvider(List.of(toolObject));
 
 		List<AsyncToolSpecification> toolSpecs = provider.getToolSpecifications();
 
@@ -353,9 +353,9 @@ public class AsyncMcpToolProviderTests {
 		assertThat(toolSpecs.get(0).tool().description()).isEqualTo("Tool with no parameters");
 
 		// Test that the handler works with no parameters
-		McpAsyncServerExchange exchange = mock(McpAsyncServerExchange.class);
+		McpTransportContext context = mock(McpTransportContext.class);
 		CallToolRequest request = new CallToolRequest("no-param-tool", Map.of());
-		Mono<CallToolResult> result = toolSpecs.get(0).callHandler().apply(exchange, request);
+		Mono<CallToolResult> result = toolSpecs.get(0).callHandler().apply(context, request);
 
 		StepVerifier.create(result).assertNext(callToolResult -> {
 			assertThat(callToolResult).isNotNull();
@@ -378,7 +378,7 @@ public class AsyncMcpToolProviderTests {
 		}
 
 		CallToolResultTool toolObject = new CallToolResultTool();
-		AsyncMcpToolProvider provider = new AsyncMcpToolProvider(List.of(toolObject));
+		AsyncStatelessMcpToolProvider provider = new AsyncStatelessMcpToolProvider(List.of(toolObject));
 
 		List<AsyncToolSpecification> toolSpecs = provider.getToolSpecifications();
 
@@ -387,9 +387,9 @@ public class AsyncMcpToolProviderTests {
 		assertThat(toolSpecs.get(0).tool().description()).isEqualTo("Tool returning Mono<CallToolResult>");
 
 		// Test that the handler works with Mono<CallToolResult> return type
-		McpAsyncServerExchange exchange = mock(McpAsyncServerExchange.class);
+		McpTransportContext context = mock(McpTransportContext.class);
 		CallToolRequest request = new CallToolRequest("result-tool", Map.of("message", "test"));
-		Mono<CallToolResult> result = toolSpecs.get(0).callHandler().apply(exchange, request);
+		Mono<CallToolResult> result = toolSpecs.get(0).callHandler().apply(context, request);
 
 		StepVerifier.create(result).assertNext(callToolResult -> {
 			assertThat(callToolResult).isNotNull();
@@ -414,7 +414,7 @@ public class AsyncMcpToolProviderTests {
 		}
 
 		MonoVoidTool toolObject = new MonoVoidTool();
-		AsyncMcpToolProvider provider = new AsyncMcpToolProvider(List.of(toolObject));
+		AsyncStatelessMcpToolProvider provider = new AsyncStatelessMcpToolProvider(List.of(toolObject));
 
 		List<AsyncToolSpecification> toolSpecs = provider.getToolSpecifications();
 
@@ -423,9 +423,9 @@ public class AsyncMcpToolProviderTests {
 		assertThat(toolSpecs.get(0).tool().description()).isEqualTo("Tool returning Mono<Void>");
 
 		// Test that the handler works with Mono<Void> return type
-		McpAsyncServerExchange exchange = mock(McpAsyncServerExchange.class);
+		McpTransportContext context = mock(McpTransportContext.class);
 		CallToolRequest request = new CallToolRequest("void-tool", Map.of("input", "test"));
-		Mono<CallToolResult> result = toolSpecs.get(0).callHandler().apply(exchange, request);
+		Mono<CallToolResult> result = toolSpecs.get(0).callHandler().apply(context, request);
 
 		StepVerifier.create(result).assertNext(callToolResult -> {
 			assertThat(callToolResult).isNotNull();
@@ -449,7 +449,7 @@ public class AsyncMcpToolProviderTests {
 		}
 
 		PrivateMethodTool toolObject = new PrivateMethodTool();
-		AsyncMcpToolProvider provider = new AsyncMcpToolProvider(List.of(toolObject));
+		AsyncStatelessMcpToolProvider provider = new AsyncStatelessMcpToolProvider(List.of(toolObject));
 
 		List<AsyncToolSpecification> toolSpecs = provider.getToolSpecifications();
 
@@ -458,9 +458,9 @@ public class AsyncMcpToolProviderTests {
 		assertThat(toolSpecs.get(0).tool().description()).isEqualTo("Private tool method");
 
 		// Test that the handler works with private methods
-		McpAsyncServerExchange exchange = mock(McpAsyncServerExchange.class);
+		McpTransportContext context = mock(McpTransportContext.class);
 		CallToolRequest request = new CallToolRequest("private-tool", Map.of("input", "test"));
-		Mono<CallToolResult> result = toolSpecs.get(0).callHandler().apply(exchange, request);
+		Mono<CallToolResult> result = toolSpecs.get(0).callHandler().apply(context, request);
 
 		StepVerifier.create(result).assertNext(callToolResult -> {
 			assertThat(callToolResult).isNotNull();
@@ -483,7 +483,7 @@ public class AsyncMcpToolProviderTests {
 		}
 
 		SchemaTestTool toolObject = new SchemaTestTool();
-		AsyncMcpToolProvider provider = new AsyncMcpToolProvider(List.of(toolObject));
+		AsyncStatelessMcpToolProvider provider = new AsyncStatelessMcpToolProvider(List.of(toolObject));
 
 		List<AsyncToolSpecification> toolSpecs = provider.getToolSpecifications();
 
@@ -513,7 +513,7 @@ public class AsyncMcpToolProviderTests {
 		}
 
 		FluxHandlingTool toolObject = new FluxHandlingTool();
-		AsyncMcpToolProvider provider = new AsyncMcpToolProvider(List.of(toolObject));
+		AsyncStatelessMcpToolProvider provider = new AsyncStatelessMcpToolProvider(List.of(toolObject));
 
 		List<AsyncToolSpecification> toolSpecs = provider.getToolSpecifications();
 
@@ -522,9 +522,9 @@ public class AsyncMcpToolProviderTests {
 		assertThat(toolSpecs.get(0).tool().description()).isEqualTo("Tool that handles Flux properly");
 
 		// Test that the handler works with Flux return type
-		McpAsyncServerExchange exchange = mock(McpAsyncServerExchange.class);
+		McpTransportContext context = mock(McpTransportContext.class);
 		CallToolRequest request = new CallToolRequest("flux-handling-tool", Map.of("input", "test"));
-		Mono<CallToolResult> result = toolSpecs.get(0).callHandler().apply(exchange, request);
+		Mono<CallToolResult> result = toolSpecs.get(0).callHandler().apply(context, request);
 
 		StepVerifier.create(result).assertNext(callToolResult -> {
 			assertThat(callToolResult).isNotNull();
@@ -549,7 +549,7 @@ public class AsyncMcpToolProviderTests {
 		}
 
 		TitleTool toolObject = new TitleTool();
-		AsyncMcpToolProvider provider = new AsyncMcpToolProvider(List.of(toolObject));
+		AsyncStatelessMcpToolProvider provider = new AsyncStatelessMcpToolProvider(List.of(toolObject));
 
 		List<AsyncToolSpecification> toolSpecs = provider.getToolSpecifications();
 
@@ -572,7 +572,7 @@ public class AsyncMcpToolProviderTests {
 		}
 
 		TitlePrecedenceTool toolObject = new TitlePrecedenceTool();
-		AsyncMcpToolProvider provider = new AsyncMcpToolProvider(List.of(toolObject));
+		AsyncStatelessMcpToolProvider provider = new AsyncStatelessMcpToolProvider(List.of(toolObject));
 
 		List<AsyncToolSpecification> toolSpecs = provider.getToolSpecifications();
 
@@ -596,7 +596,7 @@ public class AsyncMcpToolProviderTests {
 		}
 
 		AnnotationsTitleTool toolObject = new AnnotationsTitleTool();
-		AsyncMcpToolProvider provider = new AsyncMcpToolProvider(List.of(toolObject));
+		AsyncStatelessMcpToolProvider provider = new AsyncStatelessMcpToolProvider(List.of(toolObject));
 
 		List<AsyncToolSpecification> toolSpecs = provider.getToolSpecifications();
 
@@ -617,7 +617,7 @@ public class AsyncMcpToolProviderTests {
 		}
 
 		NoTitleTool toolObject = new NoTitleTool();
-		AsyncMcpToolProvider provider = new AsyncMcpToolProvider(List.of(toolObject));
+		AsyncStatelessMcpToolProvider provider = new AsyncStatelessMcpToolProvider(List.of(toolObject));
 
 		List<AsyncToolSpecification> toolSpecs = provider.getToolSpecifications();
 
@@ -640,7 +640,7 @@ public class AsyncMcpToolProviderTests {
 		}
 
 		AnnotatedTool toolObject = new AnnotatedTool();
-		AsyncMcpToolProvider provider = new AsyncMcpToolProvider(List.of(toolObject));
+		AsyncStatelessMcpToolProvider provider = new AsyncStatelessMcpToolProvider(List.of(toolObject));
 
 		List<AsyncToolSpecification> toolSpecs = provider.getToolSpecifications();
 
@@ -671,7 +671,7 @@ public class AsyncMcpToolProviderTests {
 		}
 
 		DefaultAnnotationsTool toolObject = new DefaultAnnotationsTool();
-		AsyncMcpToolProvider provider = new AsyncMcpToolProvider(List.of(toolObject));
+		AsyncStatelessMcpToolProvider provider = new AsyncStatelessMcpToolProvider(List.of(toolObject));
 
 		List<AsyncToolSpecification> toolSpecs = provider.getToolSpecifications();
 
@@ -700,7 +700,7 @@ public class AsyncMcpToolProviderTests {
 		}
 
 		CallToolRequestParamTool toolObject = new CallToolRequestParamTool();
-		AsyncMcpToolProvider provider = new AsyncMcpToolProvider(List.of(toolObject));
+		AsyncStatelessMcpToolProvider provider = new AsyncStatelessMcpToolProvider(List.of(toolObject));
 
 		List<AsyncToolSpecification> toolSpecs = provider.getToolSpecifications();
 
@@ -730,7 +730,7 @@ public class AsyncMcpToolProviderTests {
 		}
 
 		OnlyCallToolRequestTool toolObject = new OnlyCallToolRequestTool();
-		AsyncMcpToolProvider provider = new AsyncMcpToolProvider(List.of(toolObject));
+		AsyncStatelessMcpToolProvider provider = new AsyncStatelessMcpToolProvider(List.of(toolObject));
 
 		List<AsyncToolSpecification> toolSpecs = provider.getToolSpecifications();
 
@@ -742,6 +742,88 @@ public class AsyncMcpToolProviderTests {
 
 		// The input schema should be minimal when only CallToolRequest is present
 		assertThat(toolSpec.tool().inputSchema()).isNotNull();
+	}
+
+	@Test
+	void testToolWithMcpTransportContextParameter() {
+		class TransportContextParamTool {
+
+			@McpTool(name = "context-param-tool", description = "Tool with McpTransportContext parameter")
+			public Mono<String> contextParamTool(McpTransportContext context, String additionalParam) {
+				return Mono.just("Context tool with param: " + additionalParam);
+			}
+
+		}
+
+		TransportContextParamTool toolObject = new TransportContextParamTool();
+		AsyncStatelessMcpToolProvider provider = new AsyncStatelessMcpToolProvider(List.of(toolObject));
+
+		List<AsyncToolSpecification> toolSpecs = provider.getToolSpecifications();
+
+		assertThat(toolSpecs).hasSize(1);
+		AsyncToolSpecification toolSpec = toolSpecs.get(0);
+
+		assertThat(toolSpec.tool().name()).isEqualTo("context-param-tool");
+		assertThat(toolSpec.tool().description()).isEqualTo("Tool with McpTransportContext parameter");
+
+		// The input schema should handle McpTransportContext specially
+		assertThat(toolSpec.tool().inputSchema()).isNotNull();
+		String schemaString = toolSpec.tool().inputSchema().toString();
+		// Should contain the additional parameter but not the McpTransportContext
+		assertThat(schemaString).contains("additionalParam");
+
+		// Test that the handler works with McpTransportContext parameter
+		McpTransportContext context = mock(McpTransportContext.class);
+		CallToolRequest request = new CallToolRequest("context-param-tool", Map.of("additionalParam", "test"));
+		Mono<CallToolResult> result = toolSpec.callHandler().apply(context, request);
+
+		StepVerifier.create(result).assertNext(callToolResult -> {
+			assertThat(callToolResult).isNotNull();
+			assertThat(callToolResult.isError()).isFalse();
+			assertThat(callToolResult.content()).hasSize(1);
+			assertThat(callToolResult.content().get(0)).isInstanceOf(TextContent.class);
+			assertThat(((TextContent) callToolResult.content().get(0)).text())
+				.isEqualTo("Context tool with param: test");
+		}).verifyComplete();
+	}
+
+	@Test
+	void testToolWithOnlyMcpTransportContextParameter() {
+		class OnlyTransportContextTool {
+
+			@McpTool(name = "only-context-tool", description = "Tool with only McpTransportContext parameter")
+			public Mono<String> onlyContextTool(McpTransportContext context) {
+				return Mono.just("Only context tool executed");
+			}
+
+		}
+
+		OnlyTransportContextTool toolObject = new OnlyTransportContextTool();
+		AsyncStatelessMcpToolProvider provider = new AsyncStatelessMcpToolProvider(List.of(toolObject));
+
+		List<AsyncToolSpecification> toolSpecs = provider.getToolSpecifications();
+
+		assertThat(toolSpecs).hasSize(1);
+		AsyncToolSpecification toolSpec = toolSpecs.get(0);
+
+		assertThat(toolSpec.tool().name()).isEqualTo("only-context-tool");
+		assertThat(toolSpec.tool().description()).isEqualTo("Tool with only McpTransportContext parameter");
+
+		// The input schema should be minimal when only McpTransportContext is present
+		assertThat(toolSpec.tool().inputSchema()).isNotNull();
+
+		// Test that the handler works
+		McpTransportContext context = mock(McpTransportContext.class);
+		CallToolRequest request = new CallToolRequest("only-context-tool", Map.of());
+		Mono<CallToolResult> result = toolSpec.callHandler().apply(context, request);
+
+		StepVerifier.create(result).assertNext(callToolResult -> {
+			assertThat(callToolResult).isNotNull();
+			assertThat(callToolResult.isError()).isFalse();
+			assertThat(callToolResult.content()).hasSize(1);
+			assertThat(callToolResult.content().get(0)).isInstanceOf(TextContent.class);
+			assertThat(((TextContent) callToolResult.content().get(0)).text()).isEqualTo("Only context tool executed");
+		}).verifyComplete();
 	}
 
 	@Test
@@ -758,7 +840,7 @@ public class AsyncMcpToolProviderTests {
 		}
 
 		VoidTool toolObject = new VoidTool();
-		AsyncMcpToolProvider provider = new AsyncMcpToolProvider(List.of(toolObject));
+		AsyncStatelessMcpToolProvider provider = new AsyncStatelessMcpToolProvider(List.of(toolObject));
 
 		List<AsyncToolSpecification> toolSpecs = provider.getToolSpecifications();
 
@@ -770,9 +852,9 @@ public class AsyncMcpToolProviderTests {
 		assertThat(toolSpec.tool().outputSchema()).isNull();
 
 		// Test that the handler works with Mono<Void> return type
-		McpAsyncServerExchange exchange = mock(McpAsyncServerExchange.class);
+		McpTransportContext context = mock(McpTransportContext.class);
 		CallToolRequest request = new CallToolRequest("void-tool", Map.of("input", "test"));
-		Mono<CallToolResult> result = toolSpec.callHandler().apply(exchange, request);
+		Mono<CallToolResult> result = toolSpec.callHandler().apply(context, request);
 
 		StepVerifier.create(result).assertNext(callToolResult -> {
 			assertThat(callToolResult).isNotNull();
@@ -798,7 +880,7 @@ public class AsyncMcpToolProviderTests {
 		}
 
 		PrimitiveTool toolObject = new PrimitiveTool();
-		AsyncMcpToolProvider provider = new AsyncMcpToolProvider(List.of(toolObject));
+		AsyncStatelessMcpToolProvider provider = new AsyncStatelessMcpToolProvider(List.of(toolObject));
 
 		List<AsyncToolSpecification> toolSpecs = provider.getToolSpecifications();
 
@@ -822,7 +904,7 @@ public class AsyncMcpToolProviderTests {
 		}
 
 		StringTool toolObject = new StringTool();
-		AsyncMcpToolProvider provider = new AsyncMcpToolProvider(List.of(toolObject));
+		AsyncStatelessMcpToolProvider provider = new AsyncStatelessMcpToolProvider(List.of(toolObject));
 
 		List<AsyncToolSpecification> toolSpecs = provider.getToolSpecifications();
 
@@ -857,7 +939,7 @@ public class AsyncMcpToolProviderTests {
 		}
 
 		NoOutputSchemaTool toolObject = new NoOutputSchemaTool();
-		AsyncMcpToolProvider provider = new AsyncMcpToolProvider(List.of(toolObject));
+		AsyncStatelessMcpToolProvider provider = new AsyncStatelessMcpToolProvider(List.of(toolObject));
 
 		List<AsyncToolSpecification> toolSpecs = provider.getToolSpecifications();
 
@@ -911,7 +993,7 @@ public class AsyncMcpToolProviderTests {
 		}
 
 		OutputSchemaTestTool toolObject = new OutputSchemaTestTool();
-		AsyncMcpToolProvider provider = new AsyncMcpToolProvider(List.of(toolObject));
+		AsyncStatelessMcpToolProvider provider = new AsyncStatelessMcpToolProvider(List.of(toolObject));
 
 		List<AsyncToolSpecification> toolSpecs = provider.getToolSpecifications();
 

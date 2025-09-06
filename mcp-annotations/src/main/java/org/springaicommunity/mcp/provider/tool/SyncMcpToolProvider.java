@@ -22,15 +22,6 @@ import java.util.List;
 import java.util.function.BiFunction;
 import java.util.stream.Stream;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springaicommunity.mcp.annotation.McpTool;
-import org.springaicommunity.mcp.method.tool.ReactiveUtils;
-import org.springaicommunity.mcp.method.tool.ReturnMode;
-import org.springaicommunity.mcp.method.tool.SyncMcpToolMethodCallback;
-import org.springaicommunity.mcp.method.tool.utils.ClassUtils;
-import org.springaicommunity.mcp.method.tool.utils.JsonSchemaGenerator;
-
 import io.modelcontextprotocol.server.McpServerFeatures.SyncToolSpecification;
 import io.modelcontextprotocol.server.McpSyncServerExchange;
 import io.modelcontextprotocol.spec.McpSchema;
@@ -38,6 +29,13 @@ import io.modelcontextprotocol.spec.McpSchema.CallToolRequest;
 import io.modelcontextprotocol.spec.McpSchema.CallToolResult;
 import io.modelcontextprotocol.util.Assert;
 import io.modelcontextprotocol.util.Utils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springaicommunity.mcp.annotation.McpTool;
+import org.springaicommunity.mcp.method.tool.ReturnMode;
+import org.springaicommunity.mcp.method.tool.SyncMcpToolMethodCallback;
+import org.springaicommunity.mcp.method.tool.utils.ClassUtils;
+import org.springaicommunity.mcp.method.tool.utils.JsonSchemaGenerator;
 import reactor.core.publisher.Mono;
 
 /**
@@ -72,12 +70,12 @@ public class SyncMcpToolProvider {
 				.filter(method -> !Mono.class.isAssignableFrom(method.getReturnType()))
 				.map(mcpToolMethod -> {
 
-					McpTool toolAnnotation = doGetMcpToolAnnotation(mcpToolMethod);
+					McpTool toolJavaAnnotation = doGetMcpToolAnnotation(mcpToolMethod);
 
-					String toolName = Utils.hasText(toolAnnotation.name()) ? toolAnnotation.name()
+					String toolName = Utils.hasText(toolJavaAnnotation.name()) ? toolJavaAnnotation.name()
 							: mcpToolMethod.getName();
 
-					String toolDescription = toolAnnotation.description();
+					String toolDescription = toolJavaAnnotation.description();
 
 					// Check if method has CallToolRequest parameter
 					boolean hasCallToolRequestParam = Arrays.stream(mcpToolMethod.getParameterTypes())
@@ -100,13 +98,30 @@ public class SyncMcpToolProvider {
 						.description(toolDescription)
 						.inputSchema(inputSchema);
 
+					var title = toolJavaAnnotation.title();
+
 					// Tool annotations
-					if (toolAnnotation.annotations() != null) {
-						var toolAnnotations = toolAnnotation.annotations();
+					if (toolJavaAnnotation.annotations() != null) {
+						var toolAnnotations = toolJavaAnnotation.annotations();
 						toolBuilder.annotations(new McpSchema.ToolAnnotations(toolAnnotations.title(),
 								toolAnnotations.readOnlyHint(), toolAnnotations.destructiveHint(),
 								toolAnnotations.idempotentHint(), toolAnnotations.openWorldHint(), null));
+
+						// If not provided, the name should be used for display (except
+						// for Tool, where annotations.title should be given precedence
+						// over using name, if present).
+						if (!Utils.hasText(title)) {
+							title = toolAnnotations.title();
+						}
 					}
+
+					// If not provided, the name should be used for display (except
+					// for Tool, where annotations.title should be given precedence
+					// over using name, if present).
+					if (!Utils.hasText(title)) {
+						title = toolName;
+					}
+					toolBuilder.title(title);
 
 					// ReactiveUtils.isReactiveReturnTypeOfCallToolResult(mcpToolMethod);
 
@@ -115,7 +130,7 @@ public class SyncMcpToolProvider {
 					// CallToolResult, simple value types (String, etc.)
 					// or if generateOutputSchema attribute is set to false.
 					Class<?> methodReturnType = mcpToolMethod.getReturnType();
-					if (toolAnnotation.generateOutputSchema() && methodReturnType != null
+					if (toolJavaAnnotation.generateOutputSchema() && methodReturnType != null
 							&& methodReturnType != CallToolResult.class && methodReturnType != Void.class
 							&& methodReturnType != void.class && !ClassUtils.isPrimitiveOrWrapper(methodReturnType)
 							&& !ClassUtils.isSimpleValueType(methodReturnType)) {

@@ -75,12 +75,12 @@ public class AsyncMcpToolProvider {
 						|| Publisher.class.isAssignableFrom(method.getReturnType()))
 				.map(mcpToolMethod -> {
 
-					var toolAnnotation = doGetMcpToolAnnotation(mcpToolMethod);
+					var toolJavaAnnotation = doGetMcpToolAnnotation(mcpToolMethod);
 
-					String toolName = Utils.hasText(toolAnnotation.name()) ? toolAnnotation.name()
+					String toolName = Utils.hasText(toolJavaAnnotation.name()) ? toolJavaAnnotation.name()
 							: mcpToolMethod.getName();
 
-					String toolDescrption = toolAnnotation.description();
+					String toolDescrption = toolJavaAnnotation.description();
 
 					String inputSchema = JsonSchemaGenerator.generateForMethodInput(mcpToolMethod);
 
@@ -89,20 +89,36 @@ public class AsyncMcpToolProvider {
 						.description(toolDescrption)
 						.inputSchema(inputSchema);
 
+					var title = toolJavaAnnotation.title();
+
 					// Tool annotations
-					if (toolAnnotation.annotations() != null) {
-						var toolAnnotations = toolAnnotation.annotations();
+					if (toolJavaAnnotation.annotations() != null) {
+						var toolAnnotations = toolJavaAnnotation.annotations();
 						toolBuilder.annotations(new McpSchema.ToolAnnotations(toolAnnotations.title(),
 								toolAnnotations.readOnlyHint(), toolAnnotations.destructiveHint(),
 								toolAnnotations.idempotentHint(), toolAnnotations.openWorldHint(), null));
+
+						// If not provided, the name should be used for display (except
+						// for Tool, where annotations.title should be given precedence
+						// over using name, if present).
+						if (!Utils.hasText(title)) {
+							title = toolAnnotations.title();
+						}
 					}
+
+					// If not provided, the name should be used for display (except
+					// for Tool, where annotations.title should be given precedence
+					// over using name, if present).
+					if (!Utils.hasText(title)) {
+						title = toolName;
+					}
+					toolBuilder.title(title);
 
 					// Generate Output Schema from the method return type.
 					// Output schema is not generated for primitive types, void,
 					// CallToolResult, simple value types (String, etc.)
 					// or if generateOutputSchema attribute is set to false.
-
-					if (toolAnnotation.generateOutputSchema()
+					if (toolJavaAnnotation.generateOutputSchema()
 							&& !ReactiveUtils.isReactiveReturnTypeOfVoid(mcpToolMethod)
 							&& !ReactiveUtils.isReactiveReturnTypeOfCallToolResult(mcpToolMethod)) {
 
