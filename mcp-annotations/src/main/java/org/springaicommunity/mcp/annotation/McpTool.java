@@ -39,6 +39,14 @@ public @interface McpTool {
 	boolean generateOutputSchema() default true;
 
 	/**
+	 * Intended for UI and end-user contexts — optimized to be human-readable and easily
+	 * understood, even by those unfamiliar with domain-specific terminology. If not
+	 * provided, the name should be used for display (except for Tool, where
+	 * annotations.title should be given precedence over using name, if present).
+	 */
+	String title() default "";
+
+	/**
 	 * Additional properties describing a Tool to clients.
 	 *
 	 * all properties in ToolAnnotations are hints. They are not guaranteed to provide a

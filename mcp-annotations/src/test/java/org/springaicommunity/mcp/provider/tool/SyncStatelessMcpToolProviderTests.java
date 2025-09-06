@@ -26,8 +26,8 @@ import java.util.Map;
 import org.junit.jupiter.api.Test;
 import org.springaicommunity.mcp.annotation.McpTool;
 
-import io.modelcontextprotocol.server.McpServerFeatures.SyncToolSpecification;
-import io.modelcontextprotocol.server.McpSyncServerExchange;
+import io.modelcontextprotocol.server.McpStatelessServerFeatures.SyncToolSpecification;
+import io.modelcontextprotocol.common.McpTransportContext;
 import io.modelcontextprotocol.spec.McpSchema.CallToolRequest;
 import io.modelcontextprotocol.spec.McpSchema.CallToolResult;
 import io.modelcontextprotocol.spec.McpSchema.TextContent;
@@ -35,15 +35,15 @@ import io.modelcontextprotocol.spec.McpSchema.ToolAnnotations;
 import reactor.core.publisher.Mono;
 
 /**
- * Tests for {@link SyncMcpToolProvider}.
+ * Tests for {@link SyncStatelessMcpToolProvider}.
  *
  * @author Christian Tzolov
  */
-public class SyncMcpToolProviderTests {
+public class SyncStatelessMcpToolProviderTests {
 
 	@Test
 	void testConstructorWithNullToolObjects() {
-		assertThatThrownBy(() -> new SyncMcpToolProvider(null)).isInstanceOf(IllegalArgumentException.class)
+		assertThatThrownBy(() -> new SyncStatelessMcpToolProvider(null)).isInstanceOf(IllegalArgumentException.class)
 			.hasMessageContaining("toolObjects cannot be null");
 	}
 
@@ -60,7 +60,7 @@ public class SyncMcpToolProviderTests {
 		}
 
 		SingleValidTool toolObject = new SingleValidTool();
-		SyncMcpToolProvider provider = new SyncMcpToolProvider(List.of(toolObject));
+		SyncStatelessMcpToolProvider provider = new SyncStatelessMcpToolProvider(List.of(toolObject));
 
 		List<SyncToolSpecification> toolSpecs = provider.getToolSpecifications();
 
@@ -73,10 +73,10 @@ public class SyncMcpToolProviderTests {
 		assertThat(toolSpec.tool().inputSchema()).isNotNull();
 		assertThat(toolSpec.callHandler()).isNotNull();
 
-		// Test that the handler works
-		McpSyncServerExchange exchange = mock(McpSyncServerExchange.class);
+		// Test that the handler works with McpTransportContext
+		McpTransportContext context = mock(McpTransportContext.class);
 		CallToolRequest request = new CallToolRequest("test-tool", Map.of("input", "hello"));
-		CallToolResult result = toolSpec.callHandler().apply(exchange, request);
+		CallToolResult result = toolSpec.callHandler().apply(context, request);
 
 		assertThat(result).isNotNull();
 		assertThat(result.isError()).isFalse();
@@ -97,7 +97,7 @@ public class SyncMcpToolProviderTests {
 		}
 
 		CustomNameTool toolObject = new CustomNameTool();
-		SyncMcpToolProvider provider = new SyncMcpToolProvider(List.of(toolObject));
+		SyncStatelessMcpToolProvider provider = new SyncStatelessMcpToolProvider(List.of(toolObject));
 
 		List<SyncToolSpecification> toolSpecs = provider.getToolSpecifications();
 
@@ -118,7 +118,7 @@ public class SyncMcpToolProviderTests {
 		}
 
 		DefaultNameTool toolObject = new DefaultNameTool();
-		SyncMcpToolProvider provider = new SyncMcpToolProvider(List.of(toolObject));
+		SyncStatelessMcpToolProvider provider = new SyncStatelessMcpToolProvider(List.of(toolObject));
 
 		List<SyncToolSpecification> toolSpecs = provider.getToolSpecifications();
 
@@ -139,7 +139,7 @@ public class SyncMcpToolProviderTests {
 		}
 
 		EmptyNameTool toolObject = new EmptyNameTool();
-		SyncMcpToolProvider provider = new SyncMcpToolProvider(List.of(toolObject));
+		SyncStatelessMcpToolProvider provider = new SyncStatelessMcpToolProvider(List.of(toolObject));
 
 		List<SyncToolSpecification> toolSpecs = provider.getToolSpecifications();
 
@@ -165,7 +165,7 @@ public class SyncMcpToolProviderTests {
 		}
 
 		MonoReturnTool toolObject = new MonoReturnTool();
-		SyncMcpToolProvider provider = new SyncMcpToolProvider(List.of(toolObject));
+		SyncStatelessMcpToolProvider provider = new SyncStatelessMcpToolProvider(List.of(toolObject));
 
 		List<SyncToolSpecification> toolSpecs = provider.getToolSpecifications();
 
@@ -191,7 +191,7 @@ public class SyncMcpToolProviderTests {
 		}
 
 		MultipleToolMethods toolObject = new MultipleToolMethods();
-		SyncMcpToolProvider provider = new SyncMcpToolProvider(List.of(toolObject));
+		SyncStatelessMcpToolProvider provider = new SyncStatelessMcpToolProvider(List.of(toolObject));
 
 		List<SyncToolSpecification> toolSpecs = provider.getToolSpecifications();
 
@@ -223,7 +223,7 @@ public class SyncMcpToolProviderTests {
 
 		FirstToolObject firstObject = new FirstToolObject();
 		SecondToolObject secondObject = new SecondToolObject();
-		SyncMcpToolProvider provider = new SyncMcpToolProvider(List.of(firstObject, secondObject));
+		SyncStatelessMcpToolProvider provider = new SyncStatelessMcpToolProvider(List.of(firstObject, secondObject));
 
 		List<SyncToolSpecification> toolSpecs = provider.getToolSpecifications();
 
@@ -254,7 +254,7 @@ public class SyncMcpToolProviderTests {
 		}
 
 		MixedMethods toolObject = new MixedMethods();
-		SyncMcpToolProvider provider = new SyncMcpToolProvider(List.of(toolObject));
+		SyncStatelessMcpToolProvider provider = new SyncStatelessMcpToolProvider(List.of(toolObject));
 
 		List<SyncToolSpecification> toolSpecs = provider.getToolSpecifications();
 
@@ -276,7 +276,7 @@ public class SyncMcpToolProviderTests {
 		}
 
 		ComplexParameterTool toolObject = new ComplexParameterTool();
-		SyncMcpToolProvider provider = new SyncMcpToolProvider(List.of(toolObject));
+		SyncStatelessMcpToolProvider provider = new SyncStatelessMcpToolProvider(List.of(toolObject));
 
 		List<SyncToolSpecification> toolSpecs = provider.getToolSpecifications();
 
@@ -286,10 +286,10 @@ public class SyncMcpToolProviderTests {
 		assertThat(toolSpecs.get(0).tool().inputSchema()).isNotNull();
 
 		// Test that the handler works with complex parameters
-		McpSyncServerExchange exchange = mock(McpSyncServerExchange.class);
+		McpTransportContext context = mock(McpTransportContext.class);
 		CallToolRequest request = new CallToolRequest("complex-tool",
 				Map.of("name", "John", "age", 30, "active", true, "tags", List.of("tag1", "tag2")));
-		CallToolResult result = toolSpecs.get(0).callHandler().apply(exchange, request);
+		CallToolResult result = toolSpecs.get(0).callHandler().apply(context, request);
 
 		assertThat(result).isNotNull();
 		assertThat(result.isError()).isFalse();
@@ -311,7 +311,7 @@ public class SyncMcpToolProviderTests {
 		}
 
 		NoParameterTool toolObject = new NoParameterTool();
-		SyncMcpToolProvider provider = new SyncMcpToolProvider(List.of(toolObject));
+		SyncStatelessMcpToolProvider provider = new SyncStatelessMcpToolProvider(List.of(toolObject));
 
 		List<SyncToolSpecification> toolSpecs = provider.getToolSpecifications();
 
@@ -320,9 +320,9 @@ public class SyncMcpToolProviderTests {
 		assertThat(toolSpecs.get(0).tool().description()).isEqualTo("Tool with no parameters");
 
 		// Test that the handler works with no parameters
-		McpSyncServerExchange exchange = mock(McpSyncServerExchange.class);
+		McpTransportContext context = mock(McpTransportContext.class);
 		CallToolRequest request = new CallToolRequest("no-param-tool", Map.of());
-		CallToolResult result = toolSpecs.get(0).callHandler().apply(exchange, request);
+		CallToolResult result = toolSpecs.get(0).callHandler().apply(context, request);
 
 		assertThat(result).isNotNull();
 		assertThat(result.isError()).isFalse();
@@ -343,7 +343,7 @@ public class SyncMcpToolProviderTests {
 		}
 
 		CallToolResultTool toolObject = new CallToolResultTool();
-		SyncMcpToolProvider provider = new SyncMcpToolProvider(List.of(toolObject));
+		SyncStatelessMcpToolProvider provider = new SyncStatelessMcpToolProvider(List.of(toolObject));
 
 		List<SyncToolSpecification> toolSpecs = provider.getToolSpecifications();
 
@@ -352,9 +352,9 @@ public class SyncMcpToolProviderTests {
 		assertThat(toolSpecs.get(0).tool().description()).isEqualTo("Tool returning CallToolResult");
 
 		// Test that the handler works with CallToolResult return type
-		McpSyncServerExchange exchange = mock(McpSyncServerExchange.class);
+		McpTransportContext context = mock(McpTransportContext.class);
 		CallToolRequest request = new CallToolRequest("result-tool", Map.of("message", "test"));
-		CallToolResult result = toolSpecs.get(0).callHandler().apply(exchange, request);
+		CallToolResult result = toolSpecs.get(0).callHandler().apply(context, request);
 
 		assertThat(result).isNotNull();
 		assertThat(result.isError()).isFalse();
@@ -375,7 +375,7 @@ public class SyncMcpToolProviderTests {
 		}
 
 		PrivateMethodTool toolObject = new PrivateMethodTool();
-		SyncMcpToolProvider provider = new SyncMcpToolProvider(List.of(toolObject));
+		SyncStatelessMcpToolProvider provider = new SyncStatelessMcpToolProvider(List.of(toolObject));
 
 		List<SyncToolSpecification> toolSpecs = provider.getToolSpecifications();
 
@@ -384,9 +384,9 @@ public class SyncMcpToolProviderTests {
 		assertThat(toolSpecs.get(0).tool().description()).isEqualTo("Private tool method");
 
 		// Test that the handler works with private methods
-		McpSyncServerExchange exchange = mock(McpSyncServerExchange.class);
+		McpTransportContext context = mock(McpTransportContext.class);
 		CallToolRequest request = new CallToolRequest("private-tool", Map.of("input", "test"));
-		CallToolResult result = toolSpecs.get(0).callHandler().apply(exchange, request);
+		CallToolResult result = toolSpecs.get(0).callHandler().apply(context, request);
 
 		assertThat(result).isNotNull();
 		assertThat(result.isError()).isFalse();
@@ -407,7 +407,7 @@ public class SyncMcpToolProviderTests {
 		}
 
 		SchemaTestTool toolObject = new SchemaTestTool();
-		SyncMcpToolProvider provider = new SyncMcpToolProvider(List.of(toolObject));
+		SyncStatelessMcpToolProvider provider = new SyncStatelessMcpToolProvider(List.of(toolObject));
 
 		List<SyncToolSpecification> toolSpecs = provider.getToolSpecifications();
 
@@ -437,7 +437,7 @@ public class SyncMcpToolProviderTests {
 		}
 
 		TitleTool toolObject = new TitleTool();
-		SyncMcpToolProvider provider = new SyncMcpToolProvider(List.of(toolObject));
+		SyncStatelessMcpToolProvider provider = new SyncStatelessMcpToolProvider(List.of(toolObject));
 
 		List<SyncToolSpecification> toolSpecs = provider.getToolSpecifications();
 
@@ -460,7 +460,7 @@ public class SyncMcpToolProviderTests {
 		}
 
 		TitlePrecedenceTool toolObject = new TitlePrecedenceTool();
-		SyncMcpToolProvider provider = new SyncMcpToolProvider(List.of(toolObject));
+		SyncStatelessMcpToolProvider provider = new SyncStatelessMcpToolProvider(List.of(toolObject));
 
 		List<SyncToolSpecification> toolSpecs = provider.getToolSpecifications();
 
@@ -484,7 +484,7 @@ public class SyncMcpToolProviderTests {
 		}
 
 		AnnotationsTitleTool toolObject = new AnnotationsTitleTool();
-		SyncMcpToolProvider provider = new SyncMcpToolProvider(List.of(toolObject));
+		SyncStatelessMcpToolProvider provider = new SyncStatelessMcpToolProvider(List.of(toolObject));
 
 		List<SyncToolSpecification> toolSpecs = provider.getToolSpecifications();
 
@@ -505,7 +505,7 @@ public class SyncMcpToolProviderTests {
 		}
 
 		NoTitleTool toolObject = new NoTitleTool();
-		SyncMcpToolProvider provider = new SyncMcpToolProvider(List.of(toolObject));
+		SyncStatelessMcpToolProvider provider = new SyncStatelessMcpToolProvider(List.of(toolObject));
 
 		List<SyncToolSpecification> toolSpecs = provider.getToolSpecifications();
 
@@ -528,7 +528,7 @@ public class SyncMcpToolProviderTests {
 		}
 
 		AnnotatedTool toolObject = new AnnotatedTool();
-		SyncMcpToolProvider provider = new SyncMcpToolProvider(List.of(toolObject));
+		SyncStatelessMcpToolProvider provider = new SyncStatelessMcpToolProvider(List.of(toolObject));
 
 		List<SyncToolSpecification> toolSpecs = provider.getToolSpecifications();
 
@@ -559,7 +559,7 @@ public class SyncMcpToolProviderTests {
 		}
 
 		DefaultAnnotationsTool toolObject = new DefaultAnnotationsTool();
-		SyncMcpToolProvider provider = new SyncMcpToolProvider(List.of(toolObject));
+		SyncStatelessMcpToolProvider provider = new SyncStatelessMcpToolProvider(List.of(toolObject));
 
 		List<SyncToolSpecification> toolSpecs = provider.getToolSpecifications();
 
@@ -602,7 +602,7 @@ public class SyncMcpToolProviderTests {
 		}
 
 		OutputSchemaTool toolObject = new OutputSchemaTool();
-		SyncMcpToolProvider provider = new SyncMcpToolProvider(List.of(toolObject));
+		SyncStatelessMcpToolProvider provider = new SyncStatelessMcpToolProvider(List.of(toolObject));
 
 		List<SyncToolSpecification> toolSpecs = provider.getToolSpecifications();
 
@@ -640,7 +640,7 @@ public class SyncMcpToolProviderTests {
 		}
 
 		NoOutputSchemaTool toolObject = new NoOutputSchemaTool();
-		SyncMcpToolProvider provider = new SyncMcpToolProvider(List.of(toolObject));
+		SyncStatelessMcpToolProvider provider = new SyncStatelessMcpToolProvider(List.of(toolObject));
 
 		List<SyncToolSpecification> toolSpecs = provider.getToolSpecifications();
 
@@ -664,7 +664,7 @@ public class SyncMcpToolProviderTests {
 		}
 
 		PrimitiveTool toolObject = new PrimitiveTool();
-		SyncMcpToolProvider provider = new SyncMcpToolProvider(List.of(toolObject));
+		SyncStatelessMcpToolProvider provider = new SyncStatelessMcpToolProvider(List.of(toolObject));
 
 		List<SyncToolSpecification> toolSpecs = provider.getToolSpecifications();
 
@@ -688,7 +688,7 @@ public class SyncMcpToolProviderTests {
 		}
 
 		VoidTool toolObject = new VoidTool();
-		SyncMcpToolProvider provider = new SyncMcpToolProvider(List.of(toolObject));
+		SyncStatelessMcpToolProvider provider = new SyncStatelessMcpToolProvider(List.of(toolObject));
 
 		List<SyncToolSpecification> toolSpecs = provider.getToolSpecifications();
 
@@ -712,7 +712,7 @@ public class SyncMcpToolProviderTests {
 		}
 
 		StringTool toolObject = new StringTool();
-		SyncMcpToolProvider provider = new SyncMcpToolProvider(List.of(toolObject));
+		SyncStatelessMcpToolProvider provider = new SyncStatelessMcpToolProvider(List.of(toolObject));
 
 		List<SyncToolSpecification> toolSpecs = provider.getToolSpecifications();
 
@@ -736,7 +736,7 @@ public class SyncMcpToolProviderTests {
 		}
 
 		CallToolRequestParamTool toolObject = new CallToolRequestParamTool();
-		SyncMcpToolProvider provider = new SyncMcpToolProvider(List.of(toolObject));
+		SyncStatelessMcpToolProvider provider = new SyncStatelessMcpToolProvider(List.of(toolObject));
 
 		List<SyncToolSpecification> toolSpecs = provider.getToolSpecifications();
 
@@ -767,7 +767,7 @@ public class SyncMcpToolProviderTests {
 		}
 
 		OnlyCallToolRequestTool toolObject = new OnlyCallToolRequestTool();
-		SyncMcpToolProvider provider = new SyncMcpToolProvider(List.of(toolObject));
+		SyncStatelessMcpToolProvider provider = new SyncStatelessMcpToolProvider(List.of(toolObject));
 
 		List<SyncToolSpecification> toolSpecs = provider.getToolSpecifications();
 
@@ -779,6 +779,83 @@ public class SyncMcpToolProviderTests {
 
 		// The input schema should be minimal when only CallToolRequest is present
 		assertThat(toolSpec.tool().inputSchema()).isNotNull();
+	}
+
+	@Test
+	void testToolWithMcpTransportContextParameter() {
+		class TransportContextParamTool {
+
+			@McpTool(name = "context-param-tool", description = "Tool with McpTransportContext parameter")
+			public String contextParamTool(McpTransportContext context, String additionalParam) {
+				return "Context tool with param: " + additionalParam;
+			}
+
+		}
+
+		TransportContextParamTool toolObject = new TransportContextParamTool();
+		SyncStatelessMcpToolProvider provider = new SyncStatelessMcpToolProvider(List.of(toolObject));
+
+		List<SyncToolSpecification> toolSpecs = provider.getToolSpecifications();
+
+		assertThat(toolSpecs).hasSize(1);
+		SyncToolSpecification toolSpec = toolSpecs.get(0);
+
+		assertThat(toolSpec.tool().name()).isEqualTo("context-param-tool");
+		assertThat(toolSpec.tool().description()).isEqualTo("Tool with McpTransportContext parameter");
+
+		// The input schema should handle McpTransportContext specially
+		assertThat(toolSpec.tool().inputSchema()).isNotNull();
+		String schemaString = toolSpec.tool().inputSchema().toString();
+		// Should contain the additional parameter but not the McpTransportContext
+		assertThat(schemaString).contains("additionalParam");
+
+		// Test that the handler works with McpTransportContext parameter
+		McpTransportContext context = mock(McpTransportContext.class);
+		CallToolRequest request = new CallToolRequest("context-param-tool", Map.of("additionalParam", "test"));
+		CallToolResult result = toolSpec.callHandler().apply(context, request);
+
+		assertThat(result).isNotNull();
+		assertThat(result.isError()).isFalse();
+		assertThat(result.content()).hasSize(1);
+		assertThat(result.content().get(0)).isInstanceOf(TextContent.class);
+		assertThat(((TextContent) result.content().get(0)).text()).isEqualTo("Context tool with param: test");
+	}
+
+	@Test
+	void testToolWithOnlyMcpTransportContextParameter() {
+		class OnlyTransportContextTool {
+
+			@McpTool(name = "only-context-tool", description = "Tool with only McpTransportContext parameter")
+			public String onlyContextTool(McpTransportContext context) {
+				return "Only context tool executed";
+			}
+
+		}
+
+		OnlyTransportContextTool toolObject = new OnlyTransportContextTool();
+		SyncStatelessMcpToolProvider provider = new SyncStatelessMcpToolProvider(List.of(toolObject));
+
+		List<SyncToolSpecification> toolSpecs = provider.getToolSpecifications();
+
+		assertThat(toolSpecs).hasSize(1);
+		SyncToolSpecification toolSpec = toolSpecs.get(0);
+
+		assertThat(toolSpec.tool().name()).isEqualTo("only-context-tool");
+		assertThat(toolSpec.tool().description()).isEqualTo("Tool with only McpTransportContext parameter");
+
+		// The input schema should be minimal when only McpTransportContext is present
+		assertThat(toolSpec.tool().inputSchema()).isNotNull();
+
+		// Test that the handler works
+		McpTransportContext context = mock(McpTransportContext.class);
+		CallToolRequest request = new CallToolRequest("only-context-tool", Map.of());
+		CallToolResult result = toolSpec.callHandler().apply(context, request);
+
+		assertThat(result).isNotNull();
+		assertThat(result.isError()).isFalse();
+		assertThat(result.content()).hasSize(1);
+		assertThat(result.content().get(0)).isInstanceOf(TextContent.class);
+		assertThat(((TextContent) result.content().get(0)).text()).isEqualTo("Only context tool executed");
 	}
 
 }
