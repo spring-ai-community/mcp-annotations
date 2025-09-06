@@ -412,8 +412,8 @@ public class CalculatorToolProvider {
 
     @McpTool(name = "calculate-area", 
              description = "Calculate the area of a rectangle",
+             title = "Rectangle Area Calculator",  // Human-readable display name
              annotations = @McpTool.McpAnnotations(
-                 title = "Rectangle Area Calculator",
                  readOnlyHint = true,
                  destructiveHint = false,
                  idempotentHint = true
@@ -490,6 +490,62 @@ public class CalculatorToolProvider {
     }
 }
 ```
+
+#### Tool Title Attribute
+
+The `@McpTool` annotation supports a `title` attribute that provides a human-readable display name for tools. This is intended for UI and end-user contexts, optimized to be easily understood even by those unfamiliar with domain-specific terminology.
+
+**Title Precedence Order:**
+1. If the `title` attribute is explicitly set, it takes precedence
+2. If not set but `annotations.title` exists, that value is used  
+3. If neither is provided, the tool's `name` is used as the title
+4. If the `name` is not set the method name is used as the title
+
+Example usage:
+
+```java
+// Using the title attribute directly
+@McpTool(name = "calc-area", 
+         description = "Calculate rectangle area",
+         title = "Rectangle Area Calculator")  // Human-friendly display name
+public double calculateArea(double width, double height) {
+    return width * height;
+}
+
+// Title attribute takes precedence over annotations.title
+@McpTool(name = "data-processor",
+         description = "Process complex data",
+         title = "Data Processor",  // This takes precedence
+         annotations = @McpTool.McpAnnotations(
+             title = "Complex Data Handler"  // This is overridden
+         ))
+public String processData(String input) {
+    return process(input);
+}
+
+// Using annotations.title when title attribute is not set
+@McpTool(name = "file-converter",
+         description = "Convert file formats",
+         annotations = @McpTool.McpAnnotations(
+             title = "File Format Converter"  // This will be used as title
+         ))
+public String convertFile(String filePath) {
+    return convert(filePath);
+}
+
+// Falls back to name when no title is provided
+@McpTool(name = "simple-tool",
+         description = "A simple tool")
+public String simpleTool(String input) {
+    // Title will be "simple-tool"
+    return input;
+}
+```
+
+The title is particularly useful for:
+- Displaying tools in user interfaces with friendly names
+- Providing clear, non-technical names for end users
+- Maintaining backward compatibility (tools without titles continue to work)
 
 #### CallToolRequest Support
 
