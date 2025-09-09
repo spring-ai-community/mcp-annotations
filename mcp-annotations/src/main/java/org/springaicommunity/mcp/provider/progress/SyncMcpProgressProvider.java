@@ -82,6 +82,7 @@ public class SyncMcpProgressProvider {
 				.filter(method -> method.getReturnType() == void.class) // Only void
 																		// return type is
 																		// valid for sync
+				.sorted((m1, m2) -> m1.getName().compareTo(m2.getName()))
 				.map(mcpProgressMethod -> {
 					var progressAnnotation = mcpProgressMethod.getAnnotation(McpProgress.class);
 

@@ -68,6 +68,7 @@ public class SyncStatelessMcpPromptProvider {
 			.map(promptObject -> Stream.of(doGetClassMethods(promptObject))
 				.filter(method -> method.isAnnotationPresent(McpPrompt.class))
 				.filter(method -> !Mono.class.isAssignableFrom(method.getReturnType()))
+				.sorted((m1, m2) -> m1.getName().compareTo(m2.getName()))
 				.map(mcpPromptMethod -> {
 					var promptAnnotation = mcpPromptMethod.getAnnotation(McpPrompt.class);
 					var mcpPrompt = PromptAdapter.asPrompt(promptAnnotation, mcpPromptMethod);

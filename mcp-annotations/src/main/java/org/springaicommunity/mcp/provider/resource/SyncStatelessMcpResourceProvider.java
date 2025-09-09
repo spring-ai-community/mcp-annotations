@@ -69,6 +69,7 @@ public class SyncStatelessMcpResourceProvider {
 			.map(resourceObject -> Stream.of(doGetClassMethods(resourceObject))
 				.filter(method -> method.isAnnotationPresent(McpResource.class))
 				.filter(method -> !Mono.class.isAssignableFrom(method.getReturnType()))
+				.sorted((m1, m2) -> m1.getName().compareTo(m2.getName()))
 				.map(mcpResourceMethod -> {
 
 					var resourceAnnotation = doGetMcpResourceAnnotation(mcpResourceMethod);

@@ -82,6 +82,7 @@ public class SyncMcpResourceListChangedProvider {
 			.map(consumerObject -> Stream.of(doGetClassMethods(consumerObject))
 				.filter(method -> method.isAnnotationPresent(McpResourceListChanged.class))
 				.filter(method -> !Mono.class.isAssignableFrom(method.getReturnType()))
+				.sorted((m1, m2) -> m1.getName().compareTo(m2.getName()))
 				.map(mcpResourceListChangedConsumerMethod -> {
 					var resourceListChangedAnnotation = mcpResourceListChangedConsumerMethod
 						.getAnnotation(McpResourceListChanged.class);

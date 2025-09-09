@@ -7,6 +7,8 @@ package org.springaicommunity.mcp.provider.progress;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
 import org.junit.jupiter.api.Test;
@@ -29,6 +31,8 @@ public class AsyncMcpProgressProviderTests {
 	 */
 	static class AsyncProgressHandler {
 
+		final CountDownLatch latch;
+
 		private ProgressNotification lastNotification;
 
 		private Double lastProgress;
@@ -36,6 +40,14 @@ public class AsyncMcpProgressProviderTests {
 		private String lastProgressToken;
 
 		private String lastTotal;
+
+		public AsyncProgressHandler(CountDownLatch latch) {
+			this.latch = latch;
+		}
+
+		public AsyncProgressHandler() {
+			this.latch = new CountDownLatch(2);
+		}
 
 		@McpProgress(clients = "my-client-id")
 		public void handleProgressVoid(ProgressNotification notification) {
@@ -45,6 +57,7 @@ public class AsyncMcpProgressProviderTests {
 		@McpProgress(clients = "my-client-id")
 		public Mono<Void> handleProgressMono(ProgressNotification notification) {
 			this.lastNotification = notification;
+			latch.countDown();
 			return Mono.empty();
 		}
 
@@ -60,6 +73,7 @@ public class AsyncMcpProgressProviderTests {
 			this.lastProgress = progress;
 			this.lastProgressToken = progressToken;
 			this.lastTotal = total;
+			latch.countDown();
 			return Mono.empty();
 		}
 
@@ -92,7 +106,8 @@ public class AsyncMcpProgressProviderTests {
 
 	@Test
 	void testGetProgressSpecifications() {
-		AsyncProgressHandler progressHandler = new AsyncProgressHandler();
+		CountDownLatch latch = new CountDownLatch(1);
+		AsyncProgressHandler progressHandler = new AsyncProgressHandler(latch);
 		AsyncMcpProgressProvider provider = new AsyncMcpProgressProvider(List.of(progressHandler));
 
 		List<AsyncProgressSpecification> specifications = provider.getProgressSpecifications();
@@ -109,6 +124,15 @@ public class AsyncMcpProgressProviderTests {
 				"Test progress message");
 
 		StepVerifier.create(handlers.get(0).apply(notification)).verifyComplete();
+
+		try {
+			// Wait for progress notifications to be processed
+			latch.await(3, TimeUnit.SECONDS);
+		}
+		catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+
 		assertThat(progressHandler.lastNotification).isEqualTo(notification);
 
 		// Reset
