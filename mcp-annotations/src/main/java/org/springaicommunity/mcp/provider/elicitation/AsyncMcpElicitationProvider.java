@@ -91,6 +91,7 @@ public class AsyncMcpElicitationProvider {
 						&& ElicitRequest.class.isAssignableFrom(method.getParameterTypes()[0]))
 				.filter(method -> Mono.class.isAssignableFrom(method.getReturnType())
 						|| ElicitResult.class.isAssignableFrom(method.getReturnType()))
+				.sorted((m1, m2) -> m1.getName().compareTo(m2.getName()))
 				.map(mcpElicitationMethod -> {
 					var elicitationAnnotation = mcpElicitationMethod.getAnnotation(McpElicitation.class);
 

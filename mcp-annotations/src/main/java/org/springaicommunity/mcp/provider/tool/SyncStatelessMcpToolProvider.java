@@ -72,6 +72,7 @@ public class SyncStatelessMcpToolProvider {
 			.map(toolObject -> Stream.of(doGetClassMethods(toolObject))
 				.filter(method -> method.isAnnotationPresent(McpTool.class))
 				.filter(method -> !Mono.class.isAssignableFrom(method.getReturnType()))
+				.sorted((m1, m2) -> m1.getName().compareTo(m2.getName()))
 				.map(mcpToolMethod -> {
 
 					var toolJavaAnnotation = doGetMcpToolAnnotation(mcpToolMethod);

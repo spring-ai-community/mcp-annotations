@@ -78,8 +78,9 @@ public class AsyncMcpLoggingProvider {
 	public List<AsyncLoggingSpecification> getLoggingSpecifications() {
 
 		List<AsyncLoggingSpecification> loggingConsumers = this.loggingConsumerObjects.stream()
-			.map(consumerObject -> Stream.of(doGetClassMethods(consumerObject))
+			.map(consumerObject -> Stream.of(this.doGetClassMethods(consumerObject))
 				.filter(method -> method.isAnnotationPresent(McpLogging.class))
+				.sorted((m1, m2) -> m1.getName().compareTo(m2.getName()))
 				.map(mcpLoggingConsumerMethod -> {
 					var loggingConsumerAnnotation = mcpLoggingConsumerMethod.getAnnotation(McpLogging.class);
 

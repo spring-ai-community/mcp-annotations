@@ -73,6 +73,7 @@ public class AsyncMcpToolProvider {
 				.filter(method -> Mono.class.isAssignableFrom(method.getReturnType())
 						|| Flux.class.isAssignableFrom(method.getReturnType())
 						|| Publisher.class.isAssignableFrom(method.getReturnType()))
+				.sorted((m1, m2) -> m1.getName().compareTo(m2.getName()))
 				.map(mcpToolMethod -> {
 
 					var toolJavaAnnotation = doGetMcpToolAnnotation(mcpToolMethod);

@@ -97,6 +97,7 @@ public class AsyncMcpProgressProvider {
 					}
 					return false;
 				})
+				.sorted((m1, m2) -> m1.getName().compareTo(m2.getName()))
 				.map(mcpProgressMethod -> {
 					var progressAnnotation = mcpProgressMethod.getAnnotation(McpProgress.class);
 

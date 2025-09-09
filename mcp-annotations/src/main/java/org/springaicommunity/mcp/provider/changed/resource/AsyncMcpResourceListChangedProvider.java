@@ -84,6 +84,7 @@ public class AsyncMcpResourceListChangedProvider {
 				.filter(method -> method.isAnnotationPresent(McpResourceListChanged.class))
 				.filter(method -> method.getReturnType() == void.class
 						|| Mono.class.isAssignableFrom(method.getReturnType()))
+				.sorted((m1, m2) -> m1.getName().compareTo(m2.getName()))
 				.map(mcpResourceListChangedConsumerMethod -> {
 					var resourceListChangedAnnotation = mcpResourceListChangedConsumerMethod
 						.getAnnotation(McpResourceListChanged.class);

@@ -83,6 +83,7 @@ public class AsyncMcpToolListChangedProvider {
 				.filter(method -> method.isAnnotationPresent(McpToolListChanged.class))
 				.filter(method -> method.getReturnType() == void.class
 						|| Mono.class.isAssignableFrom(method.getReturnType()))
+				.sorted((m1, m2) -> m1.getName().compareTo(m2.getName()))
 				.map(mcpToolListChangedConsumerMethod -> {
 					var toolListChangedAnnotation = mcpToolListChangedConsumerMethod
 						.getAnnotation(McpToolListChanged.class);

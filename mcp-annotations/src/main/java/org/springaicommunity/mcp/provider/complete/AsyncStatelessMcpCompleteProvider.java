@@ -72,6 +72,7 @@ public class AsyncStatelessMcpCompleteProvider {
 				.filter(method -> Mono.class.isAssignableFrom(method.getReturnType())
 						|| Flux.class.isAssignableFrom(method.getReturnType())
 						|| Publisher.class.isAssignableFrom(method.getReturnType()))
+				.sorted((m1, m2) -> m1.getName().compareTo(m2.getName()))
 				.map(mcpCompleteMethod -> {
 					var completeAnnotation = mcpCompleteMethod.getAnnotation(McpComplete.class);
 					var completeRef = CompleteAdapter.asCompleteReference(completeAnnotation, mcpCompleteMethod);
