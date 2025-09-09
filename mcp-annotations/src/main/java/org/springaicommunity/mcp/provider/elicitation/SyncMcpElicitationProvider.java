@@ -91,6 +91,7 @@ public class SyncMcpElicitationProvider {
 				.filter(method -> ElicitResult.class.isAssignableFrom(method.getReturnType()))
 				.filter(method -> method.getParameterCount() == 1
 						&& ElicitRequest.class.isAssignableFrom(method.getParameterTypes()[0]))
+				.sorted((m1, m2) -> m1.getName().compareTo(m2.getName()))
 				.map(mcpElicitationMethod -> {
 					var elicitationAnnotation = mcpElicitationMethod.getAnnotation(McpElicitation.class);
 

@@ -91,6 +91,7 @@ public class AsyncMcpSamplingProvider {
 						&& CreateMessageRequest.class.isAssignableFrom(method.getParameterTypes()[0]))
 				.filter(method -> Mono.class.isAssignableFrom(method.getReturnType())
 						|| CreateMessageResult.class.isAssignableFrom(method.getReturnType()))
+				.sorted((m1, m2) -> m1.getName().compareTo(m2.getName()))
 				.map(mcpSamplingMethod -> {
 					var samplingAnnotation = mcpSamplingMethod.getAnnotation(McpSampling.class);
 

@@ -45,6 +45,7 @@ public class SyncMcpResourceProvider {
 			.map(resourceObject -> Stream.of(this.doGetClassMethods(resourceObject))
 				.filter(resourceMethod -> resourceMethod.isAnnotationPresent(McpResource.class))
 				.filter(method -> !Mono.class.isAssignableFrom(method.getReturnType()))
+				.sorted((m1, m2) -> m1.getName().compareTo(m2.getName()))
 				.map(mcpResourceMethod -> {
 					var resourceAnnotation = mcpResourceMethod.getAnnotation(McpResource.class);
 

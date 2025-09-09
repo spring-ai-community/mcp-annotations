@@ -82,6 +82,7 @@ public class SyncMcpPromptListChangedProvider {
 			.map(consumerObject -> Stream.of(doGetClassMethods(consumerObject))
 				.filter(method -> method.isAnnotationPresent(McpPromptListChanged.class))
 				.filter(method -> !Mono.class.isAssignableFrom(method.getReturnType()))
+				.sorted((m1, m2) -> m1.getName().compareTo(m2.getName()))
 				.map(mcpPromptListChangedConsumerMethod -> {
 					var promptListChangedAnnotation = mcpPromptListChangedConsumerMethod
 						.getAnnotation(McpPromptListChanged.class);
