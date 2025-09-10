@@ -21,15 +21,17 @@ import java.lang.annotation.Target;
 public @interface McpPrompt {
 
 	/**
-	 * A human-readable name for this resource. This can be used by clients to populate UI
-	 * elements.
+	 * Unique identifier for the prompt
 	 */
 	String name() default "";
 
 	/**
-	 * A description of what this resource represents. This can be used by clients to
-	 * improve the LLM's understanding of available resources. It can be thought of like a
-	 * "hint" to the model.
+	 * Optional human-readable name of the prompt for display purposes.
+	 */
+	String title() default "";
+
+	/**
+	 * Optional human-readable description.
 	 */
 	String description() default "";
 
