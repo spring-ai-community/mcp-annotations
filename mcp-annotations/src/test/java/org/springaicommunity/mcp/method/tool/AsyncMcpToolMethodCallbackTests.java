@@ -121,7 +121,8 @@ public class AsyncMcpToolMethodCallbackTests {
 
 		@McpTool(name = "primitive-types-mono-tool", description = "Mono tool with primitive types")
 		public Mono<String> primitiveTypesMonoTool(boolean flag, byte b, short s, int i, long l, float f, double d) {
-			return Mono.just(String.format(Locale.US, "Primitives: %b, %d, %d, %d, %d, %.1f, %.1f", flag, b, s, i, l, f, d));
+			return Mono
+				.just(String.format(Locale.US, "Primitives: %b, %d, %d, %d, %d, %.1f, %.1f", flag, b, s, i, l, f, d));
 		}
 
 		@McpTool(name = "return-object-mono-tool", description = "Mono tool that returns a complex object")
