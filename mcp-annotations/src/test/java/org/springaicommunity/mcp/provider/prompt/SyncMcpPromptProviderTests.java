@@ -113,6 +113,29 @@ public class SyncMcpPromptProviderTests {
 	}
 
 	@Test
+	void testGetPromptSpecificationsWithTitle() {
+		class PromptWithTitle {
+
+			@McpPrompt(name = "prompt-name", title = "Custom Title for UI", description = "Custom Titled prompt")
+			public GetPromptResult methodWithDifferentName() {
+				return new GetPromptResult("Custom prompt result",
+						List.of(new PromptMessage(Role.ASSISTANT, new TextContent("Custom prompt content"))));
+			}
+
+		}
+
+		PromptWithTitle promptObject = new PromptWithTitle();
+		SyncMcpPromptProvider provider = new SyncMcpPromptProvider(List.of(promptObject));
+
+		List<SyncPromptSpecification> promptSpecs = provider.getPromptSpecifications();
+
+		assertThat(promptSpecs).hasSize(1);
+		assertThat(promptSpecs.get(0).prompt().name()).isEqualTo("prompt-name");
+		assertThat(promptSpecs.get(0).prompt().title()).isEqualTo("Custom Title for UI");
+		assertThat(promptSpecs.get(0).prompt().description()).isEqualTo("Custom Titled prompt");
+	}
+
+	@Test
 	void testGetPromptSpecificationsWithDefaultPromptName() {
 		class DefaultNamePrompt {
 

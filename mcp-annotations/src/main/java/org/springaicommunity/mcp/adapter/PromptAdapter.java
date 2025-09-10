@@ -29,7 +29,7 @@ public class PromptAdapter {
 	 * @return The corresponding McpSchema.Prompt object
 	 */
 	public static McpSchema.Prompt asPrompt(McpPrompt mcpPrompt) {
-		return new McpSchema.Prompt(mcpPrompt.name(), mcpPrompt.description(), List.of());
+		return new McpSchema.Prompt(mcpPrompt.name(), mcpPrompt.title(), mcpPrompt.description(), List.of());
 	}
 
 	/**
@@ -41,7 +41,7 @@ public class PromptAdapter {
 	 */
 	public static McpSchema.Prompt asPrompt(McpPrompt mcpPrompt, Method method) {
 		List<McpSchema.PromptArgument> arguments = extractPromptArguments(method);
-		return new McpSchema.Prompt(getName(mcpPrompt, method), mcpPrompt.description(), arguments);
+		return new McpSchema.Prompt(getName(mcpPrompt, method), mcpPrompt.title(), mcpPrompt.description(), arguments);
 	}
 
 	private static String getName(McpPrompt promptAnnotation, Method method) {
