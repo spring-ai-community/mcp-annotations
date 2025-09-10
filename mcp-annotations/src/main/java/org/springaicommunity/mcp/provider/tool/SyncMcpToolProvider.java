@@ -16,8 +16,6 @@
 
 package org.springaicommunity.mcp.provider.tool;
 
-import java.lang.reflect.Method;
-import java.util.Arrays;
 import java.util.List;
 import java.util.function.BiFunction;
 import java.util.stream.Stream;
@@ -27,7 +25,6 @@ import io.modelcontextprotocol.server.McpSyncServerExchange;
 import io.modelcontextprotocol.spec.McpSchema;
 import io.modelcontextprotocol.spec.McpSchema.CallToolRequest;
 import io.modelcontextprotocol.spec.McpSchema.CallToolResult;
-import io.modelcontextprotocol.util.Assert;
 import io.modelcontextprotocol.util.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -36,24 +33,21 @@ import org.springaicommunity.mcp.method.tool.ReturnMode;
 import org.springaicommunity.mcp.method.tool.SyncMcpToolMethodCallback;
 import org.springaicommunity.mcp.method.tool.utils.ClassUtils;
 import org.springaicommunity.mcp.method.tool.utils.JsonSchemaGenerator;
-import reactor.core.publisher.Mono;
+import org.springaicommunity.mcp.provider.ProvidrerUtils;
 
 /**
  * @author Christian Tzolov
  */
-public class SyncMcpToolProvider {
+public class SyncMcpToolProvider extends AbstractMcpToolProvider {
 
 	private static final Logger logger = LoggerFactory.getLogger(SyncMcpToolProvider.class);
-
-	private final List<Object> toolObjects;
 
 	/**
 	 * Create a new SyncMcpToolProvider.
 	 * @param toolObjects the objects containing methods annotated with {@link McpTool}
 	 */
 	public SyncMcpToolProvider(List<Object> toolObjects) {
-		Assert.notNull(toolObjects, "toolObjects cannot be null");
-		this.toolObjects = toolObjects;
+		super(toolObjects);
 	}
 
 	/**
@@ -65,34 +59,20 @@ public class SyncMcpToolProvider {
 	public List<SyncToolSpecification> getToolSpecifications() {
 
 		List<SyncToolSpecification> toolSpecs = this.toolObjects.stream()
-			.map(toolObject -> Stream.of(doGetClassMethods(toolObject))
+			.map(toolObject -> Stream.of(this.doGetClassMethods(toolObject))
 				.filter(method -> method.isAnnotationPresent(McpTool.class))
-				.filter(method -> !Mono.class.isAssignableFrom(method.getReturnType()))
+				.filter(ProvidrerUtils.isNotReactiveReturnType)
 				.sorted((m1, m2) -> m1.getName().compareTo(m2.getName()))
 				.map(mcpToolMethod -> {
 
-					McpTool toolJavaAnnotation = doGetMcpToolAnnotation(mcpToolMethod);
+					McpTool toolJavaAnnotation = this.doGetMcpToolAnnotation(mcpToolMethod);
 
 					String toolName = Utils.hasText(toolJavaAnnotation.name()) ? toolJavaAnnotation.name()
 							: mcpToolMethod.getName();
 
 					String toolDescription = toolJavaAnnotation.description();
 
-					// Check if method has CallToolRequest parameter
-					boolean hasCallToolRequestParam = Arrays.stream(mcpToolMethod.getParameterTypes())
-						.anyMatch(type -> CallToolRequest.class.isAssignableFrom(type));
-
-					String inputSchema;
-					if (hasCallToolRequestParam) {
-						// For methods with CallToolRequest, generate minimal schema or
-						// use the one from the request
-						// The schema generation will handle this appropriately
-						inputSchema = JsonSchemaGenerator.generateForMethodInput(mcpToolMethod);
-						logger.debug("Tool method '{}' uses CallToolRequest parameter, using minimal schema", toolName);
-					}
-					else {
-						inputSchema = JsonSchemaGenerator.generateForMethodInput(mcpToolMethod);
-					}
+					String inputSchema = JsonSchemaGenerator.generateForMethodInput(mcpToolMethod);
 
 					var toolBuilder = McpSchema.Tool.builder()
 						.name(toolName)
@@ -148,7 +128,7 @@ public class SyncMcpToolProvider {
 									: ReturnMode.TEXT);
 
 					BiFunction<McpSyncServerExchange, CallToolRequest, CallToolResult> methodCallback = new SyncMcpToolMethodCallback(
-							returnMode, mcpToolMethod, toolObject);
+							returnMode, mcpToolMethod, toolObject, this.doGetToolCallException());
 
 					var toolSpec = SyncToolSpecification.builder().tool(tool).callHandler(methodCallback).build();
 
@@ -163,14 +143,6 @@ public class SyncMcpToolProvider {
 		}
 
 		return toolSpecs;
-	}
-
-	protected Method[] doGetClassMethods(Object bean) {
-		return bean.getClass().getDeclaredMethods();
-	}
-
-	protected McpTool doGetMcpToolAnnotation(Method method) {
-		return method.getAnnotation(McpTool.class);
 	}
 
 }

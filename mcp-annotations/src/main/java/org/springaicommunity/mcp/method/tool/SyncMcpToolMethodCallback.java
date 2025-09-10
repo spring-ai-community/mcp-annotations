@@ -36,7 +36,12 @@ public final class SyncMcpToolMethodCallback extends AbstractSyncMcpToolMethodCa
 		implements BiFunction<McpSyncServerExchange, CallToolRequest, CallToolResult> {
 
 	public SyncMcpToolMethodCallback(ReturnMode returnMode, java.lang.reflect.Method toolMethod, Object toolObject) {
-		super(returnMode, toolMethod, toolObject);
+		super(returnMode, toolMethod, toolObject, Exception.class);
+	}
+
+	public SyncMcpToolMethodCallback(ReturnMode returnMode, java.lang.reflect.Method toolMethod, Object toolObject,
+			Class<? extends Throwable> toolCallExceptionClass) {
+		super(returnMode, toolMethod, toolObject, toolCallExceptionClass);
 	}
 
 	@Override
@@ -69,7 +74,10 @@ public final class SyncMcpToolMethodCallback extends AbstractSyncMcpToolMethodCa
 			return this.processResult(result);
 		}
 		catch (Exception e) {
-			return this.createErrorResult(e);
+			if (this.toolCallExceptionClass.isInstance(e)) {
+				return this.createErrorResult(e);
+			}
+			throw e;
 		}
 	}
 

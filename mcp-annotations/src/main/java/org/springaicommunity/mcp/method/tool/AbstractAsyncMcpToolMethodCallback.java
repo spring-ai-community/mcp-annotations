@@ -48,6 +48,8 @@ import reactor.core.publisher.Mono;
  */
 public abstract class AbstractAsyncMcpToolMethodCallback<T> {
 
+	protected final Class<? extends Throwable> toolCallExceptionClass;
+
 	private static final TypeReference<Map<String, Object>> MAP_TYPE_REFERENCE = new TypeReference<Map<String, Object>>() {
 		// No implementation needed
 	};
@@ -58,10 +60,12 @@ public abstract class AbstractAsyncMcpToolMethodCallback<T> {
 
 	protected final ReturnMode returnMode;
 
-	protected AbstractAsyncMcpToolMethodCallback(ReturnMode returnMode, Method toolMethod, Object toolObject) {
+	protected AbstractAsyncMcpToolMethodCallback(ReturnMode returnMode, Method toolMethod, Object toolObject,
+			Class<? extends Throwable> toolCallExceptionClass) {
 		this.toolMethod = toolMethod;
 		this.toolObject = toolObject;
 		this.returnMode = returnMode;
+		this.toolCallExceptionClass = toolCallExceptionClass;
 	}
 
 	/**
