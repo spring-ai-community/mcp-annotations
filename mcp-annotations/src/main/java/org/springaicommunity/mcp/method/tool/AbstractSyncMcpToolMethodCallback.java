@@ -19,7 +19,9 @@ package org.springaicommunity.mcp.method.tool;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.springaicommunity.mcp.annotation.McpMeta;
@@ -41,6 +43,7 @@ import io.modelcontextprotocol.spec.McpSchema.CallToolResult;
  * @param <T> The type of the context parameter (e.g., McpTransportContext or
  * McpSyncServerExchange)
  * @author Christian Tzolov
+ * @author Ilayaperumal Gopinathan
  */
 public abstract class AbstractSyncMcpToolMethodCallback<T> {
 
@@ -156,9 +159,15 @@ public abstract class AbstractSyncMcpToolMethodCallback<T> {
 			return CallToolResult.builder().addTextContent(JsonParser.toJson("Done")).build();
 		}
 		else if (this.returnMode == ReturnMode.STRUCTURED) {
-			String jsonOutput = JsonParser.toJson(result);
-			Map<String, Object> structuredOutput = JsonParser.fromJson(jsonOutput, MAP_TYPE_REFERENCE);
-			return CallToolResult.builder().structuredContent(structuredOutput).build();
+			if (result instanceof List<?>) {
+				List<String> texts = ((List<?>) result).stream().map(String::valueOf).collect(Collectors.toList());
+				return CallToolResult.builder().textContent(texts).build();
+			}
+			else {
+				String jsonOutput = JsonParser.toJson(result);
+				Map<String, Object> structuredOutput = JsonParser.fromJson(jsonOutput, MAP_TYPE_REFERENCE);
+				return CallToolResult.builder().structuredContent(structuredOutput).build();
+			}
 		}
 
 		// Default to text output

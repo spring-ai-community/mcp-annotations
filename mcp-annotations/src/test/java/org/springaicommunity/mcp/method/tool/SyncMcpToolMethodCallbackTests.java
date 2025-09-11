@@ -106,6 +106,11 @@ public class SyncMcpToolMethodCallbackTests {
 			return new TestObject(name, value);
 		}
 
+		@McpTool(name = "return-list-tool", description = "Tool that returns a list")
+		public List<String> returnListTool() {
+			return List.of("this", "is", "a", "test");
+		}
+
 	}
 
 	public static class TestObject {
@@ -505,6 +510,25 @@ public class SyncMcpToolMethodCallbackTests {
 		assertThat(result.structuredContent()).isNotNull();
 		assertThat(result.structuredContent()).containsEntry("name", "test");
 		assertThat(result.structuredContent()).containsEntry("value", 42);
+	}
+
+	@Test
+	public void testToolReturningList() throws Exception {
+		TestToolProvider provider = new TestToolProvider();
+		Method method = TestToolProvider.class.getMethod("returnListTool", null);
+		SyncMcpToolMethodCallback callback = new SyncMcpToolMethodCallback(ReturnMode.STRUCTURED, method, provider);
+
+		McpSyncServerExchange exchange = mock(McpSyncServerExchange.class);
+		CallToolRequest request = new CallToolRequest("return-list-tool", Map.of());
+
+		CallToolResult result = callback.apply(exchange, request);
+
+		assertThat(result).isNotNull();
+		assertThat(result.isError()).isFalse();
+		assertThat(result.content()).isNotEmpty();
+		result.content().forEach(textContent -> {
+			assertThat(((TextContent) textContent).text()).containsAnyOf("this", "is", "a", "test");
+		});
 	}
 
 }
