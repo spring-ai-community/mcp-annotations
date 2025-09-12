@@ -38,7 +38,12 @@ public final class AsyncStatelessMcpToolMethodCallback extends AbstractAsyncMcpT
 
 	public AsyncStatelessMcpToolMethodCallback(ReturnMode returnMode, java.lang.reflect.Method toolMethod,
 			Object toolObject) {
-		super(returnMode, toolMethod, toolObject);
+		super(returnMode, toolMethod, toolObject, Exception.class);
+	}
+
+	public AsyncStatelessMcpToolMethodCallback(ReturnMode returnMode, java.lang.reflect.Method toolMethod,
+			Object toolObject, Class<? extends Throwable> toolCallExceptionClass) {
+		super(returnMode, toolMethod, toolObject, toolCallExceptionClass);
 	}
 
 	@Override
@@ -71,7 +76,10 @@ public final class AsyncStatelessMcpToolMethodCallback extends AbstractAsyncMcpT
 
 			}
 			catch (Exception e) {
-				return this.createErrorResult(e);
+				if (this.toolCallExceptionClass.isInstance(e)) {
+					return this.createErrorResult(e);
+				}
+				return Mono.error(e);
 			}
 		}));
 	}

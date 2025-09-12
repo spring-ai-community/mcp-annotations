@@ -16,12 +16,16 @@
 
 package org.springaicommunity.mcp.provider.tool;
 
-import java.lang.reflect.Method;
 import java.util.List;
 import java.util.function.BiFunction;
 import java.util.stream.Stream;
 
-import org.reactivestreams.Publisher;
+import io.modelcontextprotocol.common.McpTransportContext;
+import io.modelcontextprotocol.server.McpStatelessServerFeatures.AsyncToolSpecification;
+import io.modelcontextprotocol.spec.McpSchema;
+import io.modelcontextprotocol.spec.McpSchema.CallToolRequest;
+import io.modelcontextprotocol.spec.McpSchema.CallToolResult;
+import io.modelcontextprotocol.util.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springaicommunity.mcp.annotation.McpTool;
@@ -30,15 +34,7 @@ import org.springaicommunity.mcp.method.tool.ReactiveUtils;
 import org.springaicommunity.mcp.method.tool.ReturnMode;
 import org.springaicommunity.mcp.method.tool.utils.ClassUtils;
 import org.springaicommunity.mcp.method.tool.utils.JsonSchemaGenerator;
-
-import io.modelcontextprotocol.server.McpStatelessServerFeatures.AsyncToolSpecification;
-import io.modelcontextprotocol.common.McpTransportContext;
-import io.modelcontextprotocol.spec.McpSchema;
-import io.modelcontextprotocol.spec.McpSchema.CallToolRequest;
-import io.modelcontextprotocol.spec.McpSchema.CallToolResult;
-import io.modelcontextprotocol.util.Assert;
-import io.modelcontextprotocol.util.Utils;
-import reactor.core.publisher.Flux;
+import org.springaicommunity.mcp.provider.ProvidrerUtils;
 import reactor.core.publisher.Mono;
 
 /**
@@ -50,19 +46,16 @@ import reactor.core.publisher.Mono;
  *
  * @author Christian Tzolov
  */
-public class AsyncStatelessMcpToolProvider {
+public class AsyncStatelessMcpToolProvider extends AbstractMcpToolProvider {
 
 	private static final Logger logger = LoggerFactory.getLogger(AsyncStatelessMcpToolProvider.class);
-
-	private final List<Object> toolObjects;
 
 	/**
 	 * Create a new AsyncStatelessMcpToolProvider.
 	 * @param toolObjects the objects containing methods annotated with {@link McpTool}
 	 */
 	public AsyncStatelessMcpToolProvider(List<Object> toolObjects) {
-		Assert.notNull(toolObjects, "toolObjects cannot be null");
-		this.toolObjects = toolObjects;
+		super(toolObjects);
 	}
 
 	/**
@@ -74,9 +67,7 @@ public class AsyncStatelessMcpToolProvider {
 		List<AsyncToolSpecification> toolSpecs = this.toolObjects.stream()
 			.map(toolObject -> Stream.of(doGetClassMethods(toolObject))
 				.filter(method -> method.isAnnotationPresent(McpTool.class))
-				.filter(method -> Mono.class.isAssignableFrom(method.getReturnType())
-						|| Flux.class.isAssignableFrom(method.getReturnType())
-						|| Publisher.class.isAssignableFrom(method.getReturnType()))
+				.filter(ProvidrerUtils.isReactiveReturnType)
 				.sorted((m1, m2) -> m1.getName().compareTo(m2.getName()))
 				.map(mcpToolMethod -> {
 
@@ -145,7 +136,7 @@ public class AsyncStatelessMcpToolProvider {
 									: ReturnMode.TEXT;
 
 					BiFunction<McpTransportContext, CallToolRequest, Mono<CallToolResult>> methodCallback = new AsyncStatelessMcpToolMethodCallback(
-							returnMode, mcpToolMethod, toolObject);
+							returnMode, mcpToolMethod, toolObject, this.doGetToolCallException());
 
 					AsyncToolSpecification toolSpec = AsyncToolSpecification.builder()
 						.tool(tool)
@@ -163,14 +154,6 @@ public class AsyncStatelessMcpToolProvider {
 		}
 
 		return toolSpecs;
-	}
-
-	protected Method[] doGetClassMethods(Object bean) {
-		return bean.getClass().getDeclaredMethods();
-	}
-
-	protected McpTool doGetMcpToolAnnotation(Method method) {
-		return method.getAnnotation(McpTool.class);
 	}
 
 }

@@ -37,7 +37,12 @@ public final class SyncStatelessMcpToolMethodCallback extends AbstractSyncMcpToo
 
 	public SyncStatelessMcpToolMethodCallback(ReturnMode returnMode, java.lang.reflect.Method toolMethod,
 			Object toolObject) {
-		super(returnMode, toolMethod, toolObject);
+		super(returnMode, toolMethod, toolObject, Exception.class);
+	}
+
+	public SyncStatelessMcpToolMethodCallback(ReturnMode returnMode, java.lang.reflect.Method toolMethod,
+			Object toolObject, Class<? extends Throwable> toolCallExceptionClass) {
+		super(returnMode, toolMethod, toolObject, toolCallExceptionClass);
 	}
 
 	@Override
@@ -61,7 +66,10 @@ public final class SyncStatelessMcpToolMethodCallback extends AbstractSyncMcpToo
 			return this.processResult(result);
 		}
 		catch (Exception e) {
-			return this.createErrorResult(e);
+			if (this.toolCallExceptionClass.isInstance(e)) {
+				return this.createErrorResult(e);
+			}
+			throw e;
 		}
 	}
 

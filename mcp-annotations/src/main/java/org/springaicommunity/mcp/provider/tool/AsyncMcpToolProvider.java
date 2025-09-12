@@ -16,12 +16,16 @@
 
 package org.springaicommunity.mcp.provider.tool;
 
-import java.lang.reflect.Method;
 import java.util.List;
 import java.util.function.BiFunction;
 import java.util.stream.Stream;
 
-import org.reactivestreams.Publisher;
+import io.modelcontextprotocol.server.McpAsyncServerExchange;
+import io.modelcontextprotocol.server.McpServerFeatures.AsyncToolSpecification;
+import io.modelcontextprotocol.spec.McpSchema;
+import io.modelcontextprotocol.spec.McpSchema.CallToolRequest;
+import io.modelcontextprotocol.spec.McpSchema.CallToolResult;
+import io.modelcontextprotocol.util.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springaicommunity.mcp.annotation.McpTool;
@@ -30,33 +34,22 @@ import org.springaicommunity.mcp.method.tool.ReactiveUtils;
 import org.springaicommunity.mcp.method.tool.ReturnMode;
 import org.springaicommunity.mcp.method.tool.utils.ClassUtils;
 import org.springaicommunity.mcp.method.tool.utils.JsonSchemaGenerator;
-
-import io.modelcontextprotocol.server.McpAsyncServerExchange;
-import io.modelcontextprotocol.server.McpServerFeatures.AsyncToolSpecification;
-import io.modelcontextprotocol.spec.McpSchema;
-import io.modelcontextprotocol.spec.McpSchema.CallToolRequest;
-import io.modelcontextprotocol.spec.McpSchema.CallToolResult;
-import io.modelcontextprotocol.util.Assert;
-import io.modelcontextprotocol.util.Utils;
-import reactor.core.publisher.Flux;
+import org.springaicommunity.mcp.provider.ProvidrerUtils;
 import reactor.core.publisher.Mono;
 
 /**
  * @author Christian Tzolov
  */
-public class AsyncMcpToolProvider {
+public class AsyncMcpToolProvider extends AbstractMcpToolProvider {
 
 	private static final Logger logger = LoggerFactory.getLogger(AsyncMcpToolProvider.class);
-
-	private final List<Object> toolObjects;
 
 	/**
 	 * Create a new SyncMcpToolProvider.
 	 * @param toolObjects the objects containing methods annotated with {@link McpTool}
 	 */
 	public AsyncMcpToolProvider(List<Object> toolObjects) {
-		Assert.notNull(toolObjects, "toolObjects cannot be null");
-		this.toolObjects = toolObjects;
+		super(toolObjects);
 	}
 
 	/**
@@ -68,15 +61,13 @@ public class AsyncMcpToolProvider {
 	public List<AsyncToolSpecification> getToolSpecifications() {
 
 		List<AsyncToolSpecification> toolSpecs = this.toolObjects.stream()
-			.map(toolObject -> Stream.of(doGetClassMethods(toolObject))
+			.map(toolObject -> Stream.of(this.doGetClassMethods(toolObject))
 				.filter(method -> method.isAnnotationPresent(McpTool.class))
-				.filter(method -> Mono.class.isAssignableFrom(method.getReturnType())
-						|| Flux.class.isAssignableFrom(method.getReturnType())
-						|| Publisher.class.isAssignableFrom(method.getReturnType()))
+				.filter(ProvidrerUtils.isReactiveReturnType)
 				.sorted((m1, m2) -> m1.getName().compareTo(m2.getName()))
 				.map(mcpToolMethod -> {
 
-					var toolJavaAnnotation = doGetMcpToolAnnotation(mcpToolMethod);
+					var toolJavaAnnotation = this.doGetMcpToolAnnotation(mcpToolMethod);
 
 					String toolName = Utils.hasText(toolJavaAnnotation.name()) ? toolJavaAnnotation.name()
 							: mcpToolMethod.getName();
@@ -140,7 +131,7 @@ public class AsyncMcpToolProvider {
 									: ReturnMode.TEXT;
 
 					BiFunction<McpAsyncServerExchange, CallToolRequest, Mono<CallToolResult>> methodCallback = new AsyncMcpToolMethodCallback(
-							returnMode, mcpToolMethod, toolObject);
+							returnMode, mcpToolMethod, toolObject, this.doGetToolCallException());
 
 					AsyncToolSpecification toolSpec = AsyncToolSpecification.builder()
 						.tool(tool)
@@ -158,14 +149,6 @@ public class AsyncMcpToolProvider {
 		}
 
 		return toolSpecs;
-	}
-
-	protected Method[] doGetClassMethods(Object bean) {
-		return bean.getClass().getDeclaredMethods();
-	}
-
-	protected McpTool doGetMcpToolAnnotation(Method method) {
-		return method.getAnnotation(McpTool.class);
 	}
 
 }

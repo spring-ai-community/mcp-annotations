@@ -38,7 +38,12 @@ public final class AsyncMcpToolMethodCallback extends AbstractAsyncMcpToolMethod
 		implements BiFunction<McpAsyncServerExchange, CallToolRequest, Mono<CallToolResult>> {
 
 	public AsyncMcpToolMethodCallback(ReturnMode returnMode, Method toolMethod, Object toolObject) {
-		super(returnMode, toolMethod, toolObject);
+		super(returnMode, toolMethod, toolObject, Exception.class);
+	}
+
+	public AsyncMcpToolMethodCallback(ReturnMode returnMode, Method toolMethod, Object toolObject,
+			Class<? extends Throwable> toolCallExceptionClass) {
+		super(returnMode, toolMethod, toolObject, toolCallExceptionClass);
 	}
 
 	@Override
@@ -72,7 +77,10 @@ public final class AsyncMcpToolMethodCallback extends AbstractAsyncMcpToolMethod
 
 			}
 			catch (Exception e) {
-				return this.createErrorResult(e);
+				if (this.toolCallExceptionClass.isInstance(e)) {
+					return this.createErrorResult(e);
+				}
+				return Mono.error(e);
 			}
 		}));
 	}

@@ -44,6 +44,8 @@ import io.modelcontextprotocol.spec.McpSchema.CallToolResult;
  */
 public abstract class AbstractSyncMcpToolMethodCallback<T> {
 
+	protected final Class<? extends Throwable> toolCallExceptionClass;
+
 	private static final TypeReference<Map<String, Object>> MAP_TYPE_REFERENCE = new TypeReference<Map<String, Object>>() {
 		// No implementation needed
 	};
@@ -54,10 +56,12 @@ public abstract class AbstractSyncMcpToolMethodCallback<T> {
 
 	protected final ReturnMode returnMode;
 
-	protected AbstractSyncMcpToolMethodCallback(ReturnMode returnMode, Method toolMethod, Object toolObject) {
+	protected AbstractSyncMcpToolMethodCallback(ReturnMode returnMode, Method toolMethod, Object toolObject,
+			Class<? extends Throwable> toolCallExceptionClass) {
 		this.toolMethod = toolMethod;
 		this.toolObject = toolObject;
 		this.returnMode = returnMode;
+		this.toolCallExceptionClass = toolCallExceptionClass;
 	}
 
 	/**
