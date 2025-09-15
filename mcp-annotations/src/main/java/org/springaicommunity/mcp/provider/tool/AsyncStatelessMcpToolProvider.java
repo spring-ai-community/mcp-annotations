@@ -114,7 +114,6 @@ public class AsyncStatelessMcpToolProvider extends AbstractMcpToolProvider {
 					// Output schema is not generated for primitive types, void,
 					// CallToolResult, simple value types (String, etc.)
 					// or if generateOutputSchema attribute is set to false.
-
 					if (toolJavaAnnotation.generateOutputSchema()
 							&& !ReactiveUtils.isReactiveReturnTypeOfVoid(mcpToolMethod)
 							&& !ReactiveUtils.isReactiveReturnTypeOfCallToolResult(mcpToolMethod)) {
@@ -124,8 +123,7 @@ public class AsyncStatelessMcpToolProvider extends AbstractMcpToolProvider {
 									: null;
 							if (!ClassUtils.isPrimitiveOrWrapper(methodReturnType)
 									&& !ClassUtils.isSimpleValueType(methodReturnType)) {
-								toolBuilder
-									.outputSchema(JsonSchemaGenerator.generateFromClass((Class<?>) typeArgument));
+								toolBuilder.outputSchema(JsonSchemaGenerator.generateFromType(typeArgument));
 							}
 						});
 					}

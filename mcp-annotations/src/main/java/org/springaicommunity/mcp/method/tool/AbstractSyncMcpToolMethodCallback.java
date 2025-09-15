@@ -22,15 +22,13 @@ import java.lang.reflect.Type;
 import java.util.Map;
 import java.util.stream.Stream;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import io.modelcontextprotocol.spec.McpSchema.CallToolRequest;
+import io.modelcontextprotocol.spec.McpSchema.CallToolResult;
 import org.springaicommunity.mcp.annotation.McpMeta;
 import org.springaicommunity.mcp.annotation.McpProgressToken;
 import org.springaicommunity.mcp.annotation.McpTool;
 import org.springaicommunity.mcp.method.tool.utils.JsonParser;
-
-import com.fasterxml.jackson.core.type.TypeReference;
-
-import io.modelcontextprotocol.spec.McpSchema.CallToolRequest;
-import io.modelcontextprotocol.spec.McpSchema.CallToolResult;
 
 /**
  * Abstract base class for creating Function callbacks around tool methods.
@@ -156,17 +154,31 @@ public abstract class AbstractSyncMcpToolMethodCallback<T> {
 			return (CallToolResult) result;
 		}
 
-		if (returnMode == ReturnMode.VOID) {
+		Type returnType = this.toolMethod.getGenericReturnType();
+
+		if (returnMode == ReturnMode.VOID || returnType == Void.TYPE || returnType == void.class) {
 			return CallToolResult.builder().addTextContent(JsonParser.toJson("Done")).build();
 		}
-		else if (this.returnMode == ReturnMode.STRUCTURED) {
+
+		if (this.returnMode == ReturnMode.STRUCTURED) {
 			String jsonOutput = JsonParser.toJson(result);
 			Map<String, Object> structuredOutput = JsonParser.fromJson(jsonOutput, MAP_TYPE_REFERENCE);
 			return CallToolResult.builder().structuredContent(structuredOutput).build();
 		}
 
 		// Default to text output
-		return CallToolResult.builder().addTextContent(result != null ? result.toString() : "null").build();
+		if (result == null) {
+			return CallToolResult.builder().addTextContent("null").build();
+		}
+
+		// For string results in TEXT mode, return the string directly without JSON
+		// serialization
+		if (result instanceof String) {
+			return CallToolResult.builder().addTextContent((String) result).build();
+		}
+
+		// For other types, serialize to JSON
+		return CallToolResult.builder().addTextContent(JsonParser.toJson(result)).build();
 	}
 
 	/**

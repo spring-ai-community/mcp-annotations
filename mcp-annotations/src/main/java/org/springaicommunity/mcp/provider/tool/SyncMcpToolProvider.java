@@ -116,7 +116,8 @@ public class SyncMcpToolProvider extends AbstractMcpToolProvider {
 							&& methodReturnType != void.class && !ClassUtils.isPrimitiveOrWrapper(methodReturnType)
 							&& !ClassUtils.isSimpleValueType(methodReturnType)) {
 
-						toolBuilder.outputSchema(JsonSchemaGenerator.generateFromClass(methodReturnType));
+						toolBuilder
+							.outputSchema(JsonSchemaGenerator.generateFromType(mcpToolMethod.getGenericReturnType()));
 					}
 
 					var tool = toolBuilder.build();

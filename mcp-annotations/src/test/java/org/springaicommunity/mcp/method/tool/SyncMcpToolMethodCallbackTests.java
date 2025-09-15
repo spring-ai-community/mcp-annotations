@@ -12,6 +12,7 @@ import io.modelcontextprotocol.server.McpSyncServerExchange;
 import io.modelcontextprotocol.spec.McpSchema.CallToolRequest;
 import io.modelcontextprotocol.spec.McpSchema.CallToolResult;
 import io.modelcontextprotocol.spec.McpSchema.TextContent;
+import net.javacrumbs.jsonunit.core.Option;
 import org.junit.jupiter.api.Test;
 import org.springaicommunity.mcp.annotation.McpTool;
 import org.springaicommunity.mcp.annotation.McpToolParam;
@@ -19,6 +20,9 @@ import org.springaicommunity.mcp.annotation.McpToolParam;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
+
+import static net.javacrumbs.jsonunit.assertj.JsonAssertions.assertThatJson;
+import static net.javacrumbs.jsonunit.assertj.JsonAssertions.json;
 
 /**
  * Tests for {@link SyncMcpToolMethodCallback}.
@@ -104,6 +108,11 @@ public class SyncMcpToolMethodCallbackTests {
 		@McpTool(name = "return-object-tool", description = "Tool that returns a complex object")
 		public TestObject returnObjectTool(String name, int value) {
 			return new TestObject(name, value);
+		}
+
+		@McpTool(name = "return-list-object-tool", description = "Tool that returns a list of complex objects")
+		public List<TestObject> returnListObjectTool(String name, int value) {
+			return List.of(new TestObject(name, value));
 		}
 
 	}
@@ -505,6 +514,30 @@ public class SyncMcpToolMethodCallbackTests {
 		assertThat(result.structuredContent()).isNotNull();
 		assertThat(result.structuredContent()).containsEntry("name", "test");
 		assertThat(result.structuredContent()).containsEntry("value", 42);
+	}
+
+	@Test
+	public void testToolReturningComplexListObject() throws Exception {
+		TestToolProvider provider = new TestToolProvider();
+		Method method = TestToolProvider.class.getMethod("returnListObjectTool", String.class, int.class);
+		SyncMcpToolMethodCallback callback = new SyncMcpToolMethodCallback(ReturnMode.TEXT, method, provider);
+
+		McpSyncServerExchange exchange = mock(McpSyncServerExchange.class);
+		CallToolRequest request = new CallToolRequest("return-list-object-tool", Map.of("name", "test", "value", 42));
+
+		CallToolResult result = callback.apply(exchange, request);
+
+		assertThat(result).isNotNull();
+		assertThat(result.isError()).isFalse();
+		// For complex return types in TEXT mode, the result should be JSON serialized as
+		// text content
+		assertThat(result.content()).hasSize(1);
+		assertThat(result.content().get(0)).isInstanceOf(TextContent.class);
+
+		String jsonText = ((TextContent) result.content().get(0)).text();
+		assertThatJson(jsonText).when(Option.IGNORING_ARRAY_ORDER).isArray().hasSize(1);
+		assertThatJson(jsonText).when(Option.IGNORING_ARRAY_ORDER).isEqualTo(json("""
+				[{"name":"test","value":42}]"""));
 	}
 
 }

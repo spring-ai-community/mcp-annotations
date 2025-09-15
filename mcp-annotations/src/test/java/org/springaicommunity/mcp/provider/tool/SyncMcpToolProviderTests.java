@@ -22,17 +22,23 @@ import static org.mockito.Mockito.mock;
 
 import java.util.List;
 import java.util.Map;
+import java.util.function.BiFunction;
 
 import org.junit.jupiter.api.Test;
 import org.springaicommunity.mcp.annotation.McpTool;
 
 import io.modelcontextprotocol.server.McpServerFeatures.SyncToolSpecification;
 import io.modelcontextprotocol.server.McpSyncServerExchange;
+import io.modelcontextprotocol.spec.McpSchema;
 import io.modelcontextprotocol.spec.McpSchema.CallToolRequest;
 import io.modelcontextprotocol.spec.McpSchema.CallToolResult;
 import io.modelcontextprotocol.spec.McpSchema.TextContent;
 import io.modelcontextprotocol.spec.McpSchema.ToolAnnotations;
+import net.javacrumbs.jsonunit.core.Option;
 import reactor.core.publisher.Mono;
+
+import static net.javacrumbs.jsonunit.assertj.JsonAssertions.assertThatJson;
+import static net.javacrumbs.jsonunit.assertj.JsonAssertions.json;
 
 /**
  * Tests for {@link SyncMcpToolProvider}.
@@ -578,25 +584,16 @@ public class SyncMcpToolProviderTests {
 
 	@Test
 	void testToolWithOutputSchemaGeneration() {
+
 		// Define a custom result class
-		class CustomResult {
-
-			public String message;
-
-			public int count;
-
-			public CustomResult(String message, int count) {
-				this.message = message;
-				this.count = count;
-			}
-
+		record CustomResult(String message, int count) {
 		}
 
 		class OutputSchemaTool {
 
-			@McpTool(name = "output-schema-tool", description = "Tool with output schema")
-			public CustomResult outputSchemaTool(String input) {
-				return new CustomResult("Processed: " + input, input.length());
+			@McpTool(name = "output-schema-tool", description = "Tool with output schema", generateOutputSchema = true)
+			public List<CustomResult> outputSchemaTool(String input) {
+				return List.of(new CustomResult("Processed: " + input, input.length()));
 			}
 
 		}
@@ -615,6 +612,8 @@ public class SyncMcpToolProviderTests {
 		String outputSchemaString = toolSpec.tool().outputSchema().toString();
 		assertThat(outputSchemaString).contains("message");
 		assertThat(outputSchemaString).contains("count");
+		assertThat(outputSchemaString).isEqualTo(
+				"{$schema=https://json-schema.org/draft/2020-12/schema, type=array, items={type=object, properties={count={type=integer, format=int32}, message={type=string}}}}");
 	}
 
 	@Test
@@ -650,6 +649,48 @@ public class SyncMcpToolProviderTests {
 		assertThat(toolSpec.tool().name()).isEqualTo("no-output-schema-tool");
 		// Output schema should not be generated when disabled
 		assertThat(toolSpec.tool().outputSchema()).isNull();
+	}
+
+	@Test
+	void testToolWithListReturnType() {
+
+		record CustomResult(String message) {
+		}
+
+		class ListResponseTool {
+
+			@McpTool(name = "list-response", description = "Tool List response")
+			public List<CustomResult> listResponseTool(String input) {
+				return List.of(new CustomResult("Processed: " + input));
+			}
+
+		}
+
+		ListResponseTool toolObject = new ListResponseTool();
+		SyncMcpToolProvider provider = new SyncMcpToolProvider(List.of(toolObject));
+
+		List<SyncToolSpecification> toolSpecs = provider.getToolSpecifications();
+
+		assertThat(toolSpecs).hasSize(1);
+		SyncToolSpecification toolSpec = toolSpecs.get(0);
+
+		assertThat(toolSpec.tool().name()).isEqualTo("list-response");
+		assertThat(toolSpec.tool().outputSchema()).isNull();
+
+		BiFunction<McpSyncServerExchange, CallToolRequest, McpSchema.CallToolResult> callHandler = toolSpec
+			.callHandler();
+
+		McpSchema.CallToolResult result = callHandler.apply(mock(McpSyncServerExchange.class),
+				new CallToolRequest("list-response", Map.of("input", "test")));
+		assertThat(result).isNotNull();
+		assertThat(result.isError()).isFalse();
+		assertThat(result.content()).hasSize(1);
+		assertThat(result.content().get(0)).isInstanceOf(McpSchema.TextContent.class);
+
+		String jsonText = ((TextContent) result.content().get(0)).text();
+		assertThatJson(jsonText).when(Option.IGNORING_ARRAY_ORDER).isArray().hasSize(1);
+		assertThatJson(jsonText).when(Option.IGNORING_ARRAY_ORDER).isEqualTo(json("""
+				[{"message":"Processed: test"}]"""));
 	}
 
 	@Test

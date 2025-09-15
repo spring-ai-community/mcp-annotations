@@ -490,6 +490,38 @@ public class CalculatorToolProvider {
 }
 ```
 
+#### Output Schema Generation
+
+The `@McpTool` annotation includes a `generateOutputSchema` attribute that controls whether output schemas are automatically generated for tool methods:
+
+```java
+@McpTool(name = "calculate", 
+         description = "Perform calculation",
+         generateOutputSchema = true)  // Explicitly enable output schema generation
+public CalculationResult calculate(double value) {
+    return new CalculationResult(value * 2, "doubled");
+}
+
+@McpTool(name = "simple-tool", 
+         description = "Simple tool without output schema")  // Default: no output schema
+public String simpleTool(String input) {
+    return "Processed: " + input;
+}
+```
+
+**Output Schema Behavior:**
+- **Default**: `generateOutputSchema = false` - No output schema is automatically generated
+- **When enabled**: `generateOutputSchema = true` - Output schema is generated for complex return types
+- **Primitive types**: No output schema is generated regardless of the setting (String, int, boolean, etc.)
+- **Void types**: No output schema is generated
+- **Complex types**: Output schema is generated only when explicitly enabled
+
+**Output Serialization:**
+- **String return types**: Returned directly as text content without JSON serialization
+- **Complex objects**: Serialized to JSON for text content
+- **Null values**: Returned as "null" text content
+- **Void methods**: Return "Done" as text content
+
 #### Tool Title Attribute
 
 The `@McpTool` annotation supports a `title` attribute that provides a human-readable display name for tools. This is intended for UI and end-user contexts, optimized to be easily understood even by those unfamiliar with domain-specific terminology.
