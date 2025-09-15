@@ -116,6 +116,11 @@ public class SyncMcpToolMethodCallbackTests {
 			return List.of(new TestObject(name, value));
 		}
 
+		@McpTool(name = "return-list-string-tool", description = "Tool that returns a list of complex objects")
+		public List<String> returnListStringTool(String name, int value) {
+			return List.of(name, String.valueOf(value));
+		}
+
 	}
 
 	public static class TestObject {
@@ -539,6 +544,30 @@ public class SyncMcpToolMethodCallbackTests {
 		assertThatJson(jsonText).when(Option.IGNORING_ARRAY_ORDER).isArray().hasSize(1);
 		assertThatJson(jsonText).when(Option.IGNORING_ARRAY_ORDER).isEqualTo(json("""
 				[{"name":"test","value":42}]"""));
+	}
+
+	@Test
+	public void testToolReturningStringList() throws Exception {
+		TestToolProvider provider = new TestToolProvider();
+		Method method = TestToolProvider.class.getMethod("returnListStringTool", String.class, int.class);
+		SyncMcpToolMethodCallback callback = new SyncMcpToolMethodCallback(ReturnMode.TEXT, method, provider);
+
+		McpSyncServerExchange exchange = mock(McpSyncServerExchange.class);
+		CallToolRequest request = new CallToolRequest("return-list-string-tool", Map.of("name", "test", "value", 42));
+
+		CallToolResult result = callback.apply(exchange, request);
+
+		assertThat(result).isNotNull();
+		assertThat(result.isError()).isFalse();
+		// For complex return types in TEXT mode, the result should be JSON serialized as
+		// text content
+		assertThat(result.content()).hasSize(1);
+		assertThat(result.content().get(0)).isInstanceOf(TextContent.class);
+
+		String jsonText = ((TextContent) result.content().get(0)).text();
+		assertThatJson(jsonText).when(Option.IGNORING_ARRAY_ORDER).isArray().hasSize(2);
+		assertThatJson(jsonText).when(Option.IGNORING_ARRAY_ORDER).isEqualTo(json("""
+				["test", "42"]"""));
 	}
 
 }
