@@ -238,21 +238,36 @@ public abstract class AbstractAsyncMcpToolMethodCallback<T> {
 	 * @return A CallToolResult representing the mapped value
 	 */
 	protected CallToolResult mapValueToCallToolResult(Object value) {
+		// Return the result if it's already a CallToolResult
 		if (value instanceof CallToolResult) {
 			return (CallToolResult) value;
 		}
 
-		if (returnMode == ReturnMode.VOID) {
+		Type returnType = this.toolMethod.getGenericReturnType();
+
+		if (returnMode == ReturnMode.VOID || returnType == Void.TYPE || returnType == void.class) {
 			return CallToolResult.builder().addTextContent(JsonParser.toJson("Done")).build();
 		}
-		else if (this.returnMode == ReturnMode.STRUCTURED) {
+
+		if (this.returnMode == ReturnMode.STRUCTURED) {
 			String jsonOutput = JsonParser.toJson(value);
 			Map<String, Object> structuredOutput = JsonParser.fromJson(jsonOutput, MAP_TYPE_REFERENCE);
 			return CallToolResult.builder().structuredContent(structuredOutput).build();
 		}
 
 		// Default to text output
-		return CallToolResult.builder().addTextContent(value != null ? value.toString() : "null").build();
+		if (value == null) {
+			return CallToolResult.builder().addTextContent("null").build();
+		}
+
+		// For string results in TEXT mode, return the string directly without JSON
+		// serialization
+		if (value instanceof String) {
+			return CallToolResult.builder().addTextContent((String) value).build();
+		}
+
+		// For other types, serialize to JSON
+		return CallToolResult.builder().addTextContent(JsonParser.toJson(value)).build();
 	}
 
 	/**

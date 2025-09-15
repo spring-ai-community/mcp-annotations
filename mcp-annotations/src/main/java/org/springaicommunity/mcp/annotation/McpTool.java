@@ -34,9 +34,9 @@ public @interface McpTool {
 
 	/**
 	 * If true, the tool will generate an output schema for non-primitive output types. If
-	 * false, the tool will not generate an output schema.
+	 * false, the tool will not automatically generate an output schema.
 	 */
-	boolean generateOutputSchema() default true;
+	boolean generateOutputSchema() default false;
 
 	/**
 	 * Intended for UI and end-user contexts — optimized to be human-readable and easily
