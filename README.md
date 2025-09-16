@@ -45,7 +45,7 @@ and a Java MCP SDK dependency:
 <dependency>
     <groupId>io.modelcontextprotocol.sdk</groupId>
     <artifactId>mcp</artifactId>
-    <version>0.12.0</version>
+    <version>0.13.0-SNAPSHOT</version>
 </dependency>
 ```
 
@@ -1999,7 +1999,7 @@ public class StatelessMcpServerFactory {
 
 - Java 17 or higher
 - Reactor Core (for async operations)
-- MCP Java SDK 0.12.0 or higher
+- MCP Java SDK 0.13.0-SNAPSHOT or higher
 
 ## Building from Source
 

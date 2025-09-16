@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.function.BiFunction;
 import java.util.stream.Stream;
 
+import io.modelcontextprotocol.json.McpJsonMapper;
 import io.modelcontextprotocol.server.McpServerFeatures.SyncToolSpecification;
 import io.modelcontextprotocol.server.McpSyncServerExchange;
 import io.modelcontextprotocol.spec.McpSchema;
@@ -74,10 +75,10 @@ public class SyncMcpToolProvider extends AbstractMcpToolProvider {
 
 					String inputSchema = JsonSchemaGenerator.generateForMethodInput(mcpToolMethod);
 
-					var toolBuilder = McpSchema.Tool.builder()
+					McpSchema.Tool.Builder toolBuilder = McpSchema.Tool.builder()
 						.name(toolName)
 						.description(toolDescription)
-						.inputSchema(inputSchema);
+						.inputSchema(this.getJsonMapper(), inputSchema);
 
 					var title = toolJavaAnnotation.title();
 
@@ -104,8 +105,6 @@ public class SyncMcpToolProvider extends AbstractMcpToolProvider {
 					}
 					toolBuilder.title(title);
 
-					// ReactiveUtils.isReactiveReturnTypeOfCallToolResult(mcpToolMethod);
-
 					// Generate Output Schema from the method return type.
 					// Output schema is not generated for primitive types, void,
 					// CallToolResult, simple value types (String, etc.)
@@ -116,8 +115,8 @@ public class SyncMcpToolProvider extends AbstractMcpToolProvider {
 							&& methodReturnType != void.class && !ClassUtils.isPrimitiveOrWrapper(methodReturnType)
 							&& !ClassUtils.isSimpleValueType(methodReturnType)) {
 
-						toolBuilder
-							.outputSchema(JsonSchemaGenerator.generateFromType(mcpToolMethod.getGenericReturnType()));
+						toolBuilder.outputSchema(this.getJsonMapper(),
+								JsonSchemaGenerator.generateFromType(mcpToolMethod.getGenericReturnType()));
 					}
 
 					var tool = toolBuilder.build();

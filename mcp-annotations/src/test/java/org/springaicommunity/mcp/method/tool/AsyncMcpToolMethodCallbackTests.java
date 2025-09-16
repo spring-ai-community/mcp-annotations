@@ -570,8 +570,8 @@ public class AsyncMcpToolMethodCallbackTests {
 			assertThat(result.isError()).isFalse();
 			assertThat(result.content()).isEmpty();
 			assertThat(result.structuredContent()).isNotNull();
-			assertThat(result.structuredContent()).containsEntry("name", "test");
-			assertThat(result.structuredContent()).containsEntry("value", 42);
+			assertThat((Map<String, Object>) result.structuredContent()).containsEntry("name", "test");
+			assertThat((Map<String, Object>) result.structuredContent()).containsEntry("value", 42);
 		}).verifyComplete();
 	}
 
