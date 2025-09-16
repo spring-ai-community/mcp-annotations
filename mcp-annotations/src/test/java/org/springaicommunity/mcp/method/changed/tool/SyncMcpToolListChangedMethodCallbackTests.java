@@ -13,7 +13,7 @@ import java.util.function.Consumer;
 
 import org.junit.jupiter.api.Test;
 import org.springaicommunity.mcp.annotation.McpToolListChanged;
-
+import io.modelcontextprotocol.json.McpJsonMapper;
 import io.modelcontextprotocol.spec.McpSchema;
 
 /**
@@ -24,8 +24,16 @@ import io.modelcontextprotocol.spec.McpSchema;
 public class SyncMcpToolListChangedMethodCallbackTests {
 
 	private static final List<McpSchema.Tool> TEST_TOOLS = List.of(
-			McpSchema.Tool.builder().name("test-tool-1").description("Test Tool 1").inputSchema("{}").build(),
-			McpSchema.Tool.builder().name("test-tool-2").description("Test Tool 2").inputSchema("{}").build());
+			McpSchema.Tool.builder()
+				.name("test-tool-1")
+				.description("Test Tool 1")
+				.inputSchema(McpJsonMapper.createDefault(), "{}")
+				.build(),
+			McpSchema.Tool.builder()
+				.name("test-tool-2")
+				.description("Test Tool 2")
+				.inputSchema(McpJsonMapper.createDefault(), "{}")
+				.build());
 
 	/**
 	 * Test class with valid methods.

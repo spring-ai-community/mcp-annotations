@@ -3,12 +3,15 @@ package org.springaicommunity.mcp.provider.tool;
 import java.lang.reflect.Method;
 import java.util.List;
 
+import io.modelcontextprotocol.json.McpJsonMapper;
 import io.modelcontextprotocol.util.Assert;
 import org.springaicommunity.mcp.annotation.McpTool;
 
 public abstract class AbstractMcpToolProvider {
 
 	protected final List<Object> toolObjects;
+
+	protected McpJsonMapper jsonMapper = McpJsonMapper.createDefault();
 
 	public AbstractMcpToolProvider(List<Object> toolObjects) {
 		Assert.notNull(toolObjects, "toolObjects cannot be null");
@@ -25,6 +28,14 @@ public abstract class AbstractMcpToolProvider {
 
 	protected Class<? extends Throwable> doGetToolCallException() {
 		return Exception.class;
+	}
+
+	public void setJsonMapper(McpJsonMapper jsonMapper) {
+		this.jsonMapper = jsonMapper;
+	}
+
+	public McpJsonMapper getJsonMapper() {
+		return this.jsonMapper;
 	}
 
 }

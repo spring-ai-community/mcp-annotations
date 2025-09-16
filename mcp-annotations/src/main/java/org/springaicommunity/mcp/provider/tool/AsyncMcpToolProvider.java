@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.function.BiFunction;
 import java.util.stream.Stream;
 
+import io.modelcontextprotocol.json.McpJsonMapper;
 import io.modelcontextprotocol.server.McpAsyncServerExchange;
 import io.modelcontextprotocol.server.McpServerFeatures.AsyncToolSpecification;
 import io.modelcontextprotocol.spec.McpSchema;
@@ -79,7 +80,7 @@ public class AsyncMcpToolProvider extends AbstractMcpToolProvider {
 					var toolBuilder = McpSchema.Tool.builder()
 						.name(toolName)
 						.description(toolDescrption)
-						.inputSchema(inputSchema);
+						.inputSchema(this.getJsonMapper(), inputSchema);
 
 					var title = toolJavaAnnotation.title();
 
@@ -119,8 +120,8 @@ public class AsyncMcpToolProvider extends AbstractMcpToolProvider {
 									: null;
 							if (!ClassUtils.isPrimitiveOrWrapper(methodReturnType)
 									&& !ClassUtils.isSimpleValueType(methodReturnType)) {
-								toolBuilder
-									.outputSchema(JsonSchemaGenerator.generateFromClass((Class<?>) typeArgument));
+								toolBuilder.outputSchema(this.getJsonMapper(),
+										JsonSchemaGenerator.generateFromClass((Class<?>) typeArgument));
 							}
 						});
 					}

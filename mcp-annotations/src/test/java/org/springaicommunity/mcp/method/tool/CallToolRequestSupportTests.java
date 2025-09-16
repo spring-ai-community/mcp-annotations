@@ -446,8 +446,8 @@ public class CallToolRequestSupportTests {
 		assertThat(result).isNotNull();
 		assertThat(result.isError()).isFalse();
 		assertThat(result.structuredContent()).isNotNull();
-		assertThat(result.structuredContent()).containsEntry("message", "test-message");
-		assertThat(result.structuredContent()).containsEntry("value", 42);
+		assertThat((Map<String, Object>) result.structuredContent()).containsEntry("message", "test-message");
+		assertThat((Map<String, Object>) result.structuredContent()).containsEntry("value", 42);
 	}
 
 	@Test
