@@ -1978,6 +1978,39 @@ public class StatelessMcpServerFactory {
 }
 ```
 
+## Tool Call Exception Handling
+
+The library provides configurable exception handling for tool method callbacks, allowing exceptions to be converted into structured error responses.
+
+### Configuration
+
+Each callback can be configured with a `toolCallExceptionClass` that determines exception handling behavior:
+
+- **Default**: `Exception.class` - All exceptions converted to `CallToolResult` error responses
+- **Custom**: Specify a specific exception type for selective handling
+
+### Behavior
+
+| Exception Type | Matches Configuration | Result |
+|---|---|---|
+| Configured type | ✅ Yes | Returns `CallToolResult` with `isError(true)` |
+| Other type | ❌ No | Exception propagated (sync) / `Mono.error()` (async) |
+
+### Error Result Format
+
+Matching exceptions are converted to structured error results:
+
+```java
+CallToolResult.builder()
+    .isError(true)
+    .addTextContent("Error invoking method: " + exception.getMessage())
+    .build()
+```
+
+### Custom Exception Types
+
+Override `AbstractMcpToolProvider#doGetToolCallException()` to customize the exception type passed to callbacks.
+
 
 ## Features
 
@@ -1990,6 +2023,7 @@ public class StatelessMcpServerFactory {
 - **URI template support** - Powerful URI template handling for resource and completion operations
 - **Tool support with automatic JSON schema generation** - Create MCP tools with automatic input/output schema generation from method signatures
 - **Dynamic schema support via CallToolRequest** - Tools can accept `CallToolRequest` parameters to handle dynamic schemas at runtime
+- **Configurable exception handling** - Flexible error handling with customizable exception types and automatic error result generation
 - **Logging consumer support** - Handle logging message notifications from MCP servers
 - **Sampling support** - Handle sampling requests from MCP servers
 - **Progress notification support** - Handle progress notifications for long-running operations
