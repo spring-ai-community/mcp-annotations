@@ -483,7 +483,7 @@ public class SyncMcpToolMethodCallbackTests {
 	}
 
 	@Test
-	public void testToolWithStructuredOutput() throws Exception {
+	public void testToolWithTextOutput() throws Exception {
 		TestToolProvider provider = new TestToolProvider();
 		Method method = TestToolProvider.class.getMethod("processObject", TestObject.class);
 		SyncMcpToolMethodCallback callback = new SyncMcpToolMethodCallback(ReturnMode.TEXT, method, provider);
@@ -544,6 +544,28 @@ public class SyncMcpToolMethodCallbackTests {
 		assertThatJson(jsonText).when(Option.IGNORING_ARRAY_ORDER).isArray().hasSize(1);
 		assertThatJson(jsonText).when(Option.IGNORING_ARRAY_ORDER).isEqualTo(json("""
 				[{"name":"test","value":42}]"""));
+	}
+
+	@Test
+	public void testToolReturningStructuredComplexListObject() throws Exception {
+		TestToolProvider provider = new TestToolProvider();
+		Method method = TestToolProvider.class.getMethod("returnListObjectTool", String.class, int.class);
+		SyncMcpToolMethodCallback callback = new SyncMcpToolMethodCallback(ReturnMode.STRUCTURED, method, provider);
+
+		McpSyncServerExchange exchange = mock(McpSyncServerExchange.class);
+		CallToolRequest request = new CallToolRequest("return-list-object-tool", Map.of("name", "test", "value", 42));
+
+		CallToolResult result = callback.apply(exchange, request);
+
+		assertThat(result).isNotNull();
+		assertThat(result.isError()).isFalse();
+
+		assertThat(result.structuredContent()).isNotNull();
+		assertThat(result.structuredContent()).isInstanceOf(List.class);
+		assertThat((List<?>) result.structuredContent()).hasSize(1);
+		Map<String, Object> firstEntry = ((List<Map<String, Object>>) result.structuredContent()).get(0);
+		assertThat(firstEntry).containsEntry("name", "test");
+		assertThat(firstEntry).containsEntry("value", 42);
 	}
 
 	@Test
