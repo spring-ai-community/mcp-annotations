@@ -16,7 +16,6 @@
 
 package org.springaicommunity.mcp.method.tool;
 
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Map;
 
@@ -112,7 +111,7 @@ public class SyncMcpToolMethodCallbackExceptionHandlingTests {
 		assertThat(result.isError()).isTrue();
 		assertThat(result.content()).hasSize(1);
 		assertThat(result.content().get(0)).isInstanceOf(TextContent.class);
-		assertThat(((TextContent) result.content().get(0)).text()).contains("Error invoking method");
+		assertThat(((TextContent) result.content().get(0)).text()).contains("Runtime error: test");
 	}
 
 	@Test
@@ -133,7 +132,7 @@ public class SyncMcpToolMethodCallbackExceptionHandlingTests {
 		assertThat(result.isError()).isTrue();
 		assertThat(result.content()).hasSize(1);
 		assertThat(result.content().get(0)).isInstanceOf(TextContent.class);
-		assertThat(((TextContent) result.content().get(0)).text()).contains("Error invoking method");
+		assertThat(((TextContent) result.content().get(0)).text()).contains("Custom runtime error: test");
 	}
 
 	@Test
@@ -175,7 +174,7 @@ public class SyncMcpToolMethodCallbackExceptionHandlingTests {
 		assertThat(result.isError()).isTrue();
 		assertThat(result.content()).hasSize(1);
 		assertThat(result.content().get(0)).isInstanceOf(TextContent.class);
-		assertThat(((TextContent) result.content().get(0)).text()).contains("Error invoking method");
+		assertThat(((TextContent) result.content().get(0)).text()).contains("Business error: test");
 	}
 
 	@Test
@@ -193,7 +192,7 @@ public class SyncMcpToolMethodCallbackExceptionHandlingTests {
 		// The RuntimeException wrapper should NOT be caught
 		assertThatThrownBy(() -> callback.apply(exchange, request)).isInstanceOf(RuntimeException.class)
 			.hasMessageContaining("Error invoking method")
-			.hasCauseInstanceOf(InvocationTargetException.class);
+			.hasCauseInstanceOf(BusinessException.class);
 	}
 
 	@Test
@@ -237,7 +236,7 @@ public class SyncMcpToolMethodCallbackExceptionHandlingTests {
 		assertThat(result.isError()).isTrue();
 		assertThat(result.content()).hasSize(1);
 		assertThat(result.content().get(0)).isInstanceOf(TextContent.class);
-		assertThat(((TextContent) result.content().get(0)).text()).contains("Error invoking method");
+		assertThat(((TextContent) result.content().get(0)).text()).contains("Null pointer: test");
 	}
 
 	@Test
@@ -259,7 +258,7 @@ public class SyncMcpToolMethodCallbackExceptionHandlingTests {
 		assertThat(result.isError()).isTrue();
 		assertThat(result.content()).hasSize(1);
 		assertThat(result.content().get(0)).isInstanceOf(TextContent.class);
-		assertThat(((TextContent) result.content().get(0)).text()).contains("Error invoking method");
+		assertThat(((TextContent) result.content().get(0)).text()).contains("Illegal argument: test");
 	}
 
 	@Test
@@ -287,7 +286,7 @@ public class SyncMcpToolMethodCallbackExceptionHandlingTests {
 		CallToolRequest exceptionRequest = new CallToolRequest("runtime-exception-tool", Map.of("input", "error"));
 		CallToolResult exceptionResult = exceptionCallback.apply(exchange, exceptionRequest);
 		assertThat(exceptionResult.isError()).isTrue();
-		assertThat(((TextContent) exceptionResult.content().get(0)).text()).contains("Error invoking method");
+		assertThat(((TextContent) exceptionResult.content().get(0)).text()).contains("Runtime error: error");
 	}
 
 	@Test

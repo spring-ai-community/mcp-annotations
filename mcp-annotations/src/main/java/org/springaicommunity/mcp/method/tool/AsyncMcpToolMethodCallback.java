@@ -78,7 +78,7 @@ public final class AsyncMcpToolMethodCallback extends AbstractAsyncMcpToolMethod
 			}
 			catch (Exception e) {
 				if (this.toolCallExceptionClass.isInstance(e)) {
-					return this.createErrorResult(e);
+					return this.createAsyncErrorResult(e);
 				}
 				return Mono.error(e);
 			}

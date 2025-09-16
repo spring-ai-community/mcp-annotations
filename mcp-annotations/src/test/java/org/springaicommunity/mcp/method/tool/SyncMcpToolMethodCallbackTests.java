@@ -364,10 +364,7 @@ public class SyncMcpToolMethodCallbackTests {
 		assertThat(result.isError()).isTrue();
 		assertThat(result.content()).hasSize(1);
 		assertThat(result.content().get(0)).isInstanceOf(TextContent.class);
-		assertThat(((TextContent) result.content().get(0)).text()).contains("Error invoking method");
-		// The actual error message format may be different, so let's just check for the
-		// method name
-		assertThat(((TextContent) result.content().get(0)).text()).contains("exceptionTool");
+		assertThat(((TextContent) result.content().get(0)).text()).contains("Tool execution failed: test");
 	}
 
 	@Test
@@ -468,7 +465,8 @@ public class SyncMcpToolMethodCallbackTests {
 		assertThat(result.isError()).isTrue();
 		assertThat(result.content()).hasSize(1);
 		assertThat(result.content().get(0)).isInstanceOf(TextContent.class);
-		assertThat(((TextContent) result.content().get(0)).text()).contains("Error invoking method");
+		assertThat(((TextContent) result.content().get(0)).text()).contains(
+				"Cannot construct instance of `org.springaicommunity.mcp.method.tool.SyncMcpToolMethodCallbackTests$TestObject` ");
 	}
 
 	@Test

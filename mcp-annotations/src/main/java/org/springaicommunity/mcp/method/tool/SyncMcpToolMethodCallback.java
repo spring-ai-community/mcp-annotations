@@ -60,7 +60,7 @@ public final class SyncMcpToolMethodCallback extends AbstractSyncMcpToolMethodCa
 	 */
 	@Override
 	public CallToolResult apply(McpSyncServerExchange exchange, CallToolRequest request) {
-		validateRequest(request);
+		validateSyncRequest(request);
 
 		try {
 			// Build arguments for the method call, passing the full request for
@@ -75,7 +75,7 @@ public final class SyncMcpToolMethodCallback extends AbstractSyncMcpToolMethodCa
 		}
 		catch (Exception e) {
 			if (this.toolCallExceptionClass.isInstance(e)) {
-				return this.createErrorResult(e);
+				return this.createSyncErrorResult(e);
 			}
 			throw e;
 		}
