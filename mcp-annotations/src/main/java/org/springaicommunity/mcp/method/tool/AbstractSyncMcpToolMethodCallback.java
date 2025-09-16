@@ -162,7 +162,7 @@ public abstract class AbstractSyncMcpToolMethodCallback<T> {
 
 		if (this.returnMode == ReturnMode.STRUCTURED) {
 			String jsonOutput = JsonParser.toJson(result);
-			Map<String, Object> structuredOutput = JsonParser.fromJson(jsonOutput, MAP_TYPE_REFERENCE);
+			Object structuredOutput = JsonParser.fromJson(jsonOutput, Object.class);
 			return CallToolResult.builder().structuredContent(structuredOutput).build();
 		}
 

@@ -10,6 +10,7 @@ import java.util.Locale;
 import java.util.Map;
 
 import io.modelcontextprotocol.common.McpTransportContext;
+import io.modelcontextprotocol.server.McpSyncServerExchange;
 import io.modelcontextprotocol.spec.McpSchema.CallToolRequest;
 import io.modelcontextprotocol.spec.McpSchema.CallToolResult;
 import io.modelcontextprotocol.spec.McpSchema.TextContent;
@@ -126,6 +127,11 @@ public class SyncStatelessMcpToolMethodCallbackTests {
 		@McpTool(name = "context-and-request-tool", description = "Tool with context and request")
 		public String toolWithContextAndRequest(McpTransportContext context, CallToolRequest request) {
 			return "Context present, Tool: " + request.name();
+		}
+
+		@McpTool(name = "return-list-object-tool", description = "Tool that returns a list of complex objects")
+		public List<TestObject> returnListObjectTool(String name, int value) {
+			return List.of(new TestObject(name, value));
 		}
 
 		/**
@@ -541,6 +547,28 @@ public class SyncStatelessMcpToolMethodCallbackTests {
 		assertThat(result.structuredContent()).isNotNull();
 		assertThat((Map<String, Object>) result.structuredContent()).containsEntry("name", "test");
 		assertThat((Map<String, Object>) result.structuredContent()).containsEntry("value", 42);
+	}
+
+	@Test
+	public void testToolReturningStructuredComplexListObject() throws Exception {
+		TestToolProvider provider = new TestToolProvider();
+		Method method = TestToolProvider.class.getMethod("returnListObjectTool", String.class, int.class);
+		SyncMcpToolMethodCallback callback = new SyncMcpToolMethodCallback(ReturnMode.STRUCTURED, method, provider);
+
+		McpSyncServerExchange exchange = mock(McpSyncServerExchange.class);
+		CallToolRequest request = new CallToolRequest("return-list-object-tool", Map.of("name", "test", "value", 42));
+
+		CallToolResult result = callback.apply(exchange, request);
+
+		assertThat(result).isNotNull();
+		assertThat(result.isError()).isFalse();
+
+		assertThat(result.structuredContent()).isNotNull();
+		assertThat(result.structuredContent()).isInstanceOf(List.class);
+		assertThat((List<?>) result.structuredContent()).hasSize(1);
+		Map<String, Object> firstEntry = ((List<Map<String, Object>>) result.structuredContent()).get(0);
+		assertThat(firstEntry).containsEntry("name", "test");
+		assertThat(firstEntry).containsEntry("value", 42);
 	}
 
 	@Test

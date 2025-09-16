@@ -694,6 +694,47 @@ public class SyncMcpToolProviderTests {
 	}
 
 	@Test
+	void testToolWithStructuredListReturnType() {
+
+		record CustomResult(String message) {
+		}
+
+		class ListResponseTool {
+
+			@McpTool(name = "list-response", description = "Tool List response", generateOutputSchema = true)
+			public List<CustomResult> listResponseTool(String input) {
+				return List.of(new CustomResult("Processed: " + input));
+			}
+
+		}
+
+		ListResponseTool toolObject = new ListResponseTool();
+		SyncMcpToolProvider provider = new SyncMcpToolProvider(List.of(toolObject));
+
+		List<SyncToolSpecification> toolSpecs = provider.getToolSpecifications();
+
+		assertThat(toolSpecs).hasSize(1);
+		SyncToolSpecification toolSpec = toolSpecs.get(0);
+
+		assertThat(toolSpec.tool().name()).isEqualTo("list-response");
+		assertThat(toolSpec.tool().outputSchema()).isNotNull();
+
+		BiFunction<McpSyncServerExchange, CallToolRequest, McpSchema.CallToolResult> callHandler = toolSpec
+			.callHandler();
+
+		McpSchema.CallToolResult result = callHandler.apply(mock(McpSyncServerExchange.class),
+				new CallToolRequest("list-response", Map.of("input", "test")));
+
+		assertThat(result).isNotNull();
+		assertThat(result.isError()).isFalse();
+
+		assertThat(result.structuredContent()).isInstanceOf(List.class);
+		assertThat((List<?>) result.structuredContent()).hasSize(1);
+		Map<String, Object> firstEntry = ((List<Map<String, Object>>) result.structuredContent()).get(0);
+		assertThat(firstEntry).containsEntry("message", "Processed: test");
+	}
+
+	@Test
 	void testToolWithPrimitiveReturnTypeNoOutputSchema() {
 		class PrimitiveTool {
 

@@ -251,7 +251,7 @@ public abstract class AbstractAsyncMcpToolMethodCallback<T> {
 
 		if (this.returnMode == ReturnMode.STRUCTURED) {
 			String jsonOutput = JsonParser.toJson(value);
-			Map<String, Object> structuredOutput = JsonParser.fromJson(jsonOutput, MAP_TYPE_REFERENCE);
+			Object structuredOutput = JsonParser.fromJson(jsonOutput, MAP_TYPE_REFERENCE);
 			return CallToolResult.builder().structuredContent(structuredOutput).build();
 		}
 
