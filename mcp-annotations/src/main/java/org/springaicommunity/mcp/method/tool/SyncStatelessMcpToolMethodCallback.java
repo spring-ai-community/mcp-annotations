@@ -52,7 +52,7 @@ public final class SyncStatelessMcpToolMethodCallback extends AbstractSyncMcpToo
 
 	@Override
 	public CallToolResult apply(McpTransportContext mcpTransportContext, CallToolRequest callToolRequest) {
-		validateRequest(callToolRequest);
+		validateSyncRequest(callToolRequest);
 
 		try {
 			// Build arguments for the method call
@@ -67,7 +67,7 @@ public final class SyncStatelessMcpToolMethodCallback extends AbstractSyncMcpToo
 		}
 		catch (Exception e) {
 			if (this.toolCallExceptionClass.isInstance(e)) {
-				return this.createErrorResult(e);
+				return this.createSyncErrorResult(e);
 			}
 			throw e;
 		}

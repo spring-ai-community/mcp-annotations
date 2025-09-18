@@ -399,8 +399,7 @@ public class SyncStatelessMcpToolMethodCallbackTests {
 		assertThat(result.isError()).isTrue();
 		assertThat(result.content()).hasSize(1);
 		assertThat(result.content().get(0)).isInstanceOf(TextContent.class);
-		assertThat(((TextContent) result.content().get(0)).text()).contains("Error invoking method");
-		assertThat(((TextContent) result.content().get(0)).text()).contains("exceptionTool");
+		assertThat(((TextContent) result.content().get(0)).text()).contains("Tool execution failed: test");
 	}
 
 	@Test
@@ -512,7 +511,8 @@ public class SyncStatelessMcpToolMethodCallbackTests {
 		assertThat(result.isError()).isTrue();
 		assertThat(result.content()).hasSize(1);
 		assertThat(result.content().get(0)).isInstanceOf(TextContent.class);
-		assertThat(((TextContent) result.content().get(0)).text()).contains("Error invoking method");
+		assertThat(((TextContent) result.content().get(0)).text()).contains(
+				"Cannot construct instance of `org.springaicommunity.mcp.method.tool.SyncStatelessMcpToolMethodCallbackTests$TestObject`");
 	}
 
 	@Test
