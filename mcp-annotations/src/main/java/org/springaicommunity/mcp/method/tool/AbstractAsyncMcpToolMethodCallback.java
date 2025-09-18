@@ -147,10 +147,7 @@ public abstract class AbstractAsyncMcpToolMethodCallback<T> extends AbstractMcpT
 	 */
 	protected Mono<CallToolResult> createAsyncErrorResult(Exception e) {
 		Throwable rootCause = findCauseUsingPlainJava(e);
-		return Mono.just(CallToolResult.builder()
-			.isError(true)
-			.addTextContent(rootCause.getMessage())
-			.build());
+		return Mono.just(CallToolResult.builder().isError(true).addTextContent(rootCause.getMessage()).build());
 	}
 
 	/**
