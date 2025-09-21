@@ -14,6 +14,7 @@ import io.modelcontextprotocol.spec.McpSchema.BlobResourceContents;
 import io.modelcontextprotocol.spec.McpSchema.ReadResourceRequest;
 import io.modelcontextprotocol.spec.McpSchema.ReadResourceResult;
 import io.modelcontextprotocol.spec.McpSchema.ResourceContents;
+import io.modelcontextprotocol.spec.McpSchema.Role;
 import io.modelcontextprotocol.spec.McpSchema.TextResourceContents;
 import io.modelcontextprotocol.util.McpUriTemplateManager;
 import io.modelcontextprotocol.util.McpUriTemplateManagerFactory;
@@ -208,6 +209,11 @@ public class AsyncStatelessMcpResourceMethodCallbackTests {
 			}
 
 			@Override
+			public String title() {
+				return "";
+			}
+
+			@Override
 			public String description() {
 				return "";
 			}
@@ -217,6 +223,30 @@ public class AsyncStatelessMcpResourceMethodCallbackTests {
 				return "text/plain";
 			}
 
+			@Override
+			public McpAnnotations annotations() {
+				return new McpAnnotations() {
+					@Override
+					public Class<? extends java.lang.annotation.Annotation> annotationType() {
+						return McpAnnotations.class;
+					}
+
+					@Override
+					public Role[] audience() {
+						return new Role[] { Role.USER };
+					}
+
+					@Override
+					public String lastModified() {
+						return "";
+					}
+
+					@Override
+					public double priority() {
+						return 0.5;
+					}
+				};
+			}
 		};
 	}
 
@@ -524,6 +554,11 @@ public class AsyncStatelessMcpResourceMethodCallbackTests {
 			}
 
 			@Override
+			public String title() {
+				return "";
+			}
+
+			@Override
 			public String description() {
 				return "";
 			}
@@ -533,6 +568,30 @@ public class AsyncStatelessMcpResourceMethodCallbackTests {
 				return "";
 			}
 
+			@Override
+			public McpAnnotations annotations() {
+				return new McpAnnotations() {
+					@Override
+					public Class<? extends java.lang.annotation.Annotation> annotationType() {
+						return McpAnnotations.class;
+					}
+
+					@Override
+					public Role[] audience() {
+						return new Role[] { Role.USER };
+					}
+
+					@Override
+					public String lastModified() {
+						return "";
+					}
+
+					@Override
+					public double priority() {
+						return 0.5;
+					}
+				};
+			}
 		};
 
 		assertThatThrownBy(() -> AsyncStatelessMcpResourceMethodCallback.builder()

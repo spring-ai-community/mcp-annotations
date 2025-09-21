@@ -13,6 +13,7 @@ import io.modelcontextprotocol.spec.McpSchema.BlobResourceContents;
 import io.modelcontextprotocol.spec.McpSchema.ReadResourceRequest;
 import io.modelcontextprotocol.spec.McpSchema.ReadResourceResult;
 import io.modelcontextprotocol.spec.McpSchema.ResourceContents;
+import io.modelcontextprotocol.spec.McpSchema.Role;
 import io.modelcontextprotocol.spec.McpSchema.TextResourceContents;
 import org.junit.jupiter.api.Test;
 import org.springaicommunity.mcp.adapter.ResourceAdapter;
@@ -224,6 +225,11 @@ public class SyncMcpResourceMethodCallbackTests {
 			}
 
 			@Override
+			public String title() {
+				return "";
+			}
+
+			@Override
 			public String description() {
 				return "Test resource description";
 			}
@@ -231,6 +237,31 @@ public class SyncMcpResourceMethodCallbackTests {
 			@Override
 			public String mimeType() {
 				return "text/plain";
+			}
+
+			@Override
+			public McpAnnotations annotations() {
+				return new McpAnnotations() {
+					@Override
+					public Class<? extends java.lang.annotation.Annotation> annotationType() {
+						return McpAnnotations.class;
+					}
+
+					@Override
+					public Role[] audience() {
+						return new Role[] { Role.USER };
+					}
+
+					@Override
+					public String lastModified() {
+						return "";
+					}
+
+					@Override
+					public double priority() {
+						return 0.5;
+					}
+				};
 			}
 		};
 	}
@@ -494,6 +525,11 @@ public class SyncMcpResourceMethodCallbackTests {
 			}
 
 			@Override
+			public String title() {
+				return "";
+			}
+
+			@Override
 			public String description() {
 				return "Test resource with extra URI variables";
 			}
@@ -501,6 +537,31 @@ public class SyncMcpResourceMethodCallbackTests {
 			@Override
 			public String mimeType() {
 				return "text/plain";
+			}
+
+			@Override
+			public McpAnnotations annotations() {
+				return new McpAnnotations() {
+					@Override
+					public Class<? extends java.lang.annotation.Annotation> annotationType() {
+						return McpAnnotations.class;
+					}
+
+					@Override
+					public Role[] audience() {
+						return new Role[] { Role.USER };
+					}
+
+					@Override
+					public String lastModified() {
+						return "";
+					}
+
+					@Override
+					public double priority() {
+						return 0.5;
+					}
+				};
 			}
 		};
 
