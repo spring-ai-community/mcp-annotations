@@ -20,6 +20,9 @@ import org.springaicommunity.mcp.annotation.McpMeta;
 import org.springaicommunity.mcp.annotation.McpPrompt;
 
 import io.modelcontextprotocol.common.McpTransportContext;
+import io.modelcontextprotocol.server.McpAsyncServerExchange;
+import io.modelcontextprotocol.server.McpSyncServerExchange;
+import io.modelcontextprotocol.spec.McpError;
 import io.modelcontextprotocol.spec.McpSchema.GetPromptRequest;
 import io.modelcontextprotocol.spec.McpSchema.GetPromptResult;
 import io.modelcontextprotocol.spec.McpSchema.Prompt;
@@ -128,6 +131,21 @@ public class SyncStatelessMcpPromptMethodCallbackTests {
 		}
 
 		public GetPromptResult duplicateMetaParameters(McpMeta meta1, McpMeta meta2) {
+			return new GetPromptResult("Invalid", List.of());
+		}
+
+		@McpPrompt(name = "failing-prompt", description = "A prompt that throws an exception")
+		public GetPromptResult getFailingPrompt(GetPromptRequest request) {
+			throw new RuntimeException("Test exception");
+		}
+
+		// Invalid parameter types for stateless methods
+		public GetPromptResult invalidSyncExchangeParameter(McpSyncServerExchange exchange, GetPromptRequest request) {
+			return new GetPromptResult("Invalid", List.of());
+		}
+
+		public GetPromptResult invalidAsyncExchangeParameter(McpAsyncServerExchange exchange,
+				GetPromptRequest request) {
 			return new GetPromptResult("Invalid", List.of());
 		}
 
@@ -607,6 +625,68 @@ public class SyncStatelessMcpPromptMethodCallbackTests {
 			.prompt(prompt)
 			.build()).isInstanceOf(IllegalArgumentException.class)
 			.hasMessageContaining("Method cannot have more than one McpMeta parameter");
+	}
+
+	@Test
+	public void testMethodInvocationError() throws Exception {
+		TestPromptProvider provider = new TestPromptProvider();
+		Method method = TestPromptProvider.class.getMethod("getFailingPrompt", GetPromptRequest.class);
+
+		Prompt prompt = createTestPrompt("failing-prompt", "A prompt that throws an exception");
+
+		BiFunction<McpTransportContext, GetPromptRequest, GetPromptResult> callback = SyncStatelessMcpPromptMethodCallback
+			.builder()
+			.method(method)
+			.bean(provider)
+			.prompt(prompt)
+			.build();
+
+		McpTransportContext context = mock(McpTransportContext.class);
+		Map<String, Object> args = new HashMap<>();
+		args.put("name", "John");
+		GetPromptRequest request = new GetPromptRequest("failing-prompt", args);
+
+		// The new error handling should throw McpError instead of the old exception type
+		assertThatThrownBy(() -> callback.apply(context, request)).isInstanceOf(McpError.class)
+			.hasMessageContaining("Error invoking prompt method");
+	}
+
+	@Test
+	public void testInvalidSyncExchangeParameter() throws Exception {
+		TestPromptProvider provider = new TestPromptProvider();
+		Method method = TestPromptProvider.class.getMethod("invalidSyncExchangeParameter", McpSyncServerExchange.class,
+				GetPromptRequest.class);
+
+		Prompt prompt = createTestPrompt("invalid", "Invalid parameter type");
+
+		// Should fail during callback creation due to parameter validation
+		assertThatThrownBy(() -> SyncStatelessMcpPromptMethodCallback.builder()
+			.method(method)
+			.bean(provider)
+			.prompt(prompt)
+			.build()).isInstanceOf(IllegalArgumentException.class)
+			.hasMessageContaining("Stateless Streamable-Http prompt method must not declare parameter of type")
+			.hasMessageContaining("McpSyncServerExchange")
+			.hasMessageContaining("Use McpTransportContext instead");
+	}
+
+	@Test
+	public void testInvalidAsyncExchangeParameter() throws Exception {
+		TestPromptProvider provider = new TestPromptProvider();
+		Method method = TestPromptProvider.class.getMethod("invalidAsyncExchangeParameter",
+				McpAsyncServerExchange.class, GetPromptRequest.class);
+
+		Prompt prompt = createTestPrompt("invalid", "Invalid parameter type");
+
+		// Should fail during callback creation due to parameter validation
+		assertThatThrownBy(() -> SyncStatelessMcpPromptMethodCallback.builder()
+			.method(method)
+			.bean(provider)
+			.prompt(prompt)
+			.build()).isInstanceOf(IllegalArgumentException.class)
+			.hasMessageContaining("Stateless Streamable-Http prompt method must not declare parameter of type")
+			.hasMessageContaining("McpAsyncServerExchange")
+			.hasMessageContaining("Use McpTransportContext instead");
 	}
 
 }

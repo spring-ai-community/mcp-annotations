@@ -7,9 +7,13 @@ package org.springaicommunity.mcp.method.prompt;
 import java.lang.reflect.Method;
 import java.util.function.BiFunction;
 
+import org.springaicommunity.mcp.ErrorUtils;
 import org.springaicommunity.mcp.annotation.McpPrompt;
-
+import io.modelcontextprotocol.common.McpTransportContext;
 import io.modelcontextprotocol.server.McpAsyncServerExchange;
+import io.modelcontextprotocol.server.McpSyncServerExchange;
+import io.modelcontextprotocol.spec.McpError;
+import io.modelcontextprotocol.spec.McpSchema.ErrorCodes;
 import io.modelcontextprotocol.spec.McpSchema.GetPromptRequest;
 import io.modelcontextprotocol.spec.McpSchema.GetPromptResult;
 import reactor.core.publisher.Mono;
@@ -29,6 +33,48 @@ public final class AsyncMcpPromptMethodCallback extends AbstractMcpPromptMethodC
 
 	private AsyncMcpPromptMethodCallback(Builder builder) {
 		super(builder.method, builder.bean, builder.prompt);
+	}
+
+	@Override
+	protected void validateParamType(Class<?> paramType) {
+
+		if (McpSyncServerExchange.class.isAssignableFrom(paramType)) {
+			throw new IllegalArgumentException("Async prompt method must not declare parameter of type: "
+					+ paramType.getName() + ". Use McpAsyncServerExchange instead." + " Method: "
+					+ this.method.getName() + " in " + this.method.getDeclaringClass().getName());
+		}
+	}
+
+	@Override
+	protected Object assignExchangeType(Class<?> paramType, Object exchange) {
+
+		if (McpTransportContext.class.isAssignableFrom(paramType)) {
+			if (exchange instanceof McpTransportContext transportContext) {
+				return transportContext;
+			}
+			else if (exchange instanceof McpSyncServerExchange syncServerExchange) {
+				throw new IllegalArgumentException("Unsupported Async exchange type: "
+						+ syncServerExchange.getClass().getName() + " for Async method: " + method.getName() + " in "
+						+ method.getDeclaringClass().getName());
+
+			}
+			else if (exchange instanceof McpAsyncServerExchange asyncServerExchange) {
+				return asyncServerExchange.transportContext();
+			}
+		}
+		else if (McpAsyncServerExchange.class.isAssignableFrom(paramType)) {
+			if (exchange instanceof McpAsyncServerExchange asyncServerExchange) {
+				return asyncServerExchange;
+			}
+
+			throw new IllegalArgumentException(
+					"Unsupported exchange type: " + (exchange != null ? exchange.getClass().getName() : "null")
+							+ " for Async method: " + method.getName() + " in " + method.getDeclaringClass().getName());
+		}
+
+		throw new IllegalArgumentException(
+				"Unsupported exchange type: " + (exchange != null ? exchange.getClass().getName() : "null")
+						+ " for method: " + method.getName() + " in " + method.getDeclaringClass().getName());
 	}
 
 	/**
@@ -69,15 +115,24 @@ public final class AsyncMcpPromptMethodCallback extends AbstractMcpPromptMethodC
 				}
 			}
 			catch (Exception e) {
-				return Mono
-					.error(new McpPromptMethodException("Error invoking prompt method: " + this.method.getName(), e));
+				if (e instanceof McpError mcpError && mcpError.getJsonRpcError() != null) {
+					return Mono.error(mcpError);
+				}
+
+				return Mono.error(McpError.builder(ErrorCodes.INVALID_PARAMS)
+					.message("Error invoking prompt method: " + this.method.getName() + " in "
+							+ this.bean.getClass().getName() + ". /nCause: "
+							+ ErrorUtils.findCauseUsingPlainJava(e).getMessage())
+					.data(ErrorUtils.findCauseUsingPlainJava(e).getMessage())
+					.build());
 			}
 		});
 	}
 
 	@Override
-	protected boolean isExchangeOrContextType(Class<?> paramType) {
-		return McpAsyncServerExchange.class.isAssignableFrom(paramType);
+	protected boolean isSupportedExchangeOrContextType(Class<?> paramType) {
+		return (McpAsyncServerExchange.class.isAssignableFrom(paramType)
+				|| McpTransportContext.class.isAssignableFrom(paramType));
 	}
 
 	@Override

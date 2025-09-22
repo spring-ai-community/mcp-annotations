@@ -8,7 +8,10 @@ import java.lang.reflect.Method;
 import java.util.List;
 import java.util.function.BiFunction;
 
+import io.modelcontextprotocol.common.McpTransportContext;
+import io.modelcontextprotocol.server.McpAsyncServerExchange;
 import io.modelcontextprotocol.server.McpSyncServerExchange;
+import io.modelcontextprotocol.spec.McpError;
 import io.modelcontextprotocol.spec.McpSchema.BlobResourceContents;
 import io.modelcontextprotocol.spec.McpSchema.ReadResourceRequest;
 import io.modelcontextprotocol.spec.McpSchema.ReadResourceResult;
@@ -202,6 +205,24 @@ public class SyncMcpResourceMethodCallbackTests {
 		public ReadResourceResult duplicateRequestParameters(ReadResourceRequest request1,
 				ReadResourceRequest request2) {
 			return new ReadResourceResult(List.of());
+		}
+
+		@McpResource(uri = "failing-resource://resource", description = "A resource that throws an exception")
+		public ReadResourceResult getFailingResource(ReadResourceRequest request) {
+			throw new RuntimeException("Test exception");
+		}
+
+		// Invalid parameter types for sync methods
+		public ReadResourceResult invalidAsyncExchangeParameter(McpAsyncServerExchange exchange,
+				ReadResourceRequest request) {
+			return new ReadResourceResult(List.of());
+		}
+
+		@McpResource(uri = "transport-context://resource", description = "A resource with transport context")
+		public ReadResourceResult getResourceWithTransportContext(McpTransportContext context,
+				ReadResourceRequest request) {
+			return new ReadResourceResult(List.of(new TextResourceContents(request.uri(), "text/plain",
+					"Content with transport context for " + request.uri())));
 		}
 
 	}
@@ -1123,6 +1144,65 @@ public class SyncMcpResourceMethodCallbackTests {
 			.resource(ResourceAdapter.asResource(createMockMcpResource()))
 			.build()).isInstanceOf(IllegalArgumentException.class)
 			.hasMessageContaining("Method cannot have more than one McpMeta parameter");
+	}
+
+	@Test
+	public void testMethodInvocationError() throws Exception {
+		TestResourceProvider provider = new TestResourceProvider();
+		Method method = TestResourceProvider.class.getMethod("getFailingResource", ReadResourceRequest.class);
+		McpResource resourceAnnotation = method.getAnnotation(McpResource.class);
+
+		BiFunction<McpSyncServerExchange, ReadResourceRequest, ReadResourceResult> callback = SyncMcpResourceMethodCallback
+			.builder()
+			.method(method)
+			.bean(provider)
+			.resource(ResourceAdapter.asResource(resourceAnnotation))
+			.build();
+
+		McpSyncServerExchange exchange = mock(McpSyncServerExchange.class);
+		ReadResourceRequest request = new ReadResourceRequest("failing-resource://resource");
+
+		// The new error handling should throw McpError instead of custom exceptions
+		assertThatThrownBy(() -> callback.apply(exchange, request)).isInstanceOf(McpError.class)
+			.hasMessageContaining("Error invoking resource method");
+	}
+
+	@Test
+	public void testInvalidAsyncExchangeParameter() throws Exception {
+		TestResourceProvider provider = new TestResourceProvider();
+		Method method = TestResourceProvider.class.getMethod("invalidAsyncExchangeParameter",
+				McpAsyncServerExchange.class, ReadResourceRequest.class);
+
+		// Should fail during callback creation due to parameter validation
+		assertThatThrownBy(() -> SyncMcpResourceMethodCallback.builder()
+			.method(method)
+			.bean(provider)
+			.resource(ResourceAdapter.asResource(createMockMcpResource()))
+			.build())
+			.isInstanceOf(IllegalArgumentException.class)
+			.hasMessageContaining(
+					"Method parameters must be exchange, ReadResourceRequest, String, McpMeta, or @McpProgressToken")
+			.hasMessageContaining("McpAsyncServerExchange");
+	}
+
+	@Test
+	public void testCallbackWithTransportContext() throws Exception {
+		TestResourceProvider provider = new TestResourceProvider();
+		Method method = TestResourceProvider.class.getMethod("getResourceWithTransportContext",
+				McpTransportContext.class, ReadResourceRequest.class);
+		McpResource resourceAnnotation = method.getAnnotation(McpResource.class);
+
+		// Should fail during callback creation due to parameter validation -
+		// McpTransportContext is not supported in resource methods
+		assertThatThrownBy(() -> SyncMcpResourceMethodCallback.builder()
+			.method(method)
+			.bean(provider)
+			.resource(ResourceAdapter.asResource(resourceAnnotation))
+			.build())
+			.isInstanceOf(IllegalArgumentException.class)
+			.hasMessageContaining(
+					"Method parameters must be exchange, ReadResourceRequest, String, McpMeta, or @McpProgressToken")
+			.hasMessageContaining("McpTransportContext");
 	}
 
 }

@@ -21,6 +21,7 @@ import org.springaicommunity.mcp.annotation.McpProgressToken;
 import org.springaicommunity.mcp.annotation.McpPrompt;
 
 import io.modelcontextprotocol.server.McpSyncServerExchange;
+import io.modelcontextprotocol.spec.McpError;
 import io.modelcontextprotocol.spec.McpSchema.GetPromptRequest;
 import io.modelcontextprotocol.spec.McpSchema.GetPromptResult;
 import io.modelcontextprotocol.spec.McpSchema.Prompt;
@@ -37,6 +38,11 @@ import io.modelcontextprotocol.spec.McpSchema.TextContent;
 public class SyncMcpPromptMethodCallbackTests {
 
 	private static class TestPromptProvider {
+
+		@McpPrompt(name = "failing-prompt", description = "A prompt that throws an exception")
+		public GetPromptResult getFailingPrompt(GetPromptRequest request) {
+			throw new RuntimeException("Test exception");
+		}
 
 		@McpPrompt(name = "greeting", description = "A simple greeting prompt")
 		public GetPromptResult getPromptWithRequest(GetPromptRequest request) {
@@ -161,6 +167,31 @@ public class SyncMcpPromptMethodCallbackTests {
 	private Prompt createTestPrompt(String name, String description) {
 		return new Prompt(name, description, List.of(new PromptArgument("name", "User's name", true),
 				new PromptArgument("age", "User's age", false)));
+	}
+
+	@Test
+	public void testMethodInvocationError() throws Exception {
+		TestPromptProvider provider = new TestPromptProvider();
+		Method method = TestPromptProvider.class.getMethod("getFailingPrompt", GetPromptRequest.class);
+
+		Prompt prompt = createTestPrompt("failing-prompt", "A prompt that throws an exception");
+
+		BiFunction<McpSyncServerExchange, GetPromptRequest, GetPromptResult> callback = SyncMcpPromptMethodCallback
+			.builder()
+			.method(method)
+			.bean(provider)
+			.prompt(prompt)
+			.build();
+
+		McpSyncServerExchange exchange = mock(McpSyncServerExchange.class);
+		Map<String, Object> args = new HashMap<>();
+		args.put("name", "John");
+		GetPromptRequest request = new GetPromptRequest("failing-prompt", args);
+
+		// The new error handling should throw McpError instead of
+		// McpPromptMethodException
+		assertThatThrownBy(() -> callback.apply(exchange, request)).isInstanceOf(McpError.class)
+			.hasMessageContaining("Error invoking prompt method");
 	}
 
 	@Test
