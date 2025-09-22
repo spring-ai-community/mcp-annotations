@@ -12,7 +12,9 @@ import java.util.Map;
 import org.springaicommunity.mcp.annotation.McpArg;
 import org.springaicommunity.mcp.annotation.McpMeta;
 import org.springaicommunity.mcp.annotation.McpProgressToken;
-
+import io.modelcontextprotocol.common.McpTransportContext;
+import io.modelcontextprotocol.server.McpAsyncServerExchange;
+import io.modelcontextprotocol.server.McpSyncServerExchange;
 import io.modelcontextprotocol.spec.McpSchema.GetPromptRequest;
 import io.modelcontextprotocol.spec.McpSchema.GetPromptResult;
 import io.modelcontextprotocol.spec.McpSchema.Prompt;
@@ -75,7 +77,10 @@ public abstract class AbstractMcpPromptMethodCallback {
 	 * @return true if the parameter type is compatible with the exchange type, false
 	 * otherwise
 	 */
-	protected abstract boolean isExchangeOrContextType(Class<?> paramType);
+	protected abstract boolean isSupportedExchangeOrContextType(Class<?> paramType);
+
+	protected void validateParamType(Class<?> paramType) {
+	}
 
 	/**
 	 * Validates method parameters.
@@ -94,6 +99,8 @@ public abstract class AbstractMcpPromptMethodCallback {
 
 		for (java.lang.reflect.Parameter param : parameters) {
 			Class<?> paramType = param.getType();
+
+			this.validateParamType(paramType);
 
 			// Skip @McpProgressToken annotated parameters from validation
 			if (param.isAnnotationPresent(McpProgressToken.class)) {
@@ -115,7 +122,7 @@ public abstract class AbstractMcpPromptMethodCallback {
 				continue;
 			}
 
-			if (isExchangeOrContextType(paramType)) {
+			if (isSupportedExchangeOrContextType(paramType)) {
 				if (hasExchangeParam) {
 					throw new IllegalArgumentException("Method cannot have more than one exchange parameter: "
 							+ method.getName() + " in " + method.getDeclaringClass().getName());
@@ -139,6 +146,8 @@ public abstract class AbstractMcpPromptMethodCallback {
 			// Other parameter types are assumed to be individual arguments
 		}
 	}
+
+	protected abstract Object assignExchangeType(Class<?> paramType, Object exchange);
 
 	/**
 	 * Builds the arguments array for invoking the method.
@@ -182,8 +191,11 @@ public abstract class AbstractMcpPromptMethodCallback {
 			java.lang.reflect.Parameter param = parameters[i];
 			Class<?> paramType = param.getType();
 
-			if (isExchangeOrContextType(paramType)) {
-				args[i] = exchange;
+			if (McpTransportContext.class.isAssignableFrom(paramType)
+					|| McpSyncServerExchange.class.isAssignableFrom(paramType)
+					|| McpAsyncServerExchange.class.isAssignableFrom(paramType)) {
+
+				args[i] = this.assignExchangeType(paramType, exchange);
 			}
 			else if (GetPromptRequest.class.isAssignableFrom(paramType)) {
 				args[i] = request;
@@ -364,32 +376,6 @@ public abstract class AbstractMcpPromptMethodCallback {
 		 * @return A new callback instance
 		 */
 		public abstract T build();
-
-	}
-
-	/**
-	 * Exception thrown when there is an error invoking a prompt method.
-	 */
-	public static class McpPromptMethodException extends RuntimeException {
-
-		private static final long serialVersionUID = 1L;
-
-		/**
-		 * Constructs a new exception with the specified detail message and cause.
-		 * @param message The detail message
-		 * @param cause The cause
-		 */
-		public McpPromptMethodException(String message, Throwable cause) {
-			super(message, cause);
-		}
-
-		/**
-		 * Constructs a new exception with the specified detail message.
-		 * @param message The detail message
-		 */
-		public McpPromptMethodException(String message) {
-			super(message);
-		}
 
 	}
 

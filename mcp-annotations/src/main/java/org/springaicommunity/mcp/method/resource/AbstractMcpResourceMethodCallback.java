@@ -12,7 +12,9 @@ import java.util.Map;
 
 import org.springaicommunity.mcp.annotation.McpMeta;
 import org.springaicommunity.mcp.annotation.McpProgressToken;
-
+import io.modelcontextprotocol.common.McpTransportContext;
+import io.modelcontextprotocol.server.McpAsyncServerExchange;
+import io.modelcontextprotocol.server.McpSyncServerExchange;
 import io.modelcontextprotocol.spec.McpSchema;
 import io.modelcontextprotocol.spec.McpSchema.ReadResourceRequest;
 import io.modelcontextprotocol.util.Assert;
@@ -215,6 +217,9 @@ public abstract class AbstractMcpResourceMethodCallback {
 		}
 	}
 
+	protected void validateParamType(Class<?> paramType) {
+	}
+
 	/**
 	 * Validates method parameters when URI variables are present. This method provides
 	 * common validation logic and delegates exchange type checking to subclasses.
@@ -236,6 +241,9 @@ public abstract class AbstractMcpResourceMethodCallback {
 			}
 			else {
 				Class<?> paramType = param.getType();
+
+				this.validateParamType(paramType);
+
 				if (McpMeta.class.isAssignableFrom(paramType)) {
 					metaParamCount++;
 				}
@@ -295,6 +303,8 @@ public abstract class AbstractMcpResourceMethodCallback {
 		}
 	}
 
+	protected abstract Object assignExchangeType(Class<?> paramType, Object exchange);
+
 	/**
 	 * Builds the arguments array for invoking the method.
 	 * <p>
@@ -313,13 +323,20 @@ public abstract class AbstractMcpResourceMethodCallback {
 
 		// First, handle @McpProgressToken and McpMeta parameters
 		for (int i = 0; i < parameters.length; i++) {
+			Class<?> paramType = parameters[i].getType();
 			if (parameters[i].isAnnotationPresent(McpProgressToken.class)) {
 				// Get progress token from request
 				args[i] = request != null ? request.progressToken() : null;
 			}
-			else if (McpMeta.class.isAssignableFrom(parameters[i].getType())) {
+			else if (McpMeta.class.isAssignableFrom(paramType)) {
 				// Inject McpMeta with request metadata
 				args[i] = request != null ? new McpMeta(request.meta()) : new McpMeta(null);
+			}
+			else if (McpTransportContext.class.isAssignableFrom(paramType)
+					|| McpSyncServerExchange.class.isAssignableFrom(paramType)
+					|| McpAsyncServerExchange.class.isAssignableFrom(paramType)) {
+
+				args[i] = this.assignExchangeType(paramType, exchange);
 			}
 		}
 
@@ -354,15 +371,13 @@ public abstract class AbstractMcpResourceMethodCallback {
 			// Skip if parameter is annotated with @McpProgressToken or is McpMeta
 			// (already handled)
 			if (parameters[i].isAnnotationPresent(McpProgressToken.class)
-					|| McpMeta.class.isAssignableFrom(parameters[i].getType())) {
+					|| McpMeta.class.isAssignableFrom(parameters[i].getType())
+					|| isExchangeOrContextType(parameters[i].getType())) {
 				continue;
 			}
 
 			Class<?> paramType = parameters[i].getType();
-			if (isExchangeOrContextType(paramType)) {
-				args[i] = exchange;
-			}
-			else if (ReadResourceRequest.class.isAssignableFrom(paramType)) {
+			if (ReadResourceRequest.class.isAssignableFrom(paramType)) {
 				args[i] = request;
 			}
 		}
@@ -408,17 +423,15 @@ public abstract class AbstractMcpResourceMethodCallback {
 			// Skip if parameter is annotated with @McpProgressToken or is McpMeta
 			// (already handled)
 			if (parameters[i].isAnnotationPresent(McpProgressToken.class)
-					|| McpMeta.class.isAssignableFrom(parameters[i].getType())) {
+					|| McpMeta.class.isAssignableFrom(parameters[i].getType())
+					|| isExchangeOrContextType(parameters[i].getType())) {
 				continue;
 			}
 
 			Parameter param = parameters[i];
 			Class<?> paramType = param.getType();
 
-			if (isExchangeOrContextType(paramType)) {
-				args[i] = exchange;
-			}
-			else if (ReadResourceRequest.class.isAssignableFrom(paramType)) {
+			if (ReadResourceRequest.class.isAssignableFrom(paramType)) {
 				args[i] = request;
 			}
 			else if (String.class.isAssignableFrom(paramType)) {
@@ -445,32 +458,6 @@ public abstract class AbstractMcpResourceMethodCallback {
 	 */
 	public ContentType contentType() {
 		return this.contentType;
-	}
-
-	/**
-	 * Exception thrown when there is an error invoking a resource method.
-	 */
-	public static class McpResourceMethodException extends RuntimeException {
-
-		private static final long serialVersionUID = 1L;
-
-		/**
-		 * Constructs a new exception with the specified detail message and cause.
-		 * @param message The detail message
-		 * @param cause The cause
-		 */
-		public McpResourceMethodException(String message, Throwable cause) {
-			super(message, cause);
-		}
-
-		/**
-		 * Constructs a new exception with the specified detail message.
-		 * @param message The detail message
-		 */
-		public McpResourceMethodException(String message) {
-			super(message);
-		}
-
 	}
 
 	/**

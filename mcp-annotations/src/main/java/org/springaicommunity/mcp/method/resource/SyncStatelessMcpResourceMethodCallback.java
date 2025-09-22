@@ -9,8 +9,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.BiFunction;
 
+import org.springaicommunity.mcp.ErrorUtils;
 import org.springaicommunity.mcp.annotation.McpResource;
 import io.modelcontextprotocol.common.McpTransportContext;
+import io.modelcontextprotocol.server.McpAsyncServerExchange;
+import io.modelcontextprotocol.server.McpSyncServerExchange;
+import io.modelcontextprotocol.spec.McpError;
+import io.modelcontextprotocol.spec.McpSchema.ErrorCodes;
 import io.modelcontextprotocol.spec.McpSchema.ReadResourceRequest;
 import io.modelcontextprotocol.spec.McpSchema.ReadResourceResult;
 import io.modelcontextprotocol.spec.McpSchema.ResourceContents;
@@ -32,6 +37,41 @@ public final class SyncStatelessMcpResourceMethodCallback extends AbstractMcpRes
 		super(builder.method, builder.bean, builder.uri, builder.name, builder.description, builder.mimeType,
 				builder.resultConverter, builder.uriTemplateManagerFactory, builder.contentType);
 		this.validateMethod(this.method);
+	}
+
+	@Override
+	protected void validateParamType(Class<?> paramType) {
+
+		if (McpSyncServerExchange.class.isAssignableFrom(paramType)
+				|| McpAsyncServerExchange.class.isAssignableFrom(paramType)) {
+
+			throw new IllegalArgumentException(
+					"Stateless Streamable-Http prompt method must not declare parameter of type: " + paramType.getName()
+							+ ". Use McpTransportContext instead." + " Method: " + this.method.getName() + " in "
+							+ this.method.getDeclaringClass().getName());
+		}
+	}
+
+	@Override
+	protected Object assignExchangeType(Class<?> paramType, Object exchange) {
+
+		if (McpTransportContext.class.isAssignableFrom(paramType)) {
+			if (exchange instanceof McpTransportContext transportContext) {
+				return transportContext;
+			}
+			else if (exchange instanceof McpSyncServerExchange syncServerExchange) {
+				return syncServerExchange.transportContext();
+			}
+			else if (exchange instanceof McpAsyncServerExchange asyncServerExchange) {
+				throw new IllegalArgumentException("Unsupported Async exchange type: "
+						+ asyncServerExchange.getClass().getName() + " for Sync method: " + method.getName() + " in "
+						+ method.getDeclaringClass().getName());
+			}
+		}
+
+		throw new IllegalArgumentException(
+				"Unsupported exchange type: " + (exchange != null ? exchange.getClass().getName() : "null")
+						+ " for method: " + method.getName() + " in " + method.getDeclaringClass().getName());
 	}
 
 	/**
@@ -77,7 +117,16 @@ public final class SyncStatelessMcpResourceMethodCallback extends AbstractMcpRes
 					this.contentType);
 		}
 		catch (Exception e) {
-			throw new McpResourceMethodException("Access error invoking resource method: " + this.method.getName(), e);
+			if (e instanceof McpError mcpError && mcpError.getJsonRpcError() != null) {
+				throw mcpError;
+			}
+
+			throw McpError.builder(ErrorCodes.INVALID_PARAMS)
+				.message("Error invoking resource method: " + this.method.getName() + " in "
+						+ this.bean.getClass().getName() + ". /nCause: "
+						+ ErrorUtils.findCauseUsingPlainJava(e).getMessage())
+				.data(ErrorUtils.findCauseUsingPlainJava(e).getMessage())
+				.build();
 		}
 	}
 

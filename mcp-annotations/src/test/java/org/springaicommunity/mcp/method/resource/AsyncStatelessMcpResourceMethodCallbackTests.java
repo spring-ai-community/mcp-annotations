@@ -10,6 +10,9 @@ import java.util.Map;
 import java.util.function.BiFunction;
 
 import io.modelcontextprotocol.common.McpTransportContext;
+import io.modelcontextprotocol.server.McpAsyncServerExchange;
+import io.modelcontextprotocol.server.McpSyncServerExchange;
+import io.modelcontextprotocol.spec.McpError;
 import io.modelcontextprotocol.spec.McpSchema.BlobResourceContents;
 import io.modelcontextprotocol.spec.McpSchema.ReadResourceRequest;
 import io.modelcontextprotocol.spec.McpSchema.ReadResourceResult;
@@ -186,6 +189,22 @@ public class AsyncStatelessMcpResourceMethodCallbackTests {
 			// This should cause a validation error during callback creation
 			String content = "Content with multiple metas for " + request.uri();
 			return new ReadResourceResult(List.of(new TextResourceContents(request.uri(), "text/plain", content)));
+		}
+
+		@McpResource(uri = "failing-resource://resource", description = "A resource that throws an exception")
+		public Mono<ReadResourceResult> getFailingResource(ReadResourceRequest request) {
+			throw new RuntimeException("Test exception");
+		}
+
+		// Invalid parameter types for stateless methods
+		public Mono<ReadResourceResult> invalidSyncExchangeParameter(McpSyncServerExchange exchange,
+				ReadResourceRequest request) {
+			return Mono.just(new ReadResourceResult(List.of()));
+		}
+
+		public Mono<ReadResourceResult> invalidAsyncExchangeParameter(McpAsyncServerExchange exchange,
+				ReadResourceRequest request) {
+			return Mono.just(new ReadResourceResult(List.of()));
 		}
 
 	}
@@ -681,9 +700,8 @@ public class AsyncStatelessMcpResourceMethodCallbackTests {
 		Mono<ReadResourceResult> resultMono = callbackWithMockTemplate.apply(context, request);
 
 		StepVerifier.create(resultMono)
-			.expectErrorMatches(
-					throwable -> throwable instanceof AsyncStatelessMcpResourceMethodCallback.McpResourceMethodException
-							&& throwable.getMessage().contains("Error invoking resource method"))
+			.expectErrorMatches(throwable -> throwable instanceof McpError
+					&& throwable.getMessage().contains("Error invoking resource method"))
 			.verify();
 	}
 
@@ -963,6 +981,68 @@ public class AsyncStatelessMcpResourceMethodCallbackTests {
 			.resource(ResourceAdapter.asResource(createMockMcpResource()))
 			.build()).isInstanceOf(IllegalArgumentException.class)
 			.hasMessageContaining("Method cannot have more than one McpMeta parameter");
+	}
+
+	@Test
+	public void testNewMethodInvocationError() throws Exception {
+		TestAsyncStatelessResourceProvider provider = new TestAsyncStatelessResourceProvider();
+		Method method = TestAsyncStatelessResourceProvider.class.getMethod("getFailingResource",
+				ReadResourceRequest.class);
+		McpResource resourceAnnotation = method.getAnnotation(McpResource.class);
+
+		BiFunction<McpTransportContext, ReadResourceRequest, Mono<ReadResourceResult>> callback = AsyncStatelessMcpResourceMethodCallback
+			.builder()
+			.method(method)
+			.bean(provider)
+			.resource(ResourceAdapter.asResource(resourceAnnotation))
+			.build();
+
+		McpTransportContext context = mock(McpTransportContext.class);
+		ReadResourceRequest request = new ReadResourceRequest("failing-resource://resource");
+
+		Mono<ReadResourceResult> resultMono = callback.apply(context, request);
+
+		// The new error handling should throw McpError instead of custom exceptions
+		StepVerifier.create(resultMono)
+			.expectErrorMatches(throwable -> throwable instanceof McpError
+					&& throwable.getMessage().contains("Error invoking resource method"))
+			.verify();
+	}
+
+	@Test
+	public void testInvalidSyncExchangeParameter() throws Exception {
+		TestAsyncStatelessResourceProvider provider = new TestAsyncStatelessResourceProvider();
+		Method method = TestAsyncStatelessResourceProvider.class.getMethod("invalidSyncExchangeParameter",
+				McpSyncServerExchange.class, ReadResourceRequest.class);
+
+		// Should fail during callback creation due to parameter validation
+		assertThatThrownBy(() -> AsyncStatelessMcpResourceMethodCallback.builder()
+			.method(method)
+			.bean(provider)
+			.resource(ResourceAdapter.asResource(createMockMcpResource()))
+			.build())
+			.isInstanceOf(IllegalArgumentException.class)
+			.hasMessageContaining(
+					"Method parameters must be exchange, ReadResourceRequest, String, McpMeta, or @McpProgressToken")
+			.hasMessageContaining("McpSyncServerExchange");
+	}
+
+	@Test
+	public void testInvalidAsyncExchangeParameter() throws Exception {
+		TestAsyncStatelessResourceProvider provider = new TestAsyncStatelessResourceProvider();
+		Method method = TestAsyncStatelessResourceProvider.class.getMethod("invalidAsyncExchangeParameter",
+				McpAsyncServerExchange.class, ReadResourceRequest.class);
+
+		// Should fail during callback creation due to parameter validation
+		assertThatThrownBy(() -> AsyncStatelessMcpResourceMethodCallback.builder()
+			.method(method)
+			.bean(provider)
+			.resource(ResourceAdapter.asResource(createMockMcpResource()))
+			.build())
+			.isInstanceOf(IllegalArgumentException.class)
+			.hasMessageContaining(
+					"Method parameters must be exchange, ReadResourceRequest, String, McpMeta, or @McpProgressToken")
+			.hasMessageContaining("McpAsyncServerExchange");
 	}
 
 }
