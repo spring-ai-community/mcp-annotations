@@ -10,7 +10,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.BiFunction;
 
+import io.modelcontextprotocol.common.McpTransportContext;
 import io.modelcontextprotocol.server.McpAsyncServerExchange;
+import io.modelcontextprotocol.server.McpSyncServerExchange;
+import io.modelcontextprotocol.spec.McpError;
 import io.modelcontextprotocol.spec.McpSchema.GetPromptRequest;
 import io.modelcontextprotocol.spec.McpSchema.GetPromptResult;
 import io.modelcontextprotocol.spec.McpSchema.Prompt;
@@ -29,6 +32,7 @@ import reactor.test.StepVerifier;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 /**
  * Tests for {@link AsyncMcpPromptMethodCallback}.
@@ -159,6 +163,24 @@ public class AsyncMcpPromptMethodCallbackTests {
 
 		public Mono<GetPromptResult> duplicateMetaParameters(McpMeta meta1, McpMeta meta2) {
 			return Mono.just(new GetPromptResult("Invalid", List.of()));
+		}
+
+		@McpPrompt(name = "failing-prompt", description = "A prompt that throws an exception")
+		public Mono<GetPromptResult> getFailingPrompt(GetPromptRequest request) {
+			throw new RuntimeException("Test exception");
+		}
+
+		// Invalid parameter types for async methods
+		public Mono<GetPromptResult> invalidSyncExchangeParameter(McpSyncServerExchange exchange,
+				GetPromptRequest request) {
+			return Mono.just(new GetPromptResult("Invalid", List.of()));
+		}
+
+		@McpPrompt(name = "transport-context-prompt", description = "A prompt with transport context")
+		public Mono<GetPromptResult> getPromptWithTransportContext(McpTransportContext context,
+				GetPromptRequest request) {
+			return Mono.just(new GetPromptResult("Transport context prompt", List.of(new PromptMessage(Role.ASSISTANT,
+					new TextContent("Hello with transport context from " + request.name())))));
 		}
 
 	}
@@ -474,6 +496,89 @@ public class AsyncMcpPromptMethodCallbackTests {
 				() -> AsyncMcpPromptMethodCallback.builder().method(method).bean(provider).prompt(prompt).build())
 			.isInstanceOf(IllegalArgumentException.class)
 			.hasMessageContaining("Method cannot have more than one McpMeta parameter");
+	}
+
+	@Test
+	public void testMethodInvocationError() throws Exception {
+		TestPromptProvider provider = new TestPromptProvider();
+		Method method = TestPromptProvider.class.getMethod("getFailingPrompt", GetPromptRequest.class);
+
+		Prompt prompt = createTestPrompt("failing-prompt", "A prompt that throws an exception");
+
+		BiFunction<McpAsyncServerExchange, GetPromptRequest, Mono<GetPromptResult>> callback = AsyncMcpPromptMethodCallback
+			.builder()
+			.method(method)
+			.bean(provider)
+			.prompt(prompt)
+			.build();
+
+		McpAsyncServerExchange exchange = mock(McpAsyncServerExchange.class);
+		Map<String, Object> args = new HashMap<>();
+		args.put("name", "John");
+		GetPromptRequest request = new GetPromptRequest("failing-prompt", args);
+
+		Mono<GetPromptResult> resultMono = callback.apply(exchange, request);
+
+		// The new error handling should throw McpError instead of custom exceptions
+		StepVerifier.create(resultMono)
+			.expectErrorMatches(throwable -> throwable instanceof McpError
+					&& throwable.getMessage().contains("Error invoking prompt method"))
+			.verify();
+	}
+
+	@Test
+	public void testInvalidSyncExchangeParameter() throws Exception {
+		TestPromptProvider provider = new TestPromptProvider();
+		Method method = TestPromptProvider.class.getMethod("invalidSyncExchangeParameter", McpSyncServerExchange.class,
+				GetPromptRequest.class);
+
+		Prompt prompt = createTestPrompt("invalid", "Invalid parameter type");
+
+		// Should fail during callback creation due to parameter validation
+		assertThatThrownBy(
+				() -> AsyncMcpPromptMethodCallback.builder().method(method).bean(provider).prompt(prompt).build())
+			.isInstanceOf(IllegalArgumentException.class)
+			.hasMessageContaining("Async prompt method must not declare parameter of type")
+			.hasMessageContaining("McpSyncServerExchange")
+			.hasMessageContaining("Use McpAsyncServerExchange instead");
+	}
+
+	@Test
+	public void testCallbackWithTransportContext() throws Exception {
+		TestPromptProvider provider = new TestPromptProvider();
+		Method method = TestPromptProvider.class.getMethod("getPromptWithTransportContext", McpTransportContext.class,
+				GetPromptRequest.class);
+
+		Prompt prompt = createTestPrompt("transport-context-prompt", "A prompt with transport context");
+
+		BiFunction<McpAsyncServerExchange, GetPromptRequest, Mono<GetPromptResult>> callback = AsyncMcpPromptMethodCallback
+			.builder()
+			.method(method)
+			.bean(provider)
+			.prompt(prompt)
+			.build();
+
+		McpAsyncServerExchange exchange = mock(McpAsyncServerExchange.class);
+		McpTransportContext context = mock(McpTransportContext.class);
+
+		// Mock the exchange to return the transport context
+		when(exchange.transportContext()).thenReturn(context);
+
+		Map<String, Object> args = new HashMap<>();
+		args.put("name", "John");
+		GetPromptRequest request = new GetPromptRequest("transport-context-prompt", args);
+
+		Mono<GetPromptResult> resultMono = callback.apply(exchange, request);
+
+		StepVerifier.create(resultMono).assertNext(result -> {
+			assertThat(result).isNotNull();
+			assertThat(result.description()).isEqualTo("Transport context prompt");
+			assertThat(result.messages()).hasSize(1);
+			PromptMessage message = result.messages().get(0);
+			assertThat(message.role()).isEqualTo(Role.ASSISTANT);
+			assertThat(((TextContent) message.content()).text())
+				.isEqualTo("Hello with transport context from transport-context-prompt");
+		}).verifyComplete();
 	}
 
 }
