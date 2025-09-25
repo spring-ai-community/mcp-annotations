@@ -16,23 +16,23 @@
 
 package org.springaicommunity.mcp.provider.resource;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.Mockito.mock;
-
 import java.util.List;
-
-import org.junit.jupiter.api.Test;
-import org.springaicommunity.mcp.annotation.McpResource;
 
 import io.modelcontextprotocol.server.McpAsyncServerExchange;
 import io.modelcontextprotocol.server.McpServerFeatures.AsyncResourceSpecification;
+import io.modelcontextprotocol.server.McpServerFeatures.AsyncResourceTemplateSpecification;
 import io.modelcontextprotocol.spec.McpSchema.ReadResourceRequest;
 import io.modelcontextprotocol.spec.McpSchema.ReadResourceResult;
 import io.modelcontextprotocol.spec.McpSchema.ResourceContents;
 import io.modelcontextprotocol.spec.McpSchema.TextResourceContents;
+import org.junit.jupiter.api.Test;
+import org.springaicommunity.mcp.annotation.McpResource;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.mock;
 
 /**
  * Tests for {@link AsyncMcpResourceProvider}.
@@ -65,12 +65,14 @@ public class AsyncMcpResourceProviderTests {
 		List<AsyncResourceSpecification> resourceSpecs = provider.getResourceSpecifications();
 
 		assertThat(resourceSpecs).isNotNull();
-		assertThat(resourceSpecs).hasSize(1);
+		assertThat(resourceSpecs).hasSize(0);
 
-		AsyncResourceSpecification resourceSpec = resourceSpecs.get(0);
-		assertThat(resourceSpec.resource().uri()).isEqualTo("test://resource/{id}");
-		assertThat(resourceSpec.resource().name()).isEqualTo("test-resource");
-		assertThat(resourceSpec.resource().description()).isEqualTo("A test resource");
+		var resourceTemplateSpecs = provider.getResourceTemplateSpecifications();
+
+		AsyncResourceTemplateSpecification resourceSpec = resourceTemplateSpecs.get(0);
+		assertThat(resourceSpec.resourceTemplate().uriTemplate()).isEqualTo("test://resource/{id}");
+		assertThat(resourceSpec.resourceTemplate().name()).isEqualTo("test-resource");
+		assertThat(resourceSpec.resourceTemplate().description()).isEqualTo("A test resource");
 		assertThat(resourceSpec.readHandler()).isNotNull();
 
 		// Test that the handler works
@@ -280,15 +282,19 @@ public class AsyncMcpResourceProviderTests {
 		AsyncMcpResourceProvider provider = new AsyncMcpResourceProvider(List.of(resourceObject));
 
 		List<AsyncResourceSpecification> resourceSpecs = provider.getResourceSpecifications();
+		assertThat(resourceSpecs).hasSize(0);
 
-		assertThat(resourceSpecs).hasSize(1);
-		assertThat(resourceSpecs.get(0).resource().uri()).isEqualTo("variable://resource/{id}/{type}");
-		assertThat(resourceSpecs.get(0).resource().name()).isEqualTo("variable-resource");
+		var resourceTemplateSpecs = provider.getResourceTemplateSpecifications();
+
+		assertThat(resourceTemplateSpecs).hasSize(1);
+		assertThat(resourceTemplateSpecs.get(0).resourceTemplate().uriTemplate())
+			.isEqualTo("variable://resource/{id}/{type}");
+		assertThat(resourceTemplateSpecs.get(0).resourceTemplate().name()).isEqualTo("variable-resource");
 
 		// Test that the handler works with URI variables
 		McpAsyncServerExchange exchange = mock(McpAsyncServerExchange.class);
 		ReadResourceRequest request = new ReadResourceRequest("variable://resource/123/document");
-		Mono<ReadResourceResult> result = resourceSpecs.get(0).readHandler().apply(exchange, request);
+		Mono<ReadResourceResult> result = resourceTemplateSpecs.get(0).readHandler().apply(exchange, request);
 
 		StepVerifier.create(result).assertNext(readResult -> {
 			assertThat(readResult.contents()).hasSize(1);
