@@ -26,6 +26,7 @@ import org.junit.jupiter.api.Test;
 import org.springaicommunity.mcp.annotation.McpResource;
 
 import io.modelcontextprotocol.server.McpServerFeatures.SyncResourceSpecification;
+import io.modelcontextprotocol.server.McpServerFeatures.SyncResourceTemplateSpecification;
 import io.modelcontextprotocol.server.McpSyncServerExchange;
 import io.modelcontextprotocol.spec.McpSchema.ReadResourceRequest;
 import io.modelcontextprotocol.spec.McpSchema.ReadResourceResult;
@@ -64,18 +65,20 @@ public class SyncMcpResourceProviderTests {
 		List<SyncResourceSpecification> resourceSpecs = provider.getResourceSpecifications();
 
 		assertThat(resourceSpecs).isNotNull();
-		assertThat(resourceSpecs).hasSize(1);
+		assertThat(resourceSpecs).hasSize(0);
 
-		SyncResourceSpecification resourceSpec = resourceSpecs.get(0);
-		assertThat(resourceSpec.resource().uri()).isEqualTo("test://resource/{id}");
-		assertThat(resourceSpec.resource().name()).isEqualTo("test-resource");
-		assertThat(resourceSpec.resource().description()).isEqualTo("A test resource");
-		assertThat(resourceSpec.readHandler()).isNotNull();
+		List<SyncResourceTemplateSpecification> resourceTemplateSpecs = provider.getResourceTemplateSpecifications();
+
+		SyncResourceTemplateSpecification resourceTemplateSpec = resourceTemplateSpecs.get(0);
+		assertThat(resourceTemplateSpec.resourceTemplate().uriTemplate()).isEqualTo("test://resource/{id}");
+		assertThat(resourceTemplateSpec.resourceTemplate().name()).isEqualTo("test-resource");
+		assertThat(resourceTemplateSpec.resourceTemplate().description()).isEqualTo("A test resource");
+		assertThat(resourceTemplateSpec.readHandler()).isNotNull();
 
 		// Test that the handler works
 		McpSyncServerExchange exchange = mock(McpSyncServerExchange.class);
 		ReadResourceRequest request = new ReadResourceRequest("test://resource/123");
-		ReadResourceResult result = resourceSpec.readHandler().apply(exchange, request);
+		ReadResourceResult result = resourceTemplateSpec.readHandler().apply(exchange, request);
 
 		assertThat(result.contents()).hasSize(1);
 		ResourceContents content = result.contents().get(0);
@@ -278,14 +281,20 @@ public class SyncMcpResourceProviderTests {
 
 		List<SyncResourceSpecification> resourceSpecs = provider.getResourceSpecifications();
 
-		assertThat(resourceSpecs).hasSize(1);
-		assertThat(resourceSpecs.get(0).resource().uri()).isEqualTo("variable://resource/{id}/{type}");
-		assertThat(resourceSpecs.get(0).resource().name()).isEqualTo("variable-resource");
+		assertThat(resourceSpecs).hasSize(0);
+
+		List<SyncResourceTemplateSpecification> resourceTemplateSpecs = provider.getResourceTemplateSpecifications();
+
+		assertThat(resourceTemplateSpecs).hasSize(1);
+
+		assertThat(resourceTemplateSpecs.get(0).resourceTemplate().uriTemplate())
+			.isEqualTo("variable://resource/{id}/{type}");
+		assertThat(resourceTemplateSpecs.get(0).resourceTemplate().name()).isEqualTo("variable-resource");
 
 		// Test that the handler works with URI variables
 		McpSyncServerExchange exchange = mock(McpSyncServerExchange.class);
 		ReadResourceRequest request = new ReadResourceRequest("variable://resource/123/document");
-		ReadResourceResult result = resourceSpecs.get(0).readHandler().apply(exchange, request);
+		ReadResourceResult result = resourceTemplateSpecs.get(0).readHandler().apply(exchange, request);
 
 		assertThat(result.contents()).hasSize(1);
 		ResourceContents content = result.contents().get(0);

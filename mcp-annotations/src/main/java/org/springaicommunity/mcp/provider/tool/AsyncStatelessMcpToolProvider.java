@@ -35,7 +35,7 @@ import org.springaicommunity.mcp.method.tool.ReactiveUtils;
 import org.springaicommunity.mcp.method.tool.ReturnMode;
 import org.springaicommunity.mcp.method.tool.utils.ClassUtils;
 import org.springaicommunity.mcp.method.tool.utils.JsonSchemaGenerator;
-import org.springaicommunity.mcp.provider.ProvidrerUtils;
+import org.springaicommunity.mcp.provider.McpProviderUtils;
 import reactor.core.publisher.Mono;
 
 /**
@@ -68,7 +68,7 @@ public class AsyncStatelessMcpToolProvider extends AbstractMcpToolProvider {
 		List<AsyncToolSpecification> toolSpecs = this.toolObjects.stream()
 			.map(toolObject -> Stream.of(doGetClassMethods(toolObject))
 				.filter(method -> method.isAnnotationPresent(McpTool.class))
-				.filter(ProvidrerUtils.isReactiveReturnType)
+				.filter(McpProviderUtils.isReactiveReturnType)
 				.sorted((m1, m2) -> m1.getName().compareTo(m2.getName()))
 				.map(mcpToolMethod -> {
 

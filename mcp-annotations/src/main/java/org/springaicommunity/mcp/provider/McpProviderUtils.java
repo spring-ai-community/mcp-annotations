@@ -18,12 +18,19 @@ package org.springaicommunity.mcp.provider;
 
 import java.lang.reflect.Method;
 import java.util.function.Predicate;
+import java.util.regex.Pattern;
 
 import org.reactivestreams.Publisher;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
-public class ProvidrerUtils {
+public class McpProviderUtils {
+
+	private static final Pattern URI_VARIABLE_PATTERN = Pattern.compile("\\{([^/]+?)\\}");
+
+	public static boolean isUriTemplate(String uri) {
+		return URI_VARIABLE_PATTERN.matcher(uri).find();
+	}
 
 	public final static Predicate<Method> isReactiveReturnType = method -> Mono.class
 		.isAssignableFrom(method.getReturnType()) || Flux.class.isAssignableFrom(method.getReturnType())
