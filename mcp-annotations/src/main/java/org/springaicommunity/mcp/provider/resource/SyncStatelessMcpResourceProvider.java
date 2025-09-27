@@ -138,7 +138,7 @@ public class SyncStatelessMcpResourceProvider {
 					var mimeType = resourceAnnotation.mimeType();
 
 					var mcpResource = McpSchema.ResourceTemplate.builder()
-						.uri(uri)
+						.uriTemplate(uri)
 						.name(name)
 						.description(description)
 						.mimeType(mimeType)

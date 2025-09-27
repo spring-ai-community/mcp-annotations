@@ -144,7 +144,7 @@ public class AsyncMcpResourceProvider {
 					var mimeType = resourceAnnotation.mimeType();
 
 					var mcpResourceTemplate = McpSchema.ResourceTemplate.builder()
-						.uri(uri)
+						.uriTemplate(uri)
 						.name(name)
 						.description(description)
 						.mimeType(mimeType)
