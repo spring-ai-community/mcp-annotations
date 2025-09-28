@@ -35,9 +35,10 @@ To use the MCP Annotations core module in your project, add the following depend
 <dependency>
     <groupId>org.springaicommunity</groupId>
     <artifactId>mcp-annotations</artifactId>
-    <version>0.3.0</version>
+    <version>...</version>
 </dependency>
 ```
+(_Select the latest released mcp-annotations [version](https://central.sonatype.com/artifact/org.springaicommunity/mcp-annotations/versions) or latest snapshot._)
 
 and a Java MCP SDK dependency:
 
@@ -45,13 +46,16 @@ and a Java MCP SDK dependency:
 <dependency>
     <groupId>io.modelcontextprotocol.sdk</groupId>
     <artifactId>mcp</artifactId>
-    <version>0.13.0-SNAPSHOT</version>
+    <version>...</version>
 </dependency>
 ```
 
+(_Select the latest released mcp-java [version](https://central.sonatype.com/artifact/io.modelcontextprotocol.sdk/mcp/versions) or latest snapshot._)
+
+
 ### Snapshot repositories
 
-To use the mcp-annotations snapshot version you need to add the following repositories to your Maven POM:
+To use the mcp-annotations and mcp-java-sdk snapshot versions you need to add the following repositories to your Maven POM:
 
 ```xml
 <repositories>
@@ -219,7 +223,9 @@ The project includes provider classes that scan for annotated methods and create
 - `SyncStatelessMcpPromptProvider` - Processes `@McpPrompt` annotations for synchronous stateless operations
 - `AsyncStatelessMcpPromptProvider` - Processes `@McpPrompt` annotations for asynchronous stateless operations
 - `SyncStatelessMcpResourceProvider` - Processes `@McpResource` annotations for synchronous stateless operations
+- `SyncStatelessMcpResourceTemplateProvider` - Processes `@McpResource` annotations for synchronous stateless operations
 - `AsyncStatelessMcpResourceProvider` - Processes `@McpResource` annotations for asynchronous stateless operations
+- `AsyncStatelessMcpResourceTemplateProvider` - Processes `@McpResource` annotations for asynchronous stateless operations
 - `SyncStatelessMcpToolProvider` - Processes `@McpTool` annotations for synchronous stateless operations
 - `AsyncStatelessMcpToolProvider` - Processes `@McpTool` annotations for asynchronous stateless operations
 
