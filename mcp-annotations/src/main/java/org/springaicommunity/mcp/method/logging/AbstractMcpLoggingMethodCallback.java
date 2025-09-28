@@ -4,6 +4,7 @@
 
 package org.springaicommunity.mcp.method.logging;
 
+import java.io.Serial;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
 
@@ -148,6 +149,7 @@ public abstract class AbstractMcpLoggingMethodCallback {
 	 */
 	public static class McpLoggingConsumerMethodException extends RuntimeException {
 
+		@Serial
 		private static final long serialVersionUID = 1L;
 
 		/**

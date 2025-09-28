@@ -4,6 +4,7 @@
 
 package org.springaicommunity.mcp.method.complete;
 
+import java.io.Serial;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
 import java.util.ArrayList;
@@ -267,6 +268,7 @@ public abstract class AbstractMcpCompleteMethodCallback {
 	 */
 	public static class McpCompleteMethodException extends RuntimeException {
 
+		@Serial
 		private static final long serialVersionUID = 1L;
 
 		/**

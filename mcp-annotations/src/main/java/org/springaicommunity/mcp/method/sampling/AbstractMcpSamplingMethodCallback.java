@@ -4,6 +4,7 @@
 
 package org.springaicommunity.mcp.method.sampling;
 
+import java.io.Serial;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
 
@@ -146,6 +147,7 @@ public abstract class AbstractMcpSamplingMethodCallback {
 	 */
 	public static class McpSamplingMethodException extends RuntimeException {
 
+		@Serial
 		private static final long serialVersionUID = 1L;
 
 		/**
