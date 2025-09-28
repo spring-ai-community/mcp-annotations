@@ -4,6 +4,7 @@
 
 package org.springaicommunity.mcp.method.progress;
 
+import java.io.Serial;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
 
@@ -147,6 +148,7 @@ public abstract class AbstractMcpProgressMethodCallback {
 	 */
 	public static class McpProgressMethodException extends RuntimeException {
 
+		@Serial
 		private static final long serialVersionUID = 1L;
 
 		/**

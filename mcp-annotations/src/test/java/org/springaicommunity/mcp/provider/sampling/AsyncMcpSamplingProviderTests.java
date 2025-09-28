@@ -7,13 +7,11 @@ package org.springaicommunity.mcp.provider.sampling;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.function.Function;
 
 import org.junit.jupiter.api.Test;
 import org.springaicommunity.mcp.annotation.McpSampling;
-import org.springaicommunity.mcp.method.sampling.AsyncMcpSamplingMethodCallbackExample;
 import org.springaicommunity.mcp.method.sampling.AsyncSamplingSpecification;
 import org.springaicommunity.mcp.method.sampling.SamlingTestHelper;
 
