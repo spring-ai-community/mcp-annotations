@@ -18,6 +18,7 @@ package org.springaicommunity.mcp.provider.resource;
 
 import java.lang.reflect.Method;
 import java.util.List;
+import java.util.Objects;
 import java.util.function.BiFunction;
 import java.util.stream.Stream;
 
@@ -26,8 +27,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springaicommunity.mcp.annotation.McpResource;
 import org.springaicommunity.mcp.method.resource.AsyncStatelessMcpResourceMethodCallback;
-
+import org.springaicommunity.mcp.provider.McpProviderUtils;
 import io.modelcontextprotocol.server.McpStatelessServerFeatures.AsyncResourceSpecification;
+import io.modelcontextprotocol.server.McpStatelessServerFeatures.AsyncResourceTemplateSpecification;
 import io.modelcontextprotocol.common.McpTransportContext;
 import io.modelcontextprotocol.spec.McpSchema;
 import io.modelcontextprotocol.spec.McpSchema.ReadResourceRequest;
@@ -79,6 +81,11 @@ public class AsyncStatelessMcpResourceProvider {
 					var resourceAnnotation = doGetMcpResourceAnnotation(mcpResourceMethod);
 
 					var uri = resourceAnnotation.uri();
+
+					if (McpProviderUtils.isUriTemplate(uri)) {
+						return null;
+					}
+
 					var name = getName(mcpResourceMethod, resourceAnnotation);
 					var description = resourceAnnotation.description();
 					var mimeType = resourceAnnotation.mimeType();
@@ -101,6 +108,60 @@ public class AsyncStatelessMcpResourceProvider {
 
 					return resourceSpec;
 				})
+				.filter(Objects::nonNull)
+				.toList())
+			.flatMap(List::stream)
+			.toList();
+
+		if (resourceSpecs.isEmpty()) {
+			logger.warn("No resource methods found in the provided resource objects: {}", this.resourceObjects);
+		}
+
+		return resourceSpecs;
+	}
+
+	public List<AsyncResourceTemplateSpecification> getResourceTemplateSpecifications() {
+
+		List<AsyncResourceTemplateSpecification> resourceSpecs = this.resourceObjects.stream()
+			.map(resourceObject -> Stream.of(doGetClassMethods(resourceObject))
+				.filter(method -> method.isAnnotationPresent(McpResource.class))
+				.filter(method -> Mono.class.isAssignableFrom(method.getReturnType())
+						|| Flux.class.isAssignableFrom(method.getReturnType())
+						|| Publisher.class.isAssignableFrom(method.getReturnType()))
+				.sorted((m1, m2) -> m1.getName().compareTo(m2.getName()))
+				.map(mcpResourceMethod -> {
+
+					var resourceAnnotation = doGetMcpResourceAnnotation(mcpResourceMethod);
+
+					var uri = resourceAnnotation.uri();
+
+					if (!McpProviderUtils.isUriTemplate(uri)) {
+						return null;
+					}
+
+					var name = getName(mcpResourceMethod, resourceAnnotation);
+					var description = resourceAnnotation.description();
+					var mimeType = resourceAnnotation.mimeType();
+
+					var mcpResource = McpSchema.ResourceTemplate.builder()
+						.uriTemplate(uri)
+						.name(name)
+						.description(description)
+						.mimeType(mimeType)
+						.build();
+
+					BiFunction<McpTransportContext, ReadResourceRequest, Mono<ReadResourceResult>> methodCallback = AsyncStatelessMcpResourceMethodCallback
+						.builder()
+						.method(mcpResourceMethod)
+						.bean(resourceObject)
+						.resource(mcpResource)
+						.build();
+
+					var resourceSpec = new AsyncResourceTemplateSpecification(mcpResource, methodCallback);
+
+					return resourceSpec;
+				})
+				.filter(Objects::nonNull)
 				.toList())
 			.flatMap(List::stream)
 			.toList();
