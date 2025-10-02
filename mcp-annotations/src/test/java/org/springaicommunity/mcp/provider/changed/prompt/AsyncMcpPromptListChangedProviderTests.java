@@ -72,9 +72,9 @@ public class AsyncMcpPromptListChangedProviderTests {
 			.map(AsyncPromptListChangedSpecification::promptListChangeHandler)
 			.toList();
 
-		// Should find 3 annotated methods (2 Mono<Void> + 1 void)
-		assertThat(consumers).hasSize(3);
-		assertThat(specifications).hasSize(3);
+		// Should find 2 annotated methods (2 Mono<Void>)
+		assertThat(consumers).hasSize(2);
+		assertThat(specifications).hasSize(2);
 
 		// Test the first consumer
 		StepVerifier.create(consumers.get(0).apply(TEST_PROMPTS)).verifyComplete();
@@ -92,7 +92,7 @@ public class AsyncMcpPromptListChangedProviderTests {
 		assertThat(handler.lastUpdatedPrompts).isEqualTo(TEST_PROMPTS);
 
 		// Test the third consumer (void method)
-		StepVerifier.create(consumers.get(2).apply(TEST_PROMPTS)).verifyComplete();
+		StepVerifier.create(consumers.get(1).apply(TEST_PROMPTS)).verifyComplete();
 
 		// Verify that the method was called
 		assertThat(handler.lastUpdatedPrompts).isEqualTo(TEST_PROMPTS);
@@ -106,12 +106,12 @@ public class AsyncMcpPromptListChangedProviderTests {
 		List<AsyncPromptListChangedSpecification> specifications = provider.getPromptListChangedSpecifications();
 
 		// Should find 3 specifications
-		assertThat(specifications).hasSize(3);
+		assertThat(specifications).hasSize(2);
 
 		// Check client IDs
 		List<String> clientIds = specifications.stream().map(spec -> spec.clients()).flatMap(Stream::of).toList();
 
-		assertThat(clientIds).containsExactlyInAnyOrder("my-client-id", "test-client", "my-client-id");
+		assertThat(clientIds).containsExactlyInAnyOrder("my-client-id", "test-client");
 	}
 
 	@Test
@@ -137,8 +137,8 @@ public class AsyncMcpPromptListChangedProviderTests {
 			.map(AsyncPromptListChangedSpecification::promptListChangeHandler)
 			.toList();
 
-		// Should find 6 annotated methods (3 from each handler)
-		assertThat(consumers).hasSize(6);
+		// Should find 4 annotated methods (2 from each handler)
+		assertThat(consumers).hasSize(4);
 	}
 
 	@Test
@@ -169,7 +169,7 @@ public class AsyncMcpPromptListChangedProviderTests {
 		List<AsyncPromptListChangedSpecification> specifications = provider.getPromptListChangedSpecifications();
 
 		// Should only find annotated methods, not the non-annotated one
-		assertThat(specifications).hasSize(3);
+		assertThat(specifications).hasSize(2);
 	}
 
 	/**
@@ -234,7 +234,7 @@ public class AsyncMcpPromptListChangedProviderTests {
 		List<AsyncPromptListChangedSpecification> specifications = provider.getPromptListChangedSpecifications();
 
 		// Should find only the 2 valid methods (Mono<Void> and void)
-		assertThat(specifications).hasSize(2);
+		assertThat(specifications).hasSize(1);
 
 		// Test that the valid methods work
 		Function<List<McpSchema.Prompt>, Mono<Void>> consumer = specifications.get(0).promptListChangeHandler();

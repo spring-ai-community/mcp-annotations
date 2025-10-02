@@ -29,13 +29,11 @@ import io.modelcontextprotocol.spec.McpSchema;
 import io.modelcontextprotocol.spec.McpSchema.ReadResourceRequest;
 import io.modelcontextprotocol.spec.McpSchema.ReadResourceResult;
 import io.modelcontextprotocol.util.Assert;
-import org.reactivestreams.Publisher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springaicommunity.mcp.annotation.McpResource;
 import org.springaicommunity.mcp.method.resource.AsyncMcpResourceMethodCallback;
 import org.springaicommunity.mcp.provider.McpProviderUtils;
-import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 /**
@@ -72,9 +70,7 @@ public class AsyncMcpResourceProvider {
 		List<AsyncResourceSpecification> resourceSpecs = this.resourceObjects.stream()
 			.map(resourceObject -> Stream.of(doGetClassMethods(resourceObject))
 				.filter(method -> method.isAnnotationPresent(McpResource.class))
-				.filter(method -> Mono.class.isAssignableFrom(method.getReturnType())
-						|| Flux.class.isAssignableFrom(method.getReturnType())
-						|| Publisher.class.isAssignableFrom(method.getReturnType()))
+				.filter(McpProviderUtils.filterNonReactiveReturnTypeMethod())
 				.sorted((m1, m2) -> m1.getName().compareTo(m2.getName()))
 				.map(mcpResourceMethod -> {
 
@@ -125,9 +121,7 @@ public class AsyncMcpResourceProvider {
 		List<AsyncResourceTemplateSpecification> resourceSpecs = this.resourceObjects.stream()
 			.map(resourceObject -> Stream.of(doGetClassMethods(resourceObject))
 				.filter(method -> method.isAnnotationPresent(McpResource.class))
-				.filter(method -> Mono.class.isAssignableFrom(method.getReturnType())
-						|| Flux.class.isAssignableFrom(method.getReturnType())
-						|| Publisher.class.isAssignableFrom(method.getReturnType()))
+				.filter(McpProviderUtils.filterNonReactiveReturnTypeMethod())
 				.sorted((m1, m2) -> m1.getName().compareTo(m2.getName()))
 				.map(mcpResourceMethod -> {
 

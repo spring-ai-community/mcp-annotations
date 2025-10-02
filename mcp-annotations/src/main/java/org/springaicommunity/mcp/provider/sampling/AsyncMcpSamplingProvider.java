@@ -21,15 +21,15 @@ import java.util.List;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
+import io.modelcontextprotocol.spec.McpSchema.CreateMessageRequest;
+import io.modelcontextprotocol.spec.McpSchema.CreateMessageResult;
+import io.modelcontextprotocol.util.Assert;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springaicommunity.mcp.annotation.McpSampling;
 import org.springaicommunity.mcp.method.sampling.AsyncMcpSamplingMethodCallback;
 import org.springaicommunity.mcp.method.sampling.AsyncSamplingSpecification;
-
-import io.modelcontextprotocol.spec.McpSchema.CreateMessageRequest;
-import io.modelcontextprotocol.spec.McpSchema.CreateMessageResult;
-import io.modelcontextprotocol.util.Assert;
+import org.springaicommunity.mcp.provider.McpProviderUtils;
 import reactor.core.publisher.Mono;
 
 /**
@@ -89,8 +89,7 @@ public class AsyncMcpSamplingProvider {
 				.filter(method -> method.isAnnotationPresent(McpSampling.class))
 				.filter(method -> method.getParameterCount() == 1
 						&& CreateMessageRequest.class.isAssignableFrom(method.getParameterTypes()[0]))
-				.filter(method -> Mono.class.isAssignableFrom(method.getReturnType())
-						|| CreateMessageResult.class.isAssignableFrom(method.getReturnType()))
+				.filter(McpProviderUtils.filterNonReactiveReturnTypeMethod())
 				.sorted((m1, m2) -> m1.getName().compareTo(m2.getName()))
 				.map(mcpSamplingMethod -> {
 					var samplingAnnotation = mcpSamplingMethod.getAnnotation(McpSampling.class);

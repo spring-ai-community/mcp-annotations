@@ -22,19 +22,18 @@ import java.util.Objects;
 import java.util.function.BiFunction;
 import java.util.stream.Stream;
 
+import io.modelcontextprotocol.common.McpTransportContext;
+import io.modelcontextprotocol.server.McpStatelessServerFeatures.SyncResourceSpecification;
+import io.modelcontextprotocol.server.McpStatelessServerFeatures.SyncResourceTemplateSpecification;
+import io.modelcontextprotocol.spec.McpSchema;
+import io.modelcontextprotocol.spec.McpSchema.ReadResourceRequest;
+import io.modelcontextprotocol.spec.McpSchema.ReadResourceResult;
+import io.modelcontextprotocol.util.Assert;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springaicommunity.mcp.annotation.McpResource;
 import org.springaicommunity.mcp.method.resource.SyncStatelessMcpResourceMethodCallback;
 import org.springaicommunity.mcp.provider.McpProviderUtils;
-import io.modelcontextprotocol.server.McpStatelessServerFeatures.SyncResourceTemplateSpecification;
-import io.modelcontextprotocol.server.McpStatelessServerFeatures.SyncResourceSpecification;
-import io.modelcontextprotocol.common.McpTransportContext;
-import io.modelcontextprotocol.spec.McpSchema;
-import io.modelcontextprotocol.spec.McpSchema.ReadResourceRequest;
-import io.modelcontextprotocol.spec.McpSchema.ReadResourceResult;
-import io.modelcontextprotocol.util.Assert;
-import reactor.core.publisher.Mono;
 
 /**
  * Provider for synchronous stateless MCP resource methods.
@@ -70,7 +69,7 @@ public class SyncStatelessMcpResourceProvider {
 		List<SyncResourceSpecification> resourceSpecs = this.resourceObjects.stream()
 			.map(resourceObject -> Stream.of(doGetClassMethods(resourceObject))
 				.filter(method -> method.isAnnotationPresent(McpResource.class))
-				.filter(method -> !Mono.class.isAssignableFrom(method.getReturnType()))
+				.filter(McpProviderUtils.filterReactiveReturnTypeMethod())
 				.sorted((m1, m2) -> m1.getName().compareTo(m2.getName()))
 				.map(mcpResourceMethod -> {
 
@@ -121,7 +120,7 @@ public class SyncStatelessMcpResourceProvider {
 		List<SyncResourceTemplateSpecification> resourceSpecs = this.resourceObjects.stream()
 			.map(resourceObject -> Stream.of(doGetClassMethods(resourceObject))
 				.filter(method -> method.isAnnotationPresent(McpResource.class))
-				.filter(method -> !Mono.class.isAssignableFrom(method.getReturnType()))
+				.filter(McpProviderUtils.filterReactiveReturnTypeMethod())
 				.sorted((m1, m2) -> m1.getName().compareTo(m2.getName()))
 				.map(mcpResourceMethod -> {
 
