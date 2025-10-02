@@ -31,7 +31,7 @@ import org.slf4j.LoggerFactory;
 import org.springaicommunity.mcp.adapter.CompleteAdapter;
 import org.springaicommunity.mcp.annotation.McpComplete;
 import org.springaicommunity.mcp.method.complete.SyncStatelessMcpCompleteMethodCallback;
-import reactor.core.publisher.Mono;
+import org.springaicommunity.mcp.provider.McpProviderUtils;
 
 /**
  * Provider for synchronous stateless MCP complete methods.
@@ -67,7 +67,7 @@ public class SyncStatelessMcpCompleteProvider {
 		List<SyncCompletionSpecification> completeSpecs = this.completeObjects.stream()
 			.map(completeObject -> Stream.of(doGetClassMethods(completeObject))
 				.filter(method -> method.isAnnotationPresent(McpComplete.class))
-				.filter(method -> !Mono.class.isAssignableFrom(method.getReturnType()))
+				.filter(McpProviderUtils.filterReactiveReturnTypeMethod())
 				.sorted((m1, m2) -> m1.getName().compareTo(m2.getName()))
 				.map(mcpCompleteMethod -> {
 					var completeAnnotation = mcpCompleteMethod.getAnnotation(McpComplete.class);

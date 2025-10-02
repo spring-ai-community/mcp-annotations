@@ -80,9 +80,9 @@ public class AsyncMcpToolListChangedProviderTests {
 			.map(AsyncToolListChangedSpecification::toolListChangeHandler)
 			.toList();
 
-		// Should find 3 annotated methods (2 Mono<Void> + 1 void)
-		assertThat(consumers).hasSize(3);
-		assertThat(specifications).hasSize(3);
+		// Should find 2 annotated methods (2 Mono<Void>. Ignores the void method)
+		assertThat(consumers).hasSize(2);
+		assertThat(specifications).hasSize(2);
 
 		// Test the first consumer
 		StepVerifier.create(consumers.get(0).apply(TEST_TOOLS)).verifyComplete();
@@ -99,9 +99,6 @@ public class AsyncMcpToolListChangedProviderTests {
 		// Verify that the method was called
 		assertThat(handler.lastUpdatedTools).isEqualTo(TEST_TOOLS);
 
-		// Test the third consumer (void method)
-		StepVerifier.create(consumers.get(2).apply(TEST_TOOLS)).verifyComplete();
-
 		// Verify that the method was called
 		assertThat(handler.lastUpdatedTools).isEqualTo(TEST_TOOLS);
 	}
@@ -113,13 +110,13 @@ public class AsyncMcpToolListChangedProviderTests {
 
 		List<AsyncToolListChangedSpecification> specifications = provider.getToolListChangedSpecifications();
 
-		// Should find 3 specifications
-		assertThat(specifications).hasSize(3);
+		// Should find 2 specifications. Ignore the non-reactive method
+		assertThat(specifications).hasSize(2);
 
 		// Check client IDs
 		List<String> clientIds = specifications.stream().map(spec -> spec.clients()).flatMap(Stream::of).toList();
 
-		assertThat(clientIds).containsExactlyInAnyOrder("client1", "test-client", "client1");
+		assertThat(clientIds).containsExactlyInAnyOrder("client1", "test-client");
 	}
 
 	@Test
@@ -145,8 +142,8 @@ public class AsyncMcpToolListChangedProviderTests {
 			.map(AsyncToolListChangedSpecification::toolListChangeHandler)
 			.toList();
 
-		// Should find 6 annotated methods (3 from each handler)
-		assertThat(consumers).hasSize(6);
+		// Should find 4 annotated methods (2 from each handler)
+		assertThat(consumers).hasSize(4);
 	}
 
 	@Test
@@ -176,8 +173,9 @@ public class AsyncMcpToolListChangedProviderTests {
 
 		List<AsyncToolListChangedSpecification> specifications = provider.getToolListChangedSpecifications();
 
-		// Should only find annotated methods, not the non-annotated one
-		assertThat(specifications).hasSize(3);
+		// Should only find annotated methods, not the non-annotated one and ignore the
+		// non-reactive one
+		assertThat(specifications).hasSize(2);
 	}
 
 	/**
@@ -222,6 +220,7 @@ public class AsyncMcpToolListChangedProviderTests {
 			});
 		}
 
+		// ignored since it does not return Mono<Void>
 		@McpToolListChanged(clients = "client1")
 		public void validVoidMethod(List<McpSchema.Tool> updatedTools) {
 			this.lastUpdatedTools = updatedTools;
@@ -241,8 +240,8 @@ public class AsyncMcpToolListChangedProviderTests {
 
 		List<AsyncToolListChangedSpecification> specifications = provider.getToolListChangedSpecifications();
 
-		// Should find only the 2 valid methods (Mono<Void> and void)
-		assertThat(specifications).hasSize(2);
+		// Should find only the 1 valid methods (one Mono<Void>)
+		assertThat(specifications).hasSize(1);
 
 		// Test that the valid methods work
 		Function<List<McpSchema.Tool>, Mono<Void>> consumer = specifications.get(0).toolListChangeHandler();

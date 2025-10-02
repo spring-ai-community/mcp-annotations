@@ -21,14 +21,13 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Stream;
 
-import org.springaicommunity.mcp.annotation.McpResource;
-import org.springaicommunity.mcp.method.resource.SyncMcpResourceMethodCallback;
-import org.springaicommunity.mcp.provider.McpProviderUtils;
 import io.modelcontextprotocol.server.McpServerFeatures.SyncResourceSpecification;
 import io.modelcontextprotocol.server.McpServerFeatures.SyncResourceTemplateSpecification;
 import io.modelcontextprotocol.spec.McpSchema;
 import io.modelcontextprotocol.util.Assert;
-import reactor.core.publisher.Mono;
+import org.springaicommunity.mcp.annotation.McpResource;
+import org.springaicommunity.mcp.method.resource.SyncMcpResourceMethodCallback;
+import org.springaicommunity.mcp.provider.McpProviderUtils;
 
 /**
  */
@@ -46,7 +45,7 @@ public class SyncMcpResourceProvider {
 		List<SyncResourceSpecification> methodCallbacks = this.resourceObjects.stream()
 			.map(resourceObject -> Stream.of(this.doGetClassMethods(resourceObject))
 				.filter(resourceMethod -> resourceMethod.isAnnotationPresent(McpResource.class))
-				.filter(method -> !Mono.class.isAssignableFrom(method.getReturnType()))
+				.filter(McpProviderUtils.filterReactiveReturnTypeMethod())
 				.sorted((m1, m2) -> m1.getName().compareTo(m2.getName()))
 				.map(mcpResourceMethod -> {
 					var resourceAnnotation = mcpResourceMethod.getAnnotation(McpResource.class);
@@ -89,7 +88,7 @@ public class SyncMcpResourceProvider {
 		List<SyncResourceTemplateSpecification> methodCallbacks = this.resourceObjects.stream()
 			.map(resourceObject -> Stream.of(this.doGetClassMethods(resourceObject))
 				.filter(resourceMethod -> resourceMethod.isAnnotationPresent(McpResource.class))
-				.filter(method -> !Mono.class.isAssignableFrom(method.getReturnType()))
+				.filter(McpProviderUtils.filterReactiveReturnTypeMethod())
 				.sorted((m1, m2) -> m1.getName().compareTo(m2.getName()))
 				.map(mcpResourceMethod -> {
 					var resourceAnnotation = mcpResourceMethod.getAnnotation(McpResource.class);

@@ -21,12 +21,12 @@ import java.util.List;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
-import org.springaicommunity.mcp.annotation.McpResourceListChanged;
-import org.springaicommunity.mcp.method.changed.resource.AsyncResourceListChangedSpecification;
-import org.springaicommunity.mcp.method.changed.resource.AsyncMcpResourceListChangedMethodCallback;
-
 import io.modelcontextprotocol.spec.McpSchema;
 import io.modelcontextprotocol.util.Assert;
+import org.springaicommunity.mcp.annotation.McpResourceListChanged;
+import org.springaicommunity.mcp.method.changed.resource.AsyncMcpResourceListChangedMethodCallback;
+import org.springaicommunity.mcp.method.changed.resource.AsyncResourceListChangedSpecification;
+import org.springaicommunity.mcp.provider.McpProviderUtils;
 import reactor.core.publisher.Mono;
 
 /**
@@ -82,8 +82,7 @@ public class AsyncMcpResourceListChangedProvider {
 			.stream()
 			.map(consumerObject -> Stream.of(doGetClassMethods(consumerObject))
 				.filter(method -> method.isAnnotationPresent(McpResourceListChanged.class))
-				.filter(method -> method.getReturnType() == void.class
-						|| Mono.class.isAssignableFrom(method.getReturnType()))
+				.filter(McpProviderUtils.filterNonReactiveReturnTypeMethod())
 				.sorted((m1, m2) -> m1.getName().compareTo(m2.getName()))
 				.map(mcpResourceListChangedConsumerMethod -> {
 					var resourceListChangedAnnotation = mcpResourceListChangedConsumerMethod

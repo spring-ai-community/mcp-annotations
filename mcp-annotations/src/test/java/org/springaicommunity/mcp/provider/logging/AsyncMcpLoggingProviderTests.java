@@ -54,6 +54,7 @@ public class AsyncMcpLoggingProviderTests {
 			});
 		}
 
+		// This should be filtered out since it does not return Mono<Void>
 		@McpLogging(clients = "test-client")
 		public void handleLoggingMessageVoid(LoggingMessageNotification notification) {
 			this.lastNotification = notification;
@@ -132,8 +133,8 @@ public class AsyncMcpLoggingProviderTests {
 			.map(AsyncLoggingSpecification::loggingHandler)
 			.toList();
 
-		// Should find 6 annotated methods (3 from each handler)
-		assertThat(consumers).hasSize(6);
+		// Should find 4 annotated methods (2 from each handler)
+		assertThat(consumers).hasSize(4);
 	}
 
 }

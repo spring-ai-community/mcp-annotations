@@ -4,19 +4,18 @@
 
 package org.springaicommunity.mcp.provider.changed.resource;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
 import java.util.List;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
+import io.modelcontextprotocol.spec.McpSchema;
 import org.junit.jupiter.api.Test;
 import org.springaicommunity.mcp.annotation.McpResourceListChanged;
 import org.springaicommunity.mcp.method.changed.resource.AsyncResourceListChangedSpecification;
-
-import io.modelcontextprotocol.spec.McpSchema;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * Tests for {@link AsyncMcpResourceListChangedProvider}.
@@ -82,9 +81,9 @@ public class AsyncMcpResourceListChangedProviderTests {
 			.map(AsyncResourceListChangedSpecification::resourceListChangeHandler)
 			.toList();
 
-		// Should find 3 annotated methods (2 Mono<Void> + 1 void)
-		assertThat(consumers).hasSize(3);
-		assertThat(specifications).hasSize(3);
+		// Should find 2 annotated methods (2 Mono<Void>. Ignores the void method)
+		assertThat(consumers).hasSize(2);
+		assertThat(specifications).hasSize(2);
 
 		// Test the first consumer
 		StepVerifier.create(consumers.get(0).apply(TEST_RESOURCES)).verifyComplete();
@@ -96,13 +95,13 @@ public class AsyncMcpResourceListChangedProviderTests {
 		assertThat(handler.lastUpdatedResources.get(1).name()).isEqualTo("test-resource-2");
 
 		// Test the second consumer
-		StepVerifier.create(consumers.get(1).apply(TEST_RESOURCES)).verifyComplete();
+		StepVerifier.create(consumers.get(0).apply(TEST_RESOURCES)).verifyComplete();
 
 		// Verify that the method was called
 		assertThat(handler.lastUpdatedResources).isEqualTo(TEST_RESOURCES);
 
 		// Test the third consumer (void method)
-		StepVerifier.create(consumers.get(2).apply(TEST_RESOURCES)).verifyComplete();
+		StepVerifier.create(consumers.get(1).apply(TEST_RESOURCES)).verifyComplete();
 
 		// Verify that the method was called
 		assertThat(handler.lastUpdatedResources).isEqualTo(TEST_RESOURCES);
@@ -116,12 +115,12 @@ public class AsyncMcpResourceListChangedProviderTests {
 		List<AsyncResourceListChangedSpecification> specifications = provider.getResourceListChangedSpecifications();
 
 		// Should find 3 specifications
-		assertThat(specifications).hasSize(3);
+		assertThat(specifications).hasSize(2);
 
 		// Check client IDs
 		List<String> clientIds = specifications.stream().map(spec -> spec.clients()).flatMap(Stream::of).toList();
 
-		assertThat(clientIds).containsExactlyInAnyOrder("client1", "test-client", "client1");
+		assertThat(clientIds).containsExactlyInAnyOrder("client1", "test-client");
 	}
 
 	@Test
@@ -148,8 +147,9 @@ public class AsyncMcpResourceListChangedProviderTests {
 			.map(AsyncResourceListChangedSpecification::resourceListChangeHandler)
 			.toList();
 
-		// Should find 6 annotated methods (3 from each handler)
-		assertThat(consumers).hasSize(6);
+		// Should find 4 annotated methods (2 from each handler) drops the non-reactive
+		// ones
+		assertThat(consumers).hasSize(4);
 	}
 
 	@Test
@@ -179,8 +179,9 @@ public class AsyncMcpResourceListChangedProviderTests {
 
 		List<AsyncResourceListChangedSpecification> specifications = provider.getResourceListChangedSpecifications();
 
-		// Should only find annotated methods, not the non-annotated one
-		assertThat(specifications).hasSize(3);
+		// Should only find annotated methods, not the non-annotated one and drops the
+		// non-reactive ones
+		assertThat(specifications).hasSize(2);
 	}
 
 	/**
@@ -244,8 +245,8 @@ public class AsyncMcpResourceListChangedProviderTests {
 
 		List<AsyncResourceListChangedSpecification> specifications = provider.getResourceListChangedSpecifications();
 
-		// Should find only the 2 valid methods (Mono<Void> and void)
-		assertThat(specifications).hasSize(2);
+		// Should find only 1 valid method (Mono<Void> and drop the non-reactive void)
+		assertThat(specifications).hasSize(1);
 
 		// Test that the valid methods work
 		Function<List<McpSchema.Resource>, Mono<Void>> consumer = specifications.get(0).resourceListChangeHandler();

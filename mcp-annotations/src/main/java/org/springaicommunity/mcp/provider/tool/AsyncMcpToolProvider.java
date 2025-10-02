@@ -63,7 +63,7 @@ public class AsyncMcpToolProvider extends AbstractMcpToolProvider {
 		List<AsyncToolSpecification> toolSpecs = this.toolObjects.stream()
 			.map(toolObject -> Stream.of(this.doGetClassMethods(toolObject))
 				.filter(method -> method.isAnnotationPresent(McpTool.class))
-				.filter(McpProviderUtils.isReactiveReturnType)
+				.filter(McpProviderUtils.filterNonReactiveReturnTypeMethod())
 				.sorted((m1, m2) -> m1.getName().compareTo(m2.getName()))
 				.map(mcpToolMethod -> {
 

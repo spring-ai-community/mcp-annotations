@@ -21,12 +21,11 @@ import java.util.List;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 
-import org.springaicommunity.mcp.annotation.McpProgress;
-import org.springaicommunity.mcp.method.progress.SyncProgressSpecification;
-import org.springaicommunity.mcp.method.progress.SyncMcpProgressMethodCallback;
-
 import io.modelcontextprotocol.spec.McpSchema.ProgressNotification;
-import reactor.core.publisher.Mono;
+import org.springaicommunity.mcp.annotation.McpProgress;
+import org.springaicommunity.mcp.method.progress.SyncMcpProgressMethodCallback;
+import org.springaicommunity.mcp.method.progress.SyncProgressSpecification;
+import org.springaicommunity.mcp.provider.McpProviderUtils;
 
 /**
  * Provider for synchronous progress callbacks.
@@ -78,7 +77,7 @@ public class SyncMcpProgressProvider {
 		List<SyncProgressSpecification> progressConsumers = this.progressObjects.stream()
 			.map(progressObject -> Stream.of(doGetClassMethods(progressObject))
 				.filter(method -> method.isAnnotationPresent(McpProgress.class))
-				.filter(method -> !Mono.class.isAssignableFrom(method.getReturnType()))
+				.filter(McpProviderUtils.filterReactiveReturnTypeMethod())
 				.filter(method -> method.getReturnType() == void.class) // Only void
 																		// return type is
 																		// valid for sync

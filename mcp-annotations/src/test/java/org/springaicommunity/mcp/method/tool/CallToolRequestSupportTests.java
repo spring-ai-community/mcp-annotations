@@ -31,7 +31,7 @@ import org.springaicommunity.mcp.annotation.McpTool;
 import org.springaicommunity.mcp.annotation.McpToolParam;
 import org.springaicommunity.mcp.method.tool.utils.JsonSchemaGenerator;
 import org.springaicommunity.mcp.provider.tool.SyncMcpToolProvider;
-
+import reactor.core.publisher.Mono;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.JsonNode;
 
@@ -177,6 +177,14 @@ public class CallToolRequestSupportTests {
 			String input = (String) arguments.get("input");
 
 			return new TestResult(input != null ? input : "default", 42);
+		}
+
+		/**
+		 * Simple reactive tool for negative testing
+		 */
+		@McpTool(name = "reactive-tool", description = "Hello World Reactive Tool")
+		public Mono<String> simpleReactive(CallToolRequest request) {
+			return Mono.just("Hello World");
 		}
 
 	}
