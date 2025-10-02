@@ -56,10 +56,8 @@ import reactor.core.publisher.Mono;
  * @see McpLogging
  * @see SyncMcpLoggingMethodCallback
  * @see LoggingMessageNotification
- * @deprecated Use {@link SyncMcpLoggingProvider} instead.
  */
-@Deprecated
-public class SyncMcpLogginProvider {
+public class SyncMcpLoggingProvider {
 
 	private final List<Object> loggingConsumerObjects;
 
@@ -68,7 +66,7 @@ public class SyncMcpLogginProvider {
 	 * @param loggingConsumerObjects the objects containing methods annotated with
 	 * {@link McpLogging}
 	 */
-	public SyncMcpLogginProvider(List<Object> loggingConsumerObjects) {
+	public SyncMcpLoggingProvider(List<Object> loggingConsumerObjects) {
 		Assert.notNull(loggingConsumerObjects, "loggingConsumerObjects cannot be null");
 		this.loggingConsumerObjects = loggingConsumerObjects;
 	}
