@@ -17,7 +17,7 @@ import io.modelcontextprotocol.spec.McpSchema.LoggingLevel;
 import io.modelcontextprotocol.spec.McpSchema.LoggingMessageNotification;
 
 /**
- * Tests for {@link SyncMcpLogginProvider}.
+ * Tests for {@link SyncMcpLoggingProvider}.
  *
  * @author Christian Tzolov
  */
@@ -60,7 +60,7 @@ public class SyncMcpLoggingProviderTests {
 	@Test
 	void testGetLoggingConsumers() {
 		LoggingHandler loggingHandler = new LoggingHandler();
-		SyncMcpLogginProvider provider = new SyncMcpLogginProvider(List.of(loggingHandler));
+		SyncMcpLoggingProvider provider = new SyncMcpLoggingProvider(List.of(loggingHandler));
 
 		List<SyncLoggingSpecification> specifications = provider.getLoggingSpecifications();
 		List<Consumer<LoggingMessageNotification>> consumers = specifications.stream()
@@ -89,7 +89,7 @@ public class SyncMcpLoggingProviderTests {
 
 	@Test
 	void testEmptyList() {
-		SyncMcpLogginProvider provider = new SyncMcpLogginProvider(List.of());
+		SyncMcpLoggingProvider provider = new SyncMcpLoggingProvider(List.of());
 
 		List<Consumer<LoggingMessageNotification>> consumers = provider.getLoggingSpecifications()
 			.stream()
@@ -103,7 +103,7 @@ public class SyncMcpLoggingProviderTests {
 	void testMultipleObjects() {
 		LoggingHandler handler1 = new LoggingHandler();
 		LoggingHandler handler2 = new LoggingHandler();
-		SyncMcpLogginProvider provider = new SyncMcpLogginProvider(List.of(handler1, handler2));
+		SyncMcpLoggingProvider provider = new SyncMcpLoggingProvider(List.of(handler1, handler2));
 
 		List<Consumer<LoggingMessageNotification>> consumers = provider.getLoggingSpecifications()
 			.stream()
