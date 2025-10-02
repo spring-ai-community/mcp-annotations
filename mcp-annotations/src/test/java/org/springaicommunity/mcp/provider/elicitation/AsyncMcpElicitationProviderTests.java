@@ -4,22 +4,21 @@
 
 package org.springaicommunity.mcp.provider.elicitation;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 
+import io.modelcontextprotocol.spec.McpSchema.ElicitRequest;
+import io.modelcontextprotocol.spec.McpSchema.ElicitResult;
 import org.junit.jupiter.api.Test;
 import org.springaicommunity.mcp.annotation.McpElicitation;
 import org.springaicommunity.mcp.method.elicitation.AsyncElicitationSpecification;
-
-import io.modelcontextprotocol.spec.McpSchema.ElicitRequest;
-import io.modelcontextprotocol.spec.McpSchema.ElicitResult;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 /**
  * Tests for {@link AsyncMcpElicitationProvider}.
@@ -51,20 +50,7 @@ public class AsyncMcpElicitationProviderTests {
 	@Test
 	public void testGetElicitationHandlerWithSyncMethod() {
 		var provider = new AsyncMcpElicitationProvider(List.of(new SyncElicitationHandler()));
-		AsyncElicitationSpecification specification = provider.getElicitationSpecifications().get(0);
-		Function<ElicitRequest, Mono<ElicitResult>> handler = specification.elicitationHandler();
-
-		assertNotNull(handler);
-
-		ElicitRequest request = new ElicitRequest("Please provide your name",
-				Map.of("type", "object", "properties", Map.of("name", Map.of("type", "string"))));
-		Mono<ElicitResult> result = handler.apply(request);
-
-		StepVerifier.create(result).assertNext(elicitResult -> {
-			assertEquals(ElicitResult.Action.ACCEPT, elicitResult.action());
-			assertNotNull(elicitResult.content());
-			assertEquals("Sync Test User", elicitResult.content().get("name"));
-		}).verifyComplete();
+		assertThat(provider.getElicitationSpecifications()).isEmpty();
 	}
 
 	public static class TestElicitationHandler {

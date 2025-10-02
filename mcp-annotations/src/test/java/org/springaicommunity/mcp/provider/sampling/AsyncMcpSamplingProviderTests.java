@@ -4,24 +4,21 @@
 
 package org.springaicommunity.mcp.provider.sampling;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-
-import java.util.Collections;
 import java.util.List;
 import java.util.function.Function;
-
-import org.junit.jupiter.api.Test;
-import org.springaicommunity.mcp.annotation.McpSampling;
-import org.springaicommunity.mcp.method.sampling.AsyncMcpSamplingMethodCallbackExample;
-import org.springaicommunity.mcp.method.sampling.AsyncSamplingSpecification;
-import org.springaicommunity.mcp.method.sampling.SamlingTestHelper;
 
 import io.modelcontextprotocol.spec.McpSchema.CreateMessageRequest;
 import io.modelcontextprotocol.spec.McpSchema.CreateMessageResult;
 import io.modelcontextprotocol.spec.McpSchema.TextContent;
+import org.junit.jupiter.api.Test;
+import org.springaicommunity.mcp.annotation.McpSampling;
+import org.springaicommunity.mcp.method.sampling.AsyncSamplingSpecification;
+import org.springaicommunity.mcp.method.sampling.SamlingTestHelper;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
  * Tests for {@link AsyncMcpSamplingProvider}.
@@ -78,12 +75,12 @@ public class AsyncMcpSamplingProviderTests {
 		class DirectResultOnly {
 
 			@McpSampling(clients = "test-client")
-			public CreateMessageResult handleDirectSamplingRequest(CreateMessageRequest request) {
-				return CreateMessageResult.builder()
+			public Mono<CreateMessageResult> handleDirectSamplingRequest(CreateMessageRequest request) {
+				return Mono.just(CreateMessageResult.builder()
 					.role(io.modelcontextprotocol.spec.McpSchema.Role.ASSISTANT)
 					.content(new TextContent("This is a direct response to the sampling request"))
 					.model("test-model")
-					.build();
+					.build());
 			}
 
 		}

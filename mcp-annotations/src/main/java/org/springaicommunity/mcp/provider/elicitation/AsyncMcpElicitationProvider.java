@@ -26,7 +26,7 @@ import org.slf4j.LoggerFactory;
 import org.springaicommunity.mcp.annotation.McpElicitation;
 import org.springaicommunity.mcp.method.elicitation.AsyncElicitationSpecification;
 import org.springaicommunity.mcp.method.elicitation.AsyncMcpElicitationMethodCallback;
-
+import org.springaicommunity.mcp.provider.McpProviderUtils;
 import io.modelcontextprotocol.spec.McpSchema.ElicitRequest;
 import io.modelcontextprotocol.spec.McpSchema.ElicitResult;
 import io.modelcontextprotocol.util.Assert;
@@ -89,8 +89,7 @@ public class AsyncMcpElicitationProvider {
 				.filter(method -> method.isAnnotationPresent(McpElicitation.class))
 				.filter(method -> method.getParameterCount() == 1
 						&& ElicitRequest.class.isAssignableFrom(method.getParameterTypes()[0]))
-				.filter(method -> Mono.class.isAssignableFrom(method.getReturnType())
-						|| ElicitResult.class.isAssignableFrom(method.getReturnType()))
+				.filter(McpProviderUtils.filterNonReactiveReturnTypeMethod())
 				.sorted((m1, m2) -> m1.getName().compareTo(m2.getName()))
 				.map(mcpElicitationMethod -> {
 					var elicitationAnnotation = mcpElicitationMethod.getAnnotation(McpElicitation.class);

@@ -21,16 +21,15 @@ import java.util.List;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
+import io.modelcontextprotocol.spec.McpSchema.CreateMessageRequest;
+import io.modelcontextprotocol.spec.McpSchema.CreateMessageResult;
+import io.modelcontextprotocol.util.Assert;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springaicommunity.mcp.annotation.McpSampling;
 import org.springaicommunity.mcp.method.sampling.SyncMcpSamplingMethodCallback;
 import org.springaicommunity.mcp.method.sampling.SyncSamplingSpecification;
-
-import io.modelcontextprotocol.spec.McpSchema.CreateMessageRequest;
-import io.modelcontextprotocol.spec.McpSchema.CreateMessageResult;
-import io.modelcontextprotocol.util.Assert;
-import reactor.core.publisher.Mono;
+import org.springaicommunity.mcp.provider.McpProviderUtils;
 
 /**
  * Provider for synchronous sampling callbacks.
@@ -87,7 +86,7 @@ public class SyncMcpSamplingProvider {
 		List<SyncSamplingSpecification> samplingHandlers = this.samplingObjects.stream()
 			.map(samplingObject -> Stream.of(doGetClassMethods(samplingObject))
 				.filter(method -> method.isAnnotationPresent(McpSampling.class))
-				.filter(method -> !Mono.class.isAssignableFrom(method.getReturnType()))
+				.filter(McpProviderUtils.filterReactiveReturnTypeMethod())
 				.filter(method -> CreateMessageResult.class.isAssignableFrom(method.getReturnType()))
 				.filter(method -> method.getParameterCount() == 1
 						&& CreateMessageRequest.class.isAssignableFrom(method.getParameterTypes()[0]))

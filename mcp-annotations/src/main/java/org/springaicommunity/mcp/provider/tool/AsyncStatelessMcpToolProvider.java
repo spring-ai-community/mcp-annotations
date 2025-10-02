@@ -21,7 +21,6 @@ import java.util.function.BiFunction;
 import java.util.stream.Stream;
 
 import io.modelcontextprotocol.common.McpTransportContext;
-import io.modelcontextprotocol.json.McpJsonMapper;
 import io.modelcontextprotocol.server.McpStatelessServerFeatures.AsyncToolSpecification;
 import io.modelcontextprotocol.spec.McpSchema;
 import io.modelcontextprotocol.spec.McpSchema.CallToolRequest;
@@ -68,7 +67,7 @@ public class AsyncStatelessMcpToolProvider extends AbstractMcpToolProvider {
 		List<AsyncToolSpecification> toolSpecs = this.toolObjects.stream()
 			.map(toolObject -> Stream.of(doGetClassMethods(toolObject))
 				.filter(method -> method.isAnnotationPresent(McpTool.class))
-				.filter(McpProviderUtils.isReactiveReturnType)
+				.filter(McpProviderUtils.filterNonReactiveReturnTypeMethod())
 				.sorted((m1, m2) -> m1.getName().compareTo(m2.getName()))
 				.map(mcpToolMethod -> {
 
