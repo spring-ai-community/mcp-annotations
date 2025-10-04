@@ -120,9 +120,9 @@ public class SyncMcpToolProvider extends AbstractMcpToolProvider {
 
 					var tool = toolBuilder.build();
 
-					boolean useStructuredOtput = tool.outputSchema() != null;
+					boolean useStructuredOutput = tool.outputSchema() != null;
 
-					ReturnMode returnMode = useStructuredOtput ? ReturnMode.STRUCTURED
+					ReturnMode returnMode = useStructuredOutput ? ReturnMode.STRUCTURED
 							: (methodReturnType == Void.TYPE || methodReturnType == void.class ? ReturnMode.VOID
 									: ReturnMode.TEXT);
 
