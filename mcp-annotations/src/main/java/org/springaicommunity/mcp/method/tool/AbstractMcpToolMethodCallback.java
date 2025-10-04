@@ -23,8 +23,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Stream;
 
-import io.modelcontextprotocol.spec.McpSchema.CallToolRequest;
-import io.modelcontextprotocol.spec.McpSchema.CallToolResult;
+import io.modelcontextprotocol.spec.McpSchema.*;
+import io.modelcontextprotocol.spec.McpSchema.CallToolResult.*;
 import org.springaicommunity.mcp.annotation.McpMeta;
 import org.springaicommunity.mcp.annotation.McpProgressToken;
 import org.springaicommunity.mcp.annotation.McpTool;
@@ -144,36 +144,48 @@ public abstract class AbstractMcpToolMethodCallback<T> {
 	 * @return A CallToolResult representing the processed result
 	 */
 	protected CallToolResult convertValueToCallToolResult(Object result) {
+		Builder callToolResultBuilder = CallToolResult.builder();
+
+		// According to the MCP protocol For backwards compatibility, a tool that returns
+		// structured content SHOULD also return the serialized JSON in a TextContent
+		// block.
+		if (this.returnMode == ReturnMode.STRUCTURED) {
+			String jsonOutput = JsonParser.toJson(result);
+			Object structuredOutput = JsonParser.fromJson(jsonOutput, Object.class);
+			callToolResultBuilder.structuredContent(structuredOutput);
+		}
+
 		// Return the result if it's already a CallToolResult
 		if (result instanceof CallToolResult) {
 			return (CallToolResult) result;
+		}
+		else if (result instanceof TextContent textContent) {
+			// Structured content is only supported in TextContent
+			return callToolResultBuilder.addContent(textContent).isError(false).meta(null).build();
+		}
+		else if (result instanceof Content content) {
+			return CallToolResult.builder().addContent(content).isError(false).meta(null).build();
 		}
 
 		Type returnType = this.toolMethod.getGenericReturnType();
 
 		if (returnMode == ReturnMode.VOID || returnType == Void.TYPE || returnType == void.class) {
-			return CallToolResult.builder().addTextContent(JsonParser.toJson("Done")).build();
-		}
-
-		if (this.returnMode == ReturnMode.STRUCTURED) {
-			String jsonOutput = JsonParser.toJson(result);
-			Object structuredOutput = JsonParser.fromJson(jsonOutput, Object.class);
-			return CallToolResult.builder().structuredContent(structuredOutput).build();
+			return callToolResultBuilder.addTextContent(JsonParser.toJson("Done")).build();
 		}
 
 		// Default to text output
 		if (result == null) {
-			return CallToolResult.builder().addTextContent("null").build();
+			return callToolResultBuilder.addTextContent("null").build();
 		}
 
 		// For string results in TEXT mode, return the string directly without JSON
 		// serialization
 		if (result instanceof String) {
-			return CallToolResult.builder().addTextContent((String) result).build();
+			return callToolResultBuilder.addTextContent((String) result).build();
 		}
 
 		// For other types, serialize to JSON
-		return CallToolResult.builder().addTextContent(JsonParser.toJson(result)).build();
+		return callToolResultBuilder.addTextContent(JsonParser.toJson(result)).build();
 	}
 
 	/**
