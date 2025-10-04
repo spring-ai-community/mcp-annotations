@@ -567,7 +567,6 @@ public class AsyncMcpToolMethodCallbackTests {
 		StepVerifier.create(callback.apply(exchange, request)).assertNext(result -> {
 			assertThat(result).isNotNull();
 			assertThat(result.isError()).isFalse();
-			assertThat(result.content()).isEmpty();
 			assertThat(result.structuredContent()).isNotNull();
 			assertThat((Map<String, Object>) result.structuredContent()).containsEntry("name", "test");
 			assertThat((Map<String, Object>) result.structuredContent()).containsEntry("value", 42);

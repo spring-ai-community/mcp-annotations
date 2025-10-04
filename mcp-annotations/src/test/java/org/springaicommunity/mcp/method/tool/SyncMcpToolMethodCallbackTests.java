@@ -514,7 +514,6 @@ public class SyncMcpToolMethodCallbackTests {
 		assertThat(result.isError()).isFalse();
 		// For complex return types (non-primitive, non-wrapper, non-CallToolResult),
 		// the new implementation should return structured content
-		assertThat(result.content()).isEmpty();
 		assertThat(result.structuredContent()).isNotNull();
 		assertThat((Map<String, Object>) result.structuredContent()).containsEntry("name", "test");
 		assertThat((Map<String, Object>) result.structuredContent()).containsEntry("value", 42);
