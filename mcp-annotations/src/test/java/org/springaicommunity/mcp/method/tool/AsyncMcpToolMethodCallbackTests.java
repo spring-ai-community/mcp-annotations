@@ -18,6 +18,7 @@ import org.reactivestreams.Publisher;
 import org.springaicommunity.mcp.annotation.McpMeta;
 import org.springaicommunity.mcp.annotation.McpTool;
 import org.springaicommunity.mcp.annotation.McpToolParam;
+import org.springaicommunity.mcp.context.McpAsyncRequestContext;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
@@ -71,6 +72,11 @@ public class AsyncMcpToolMethodCallbackTests {
 		@McpTool(name = "exchange-mono-tool", description = "Mono tool with exchange parameter")
 		public Mono<String> monoToolWithExchange(McpAsyncServerExchange exchange, String message) {
 			return Mono.just("Exchange tool: " + message);
+		}
+
+		@McpTool(name = "context-mono-tool", description = "Mono tool with context parameter")
+		public Mono<String> monoToolWithContext(McpAsyncRequestContext context, String message) {
+			return Mono.just("Context tool: " + message);
 		}
 
 		@McpTool(name = "list-mono-tool", description = "Mono tool with list parameter")
@@ -664,10 +670,32 @@ public class AsyncMcpToolMethodCallbackTests {
 		// Test that McpAsyncServerExchange is recognized as exchange type
 		assertThat(callback.isExchangeOrContextType(McpAsyncServerExchange.class)).isTrue();
 
+		// Test that McpAsyncRequestContext is recognized as context type
+		assertThat(callback.isExchangeOrContextType(McpAsyncRequestContext.class)).isTrue();
+
 		// Test that other types are not recognized as exchange type
 		assertThat(callback.isExchangeOrContextType(String.class)).isFalse();
 		assertThat(callback.isExchangeOrContextType(Integer.class)).isFalse();
 		assertThat(callback.isExchangeOrContextType(Object.class)).isFalse();
+	}
+
+	@Test
+	public void testMonoToolWithContextParameter() throws Exception {
+		TestAsyncToolProvider provider = new TestAsyncToolProvider();
+		Method method = TestAsyncToolProvider.class.getMethod("monoToolWithContext", McpAsyncRequestContext.class,
+				String.class);
+		AsyncMcpToolMethodCallback callback = new AsyncMcpToolMethodCallback(ReturnMode.TEXT, method, provider);
+
+		McpAsyncServerExchange exchange = mock(McpAsyncServerExchange.class);
+		CallToolRequest request = new CallToolRequest("context-mono-tool", Map.of("message", "hello"));
+
+		StepVerifier.create(callback.apply(exchange, request)).assertNext(result -> {
+			assertThat(result).isNotNull();
+			assertThat(result.isError()).isFalse();
+			assertThat(result.content()).hasSize(1);
+			assertThat(result.content().get(0)).isInstanceOf(TextContent.class);
+			assertThat(((TextContent) result.content().get(0)).text()).isEqualTo("Context tool: hello");
+		}).verifyComplete();
 	}
 
 	@Test

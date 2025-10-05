@@ -20,6 +20,7 @@ import java.lang.reflect.Method;
 
 import io.modelcontextprotocol.spec.McpSchema.CallToolRequest;
 import io.modelcontextprotocol.spec.McpSchema.CallToolResult;
+import org.springaicommunity.mcp.context.McpRequestContextTypes;
 
 /**
  * Abstract base class for creating Function callbacks around synchronous tool methods.
@@ -33,7 +34,8 @@ import io.modelcontextprotocol.spec.McpSchema.CallToolResult;
  * McpSyncServerExchange)
  * @author Christian Tzolov
  */
-public abstract class AbstractSyncMcpToolMethodCallback<T> extends AbstractAsyncMcpToolMethodCallback<T> {
+public abstract class AbstractSyncMcpToolMethodCallback<T, RC extends McpRequestContextTypes<?>>
+		extends AbstractAsyncMcpToolMethodCallback<T, RC> {
 
 	protected AbstractSyncMcpToolMethodCallback(ReturnMode returnMode, Method toolMethod, Object toolObject,
 			Class<? extends Throwable> toolCallExceptionClass) {

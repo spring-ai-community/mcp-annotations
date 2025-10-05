@@ -22,6 +22,7 @@ import io.modelcontextprotocol.spec.McpSchema.CallToolRequest;
 import io.modelcontextprotocol.spec.McpSchema.CallToolResult;
 import org.reactivestreams.Publisher;
 import org.springaicommunity.mcp.annotation.McpTool;
+import org.springaicommunity.mcp.context.McpRequestContextTypes;
 import org.springaicommunity.mcp.method.tool.utils.JsonParser;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -37,7 +38,8 @@ import reactor.core.publisher.Mono;
  * McpTransportContext)
  * @author Christian Tzolov
  */
-public abstract class AbstractAsyncMcpToolMethodCallback<T> extends AbstractMcpToolMethodCallback<T> {
+public abstract class AbstractAsyncMcpToolMethodCallback<T, RC extends McpRequestContextTypes<?>>
+		extends AbstractMcpToolMethodCallback<T, RC> {
 
 	protected final Class<? extends Throwable> toolCallExceptionClass;
 
