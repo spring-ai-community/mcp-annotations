@@ -4,10 +4,11 @@
 
 package org.springaicommunity.mcp.context;
 
-import java.lang.reflect.Type;
+import java.util.Map;
 import java.util.Optional;
 import java.util.function.Consumer;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import io.modelcontextprotocol.server.McpSyncServerExchange;
 import io.modelcontextprotocol.spec.McpSchema.CreateMessageRequest;
 import io.modelcontextprotocol.spec.McpSchema.CreateMessageResult;
@@ -29,9 +30,10 @@ public interface McpSyncRequestContext extends McpRequestContextTypes<McpSyncSer
 	// --------------------------------------
 	// Elicitation
 	// --------------------------------------
-	Optional<ElicitResult> elicitation(Consumer<ElicitationSpec> elicitationSpec);
+	<T> Optional<T> elicitation(TypeReference<T> type);
 
-	Optional<ElicitResult> elicitation(String message, Type type);
+	<T> Optional<StructuredElicitResult<T>> elicitation(TypeReference<T> type, String message,
+			Map<String, Object> meta);
 
 	Optional<ElicitResult> elicitation(ElicitRequest elicitRequest);
 

@@ -6,6 +6,7 @@ package org.springaicommunity.mcp.context;
 
 import java.util.Map;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import io.modelcontextprotocol.server.McpAsyncServerExchange;
 import io.modelcontextprotocol.spec.McpSchema;
 import io.modelcontextprotocol.spec.McpSchema.CallToolRequest;
@@ -126,21 +127,29 @@ public class DefaultMcpAsyncRequestContextTests {
 	// Elicitation Tests
 
 	@Test
-	public void testElicitationWithConsumer() {
+	public void testElicitationWithMessageAndMeta() {
 		ClientCapabilities capabilities = mock(ClientCapabilities.class);
 		ClientCapabilities.Elicitation elicitation = mock(ClientCapabilities.Elicitation.class);
 		when(capabilities.elicitation()).thenReturn(elicitation);
 		when(exchange.getClientCapabilities()).thenReturn(capabilities);
 
+		Map<String, Object> contentMap = Map.of("name", "John", "age", 30);
 		ElicitResult expectedResult = mock(ElicitResult.class);
+		when(expectedResult.action()).thenReturn(ElicitResult.Action.ACCEPT);
+		when(expectedResult.content()).thenReturn(contentMap);
+		when(expectedResult.meta()).thenReturn(null);
 		when(exchange.createElicitation(any(ElicitRequest.class))).thenReturn(Mono.just(expectedResult));
 
-		Mono<ElicitResult> result = context.elicitation(spec -> {
-			spec.message("Test message");
-			spec.responseType(String.class);
-		});
+		Mono<StructuredElicitResult<Map<String, Object>>> result = context
+			.elicitation(new TypeReference<Map<String, Object>>() {
+			}, "Test message", null);
 
-		StepVerifier.create(result).expectNext(expectedResult).verifyComplete();
+		StepVerifier.create(result).assertNext(structuredResult -> {
+			assertThat(structuredResult.action()).isEqualTo(ElicitResult.Action.ACCEPT);
+			assertThat(structuredResult.structuredContent()).isNotNull();
+			assertThat(structuredResult.structuredContent()).containsEntry("name", "John");
+			assertThat(structuredResult.structuredContent()).containsEntry("age", 30);
+		}).verifyComplete();
 
 		ArgumentCaptor<ElicitRequest> captor = ArgumentCaptor.forClass(ElicitRequest.class);
 		verify(exchange).createElicitation(captor.capture());
@@ -151,22 +160,32 @@ public class DefaultMcpAsyncRequestContextTests {
 	}
 
 	@Test
-	public void testElicitationWithConsumerAndMeta() {
+	public void testElicitationWithMetadata() {
 		ClientCapabilities capabilities = mock(ClientCapabilities.class);
 		ClientCapabilities.Elicitation elicitation = mock(ClientCapabilities.Elicitation.class);
 		when(capabilities.elicitation()).thenReturn(elicitation);
 		when(exchange.getClientCapabilities()).thenReturn(capabilities);
 
+		record Person(String name, int age) {
+		}
+
+		Map<String, Object> contentMap = Map.of("name", "Jane", "age", 25);
 		ElicitResult expectedResult = mock(ElicitResult.class);
+		when(expectedResult.action()).thenReturn(ElicitResult.Action.ACCEPT);
+		when(expectedResult.content()).thenReturn(contentMap);
+		when(expectedResult.meta()).thenReturn(null);
 		when(exchange.createElicitation(any(ElicitRequest.class))).thenReturn(Mono.just(expectedResult));
 
-		Mono<ElicitResult> result = context.elicitation(spec -> {
-			spec.message("Test message");
-			spec.responseType(String.class);
-			spec.meta("key", "value");
-		});
+		Map<String, Object> meta = Map.of("key", "value");
+		Mono<StructuredElicitResult<Person>> result = context.elicitation(new TypeReference<Person>() {
+		}, "Test message", meta);
 
-		StepVerifier.create(result).expectNext(expectedResult).verifyComplete();
+		StepVerifier.create(result).assertNext(structuredResult -> {
+			assertThat(structuredResult.action()).isEqualTo(ElicitResult.Action.ACCEPT);
+			assertThat(structuredResult.structuredContent()).isNotNull();
+			assertThat(structuredResult.structuredContent().name()).isEqualTo("Jane");
+			assertThat(structuredResult.structuredContent().age()).isEqualTo(25);
+		}).verifyComplete();
 
 		ArgumentCaptor<ElicitRequest> captor = ArgumentCaptor.forClass(ElicitRequest.class);
 		verify(exchange).createElicitation(captor.capture());
@@ -176,45 +195,142 @@ public class DefaultMcpAsyncRequestContextTests {
 	}
 
 	@Test
-	public void testElicitationWithNullConsumer() {
+	public void testElicitationWithNullTypeReference() {
 		assertThat(org.junit.jupiter.api.Assertions.assertThrows(IllegalArgumentException.class, () -> {
-			context.elicitation((java.util.function.Consumer<McpAsyncRequestContext.ElicitationSpec>) null);
-		})).hasMessageContaining("Elicitation spec consumer must not be null");
+			context.elicitation(null, "Test message", null);
+		})).hasMessageContaining("Elicitation response type must not be null");
 	}
 
 	@Test
 	public void testElicitationWithEmptyMessage() {
 		assertThat(org.junit.jupiter.api.Assertions.assertThrows(IllegalArgumentException.class, () -> {
-			context.elicitation(spec -> {
-				spec.message("");
-				spec.responseType(String.class);
-			});
-		})).hasMessageContaining("Message must not be empty");
+			context.elicitation(new TypeReference<String>() {
+			}, "", null);
+		})).hasMessageContaining("Elicitation message must not be empty");
 	}
 
 	@Test
-	public void testElicitationWithNullResponseType() {
+	public void testElicitationWithNullMessage() {
 		assertThat(org.junit.jupiter.api.Assertions.assertThrows(IllegalArgumentException.class, () -> {
-			context.elicitation(spec -> {
-				spec.message("Test message");
-				spec.responseType(null);
-			});
-		})).hasMessageContaining("Response type must not be null");
+			context.elicitation(new TypeReference<String>() {
+			}, null, null);
+		})).hasMessageContaining("Elicitation message must not be empty");
 	}
 
 	@Test
-	public void testElicitationWithMessageAndType() {
+	public void testElicitationReturnsEmptyWhenNotSupported() {
+		when(exchange.getClientCapabilities()).thenReturn(null);
+
+		Mono<StructuredElicitResult<Map<String, Object>>> result = context
+			.elicitation(new TypeReference<Map<String, Object>>() {
+			}, "Test message", null);
+
+		StepVerifier.create(result).verifyComplete();
+	}
+
+	@Test
+	public void testElicitationReturnsResultWhenActionIsNotAccept() {
 		ClientCapabilities capabilities = mock(ClientCapabilities.class);
 		ClientCapabilities.Elicitation elicitation = mock(ClientCapabilities.Elicitation.class);
 		when(capabilities.elicitation()).thenReturn(elicitation);
 		when(exchange.getClientCapabilities()).thenReturn(capabilities);
 
+		Map<String, Object> contentMap = Map.of();
 		ElicitResult expectedResult = mock(ElicitResult.class);
+		when(expectedResult.action()).thenReturn(ElicitResult.Action.DECLINE);
+		when(expectedResult.content()).thenReturn(contentMap);
+		when(expectedResult.meta()).thenReturn(null);
 		when(exchange.createElicitation(any(ElicitRequest.class))).thenReturn(Mono.just(expectedResult));
 
-		Mono<ElicitResult> result = context.elicitation("Test message", String.class);
+		Mono<StructuredElicitResult<Map<String, Object>>> result = context
+			.elicitation(new TypeReference<Map<String, Object>>() {
+			}, "Test message", null);
 
-		StepVerifier.create(result).expectNext(expectedResult).verifyComplete();
+		StepVerifier.create(result).assertNext(structuredResult -> {
+			assertThat(structuredResult.action()).isEqualTo(ElicitResult.Action.DECLINE);
+			assertThat(structuredResult.structuredContent()).isNotNull();
+		}).verifyComplete();
+	}
+
+	@Test
+	public void testElicitationConvertsComplexTypes() {
+		ClientCapabilities capabilities = mock(ClientCapabilities.class);
+		ClientCapabilities.Elicitation elicitation = mock(ClientCapabilities.Elicitation.class);
+		when(capabilities.elicitation()).thenReturn(elicitation);
+		when(exchange.getClientCapabilities()).thenReturn(capabilities);
+
+		record Address(String street, String city) {
+		}
+		record PersonWithAddress(String name, int age, Address address) {
+		}
+
+		Map<String, Object> addressMap = Map.of("street", "123 Main St", "city", "Springfield");
+		Map<String, Object> contentMap = Map.of("name", "John", "age", 30, "address", addressMap);
+		ElicitResult expectedResult = mock(ElicitResult.class);
+		when(expectedResult.action()).thenReturn(ElicitResult.Action.ACCEPT);
+		when(expectedResult.content()).thenReturn(contentMap);
+		when(expectedResult.meta()).thenReturn(null);
+		when(exchange.createElicitation(any(ElicitRequest.class))).thenReturn(Mono.just(expectedResult));
+
+		Mono<StructuredElicitResult<PersonWithAddress>> result = context
+			.elicitation(new TypeReference<PersonWithAddress>() {
+			}, "Test message", null);
+
+		StepVerifier.create(result).assertNext(structuredResult -> {
+			assertThat(structuredResult.action()).isEqualTo(ElicitResult.Action.ACCEPT);
+			assertThat(structuredResult.structuredContent()).isNotNull();
+			assertThat(structuredResult.structuredContent().name()).isEqualTo("John");
+			assertThat(structuredResult.structuredContent().age()).isEqualTo(30);
+			assertThat(structuredResult.structuredContent().address()).isNotNull();
+			assertThat(structuredResult.structuredContent().address().street()).isEqualTo("123 Main St");
+			assertThat(structuredResult.structuredContent().address().city()).isEqualTo("Springfield");
+		}).verifyComplete();
+	}
+
+	@Test
+	public void testElicitationHandlesListTypes() {
+		ClientCapabilities capabilities = mock(ClientCapabilities.class);
+		ClientCapabilities.Elicitation elicitation = mock(ClientCapabilities.Elicitation.class);
+		when(capabilities.elicitation()).thenReturn(elicitation);
+		when(exchange.getClientCapabilities()).thenReturn(capabilities);
+
+		Map<String, Object> contentMap = Map.of("items",
+				java.util.List.of(Map.of("name", "Item1"), Map.of("name", "Item2")));
+		ElicitResult expectedResult = mock(ElicitResult.class);
+		when(expectedResult.action()).thenReturn(ElicitResult.Action.ACCEPT);
+		when(expectedResult.content()).thenReturn(contentMap);
+		when(expectedResult.meta()).thenReturn(null);
+		when(exchange.createElicitation(any(ElicitRequest.class))).thenReturn(Mono.just(expectedResult));
+
+		Mono<StructuredElicitResult<Map<String, Object>>> result = context
+			.elicitation(new TypeReference<Map<String, Object>>() {
+			}, "Test message", null);
+
+		StepVerifier.create(result).assertNext(structuredResult -> {
+			assertThat(structuredResult.structuredContent()).containsKey("items");
+		}).verifyComplete();
+	}
+
+	@Test
+	public void testElicitationWithTypeReference() {
+		ClientCapabilities capabilities = mock(ClientCapabilities.class);
+		ClientCapabilities.Elicitation elicitation = mock(ClientCapabilities.Elicitation.class);
+		when(capabilities.elicitation()).thenReturn(elicitation);
+		when(exchange.getClientCapabilities()).thenReturn(capabilities);
+
+		Map<String, Object> contentMap = Map.of("result", "success", "data", "test value");
+		ElicitResult expectedResult = mock(ElicitResult.class);
+		when(expectedResult.action()).thenReturn(ElicitResult.Action.ACCEPT);
+		when(expectedResult.content()).thenReturn(contentMap);
+		when(exchange.createElicitation(any(ElicitRequest.class))).thenReturn(Mono.just(expectedResult));
+
+		Mono<Map<String, Object>> result = context.elicitation(new TypeReference<Map<String, Object>>() {
+		});
+
+		StepVerifier.create(result).assertNext(map -> {
+			assertThat(map).containsEntry("result", "success");
+			assertThat(map).containsEntry("data", "test value");
+		}).verifyComplete();
 	}
 
 	@Test

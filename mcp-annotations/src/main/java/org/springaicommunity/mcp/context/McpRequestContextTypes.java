@@ -4,7 +4,6 @@
 
 package org.springaicommunity.mcp.context;
 
-import java.lang.reflect.Type;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
@@ -26,29 +25,6 @@ import io.modelcontextprotocol.spec.McpSchema.TextContent;
  * @author Christian Tzolov
  */
 public interface McpRequestContextTypes<ET> {
-
-	// --------------------------------------
-	// Elicitation
-	// --------------------------------------
-
-	interface ElicitationSpec {
-
-		/**
-		 * The prompt message to display to the user
-		 */
-		ElicitationSpec message(String message);
-
-		/**
-		 * The response type defining the expected response structure. Note that
-		 * elicitation responses are subject to a restricted subset of JSON Schema types.
-		 */
-		ElicitationSpec responseType(Type type);
-
-		ElicitationSpec meta(Map<String, Object> m);
-
-		ElicitationSpec meta(String k, Object v);
-
-	}
 
 	// --------------------------------------
 	// Sampling

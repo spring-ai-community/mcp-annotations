@@ -10,6 +10,8 @@ import java.util.Optional;
 import java.util.function.Consumer;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JavaType;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.modelcontextprotocol.common.McpTransportContext;
 import io.modelcontextprotocol.server.McpSyncServerExchange;
 import io.modelcontextprotocol.spec.McpSchema;
@@ -67,19 +69,38 @@ public class DefaultMcpSyncRequestContext implements McpSyncRequestContext {
 	// Elicitation
 
 	@Override
-	public Optional<ElicitResult> elicitation(Consumer<ElicitationSpec> elicitationSpec) {
-		Assert.notNull(elicitationSpec, "Elicitation spec consumer must not be null");
-		DefaultElicitationSpec spec = new DefaultElicitationSpec();
-		elicitationSpec.accept(spec);
-		Assert.hasText(spec.message, "Elicitation message must not be empty");
-		Assert.notNull(spec.responseType, "Elicitation response type must not be null");
+	public <T> Optional<T> elicitation(TypeReference<T> type) {
+		Assert.notNull(type, "Elicitation response type must not be null");
 
-		return this.elicitationInternal(spec.message, spec.responseType, spec.meta.isEmpty() ? null : spec.meta);
+		Optional<ElicitResult> elicitResult = this.elicitationInternal("Please provide the required information.",
+				type.getType(), null);
+
+		if (!elicitResult.isPresent() || elicitResult.get().action() != ElicitResult.Action.ACCEPT) {
+			return Optional.empty();
+		}
+
+		return Optional.of(convertMapToType(elicitResult.get().content(), type));
 	}
 
 	@Override
-	public Optional<ElicitResult> elicitation(String message, Type type) {
-		return this.elicitationInternal(message, type, null);
+	public <T> Optional<StructuredElicitResult<T>> elicitation(TypeReference<T> type, String message,
+			Map<String, Object> meta) {
+		Assert.notNull(type, "Elicitation response type must not be null");
+
+		Optional<ElicitResult> elicitResult = this.elicitationInternal(message, type.getType(), meta);
+
+		if (!elicitResult.isPresent() || elicitResult.get().action() != ElicitResult.Action.ACCEPT) {
+			return Optional.empty();
+		}
+
+		return Optional.of(new StructuredElicitResult<>(elicitResult.get().action(),
+				convertMapToType(elicitResult.get().content(), type), elicitResult.get().meta()));
+	}
+
+	private static <T> T convertMapToType(Map<String, Object> map, TypeReference<T> targetType) {
+		ObjectMapper mapper = new ObjectMapper();
+		JavaType javaType = mapper.getTypeFactory().constructType(targetType);
+		return mapper.convertValue(map, javaType);
 	}
 
 	@Override
@@ -93,10 +114,12 @@ public class DefaultMcpSyncRequestContext implements McpSyncRequestContext {
 			return Optional.empty();
 		}
 
-		return Optional.of(this.exchange.createElicitation(elicitRequest));
+		ElicitResult elicitResult = this.exchange.createElicitation(elicitRequest);
+
+		return Optional.of(elicitResult);
 	}
 
-	public Optional<ElicitResult> elicitationInternal(String message, Type type, Map<String, Object> meta) {
+	private Optional<ElicitResult> elicitationInternal(String message, Type type, Map<String, Object> meta) {
 		Assert.hasText(message, "Elicitation message must not be empty");
 		Assert.notNull(type, "Elicitation response type must not be null");
 
@@ -340,13 +363,14 @@ public class DefaultMcpSyncRequestContext implements McpSyncRequestContext {
 		}
 
 		@Override
-		public Optional<ElicitResult> elicitation(Consumer<ElicitationSpec> elicitationSpec) {
+		public <T> Optional<T> elicitation(TypeReference<T> type) {
 			logger.warn("Stateless servers do not support elicitation! Ignoring the elicitation request");
 			return Optional.empty();
 		}
 
 		@Override
-		public Optional<ElicitResult> elicitation(String message, Type type) {
+		public <T> Optional<StructuredElicitResult<T>> elicitation(TypeReference<T> type, String message,
+				Map<String, Object> meta) {
 			logger.warn("Stateless servers do not support elicitation! Ignoring the elicitation request");
 			return Optional.empty();
 		}

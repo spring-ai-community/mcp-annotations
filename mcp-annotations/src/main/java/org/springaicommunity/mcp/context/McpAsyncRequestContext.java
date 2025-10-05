@@ -4,9 +4,10 @@
 
 package org.springaicommunity.mcp.context;
 
-import java.lang.reflect.Type;
+import java.util.Map;
 import java.util.function.Consumer;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import io.modelcontextprotocol.server.McpAsyncServerExchange;
 import io.modelcontextprotocol.spec.McpSchema.CreateMessageRequest;
 import io.modelcontextprotocol.spec.McpSchema.CreateMessageResult;
@@ -18,7 +19,7 @@ import reactor.core.publisher.Mono;
 
 /**
  * Async (Reactor) version of McpSyncRequestContext that returns Mono of value types.
- * 
+ *
  * @author Christian Tzolov
  */
 public interface McpAsyncRequestContext extends McpRequestContextTypes<McpAsyncServerExchange> {
@@ -31,9 +32,10 @@ public interface McpAsyncRequestContext extends McpRequestContextTypes<McpAsyncS
 	// --------------------------------------
 	// Elicitation
 	// --------------------------------------
-	Mono<ElicitResult> elicitation(Consumer<ElicitationSpec> elicitationSpec);
 
-	Mono<ElicitResult> elicitation(String message, Type type);
+	<T> Mono<T> elicitation(TypeReference<T> type);
+
+	<T> Mono<StructuredElicitResult<T>> elicitation(TypeReference<T> type, String message, Map<String, Object> meta);
 
 	Mono<ElicitResult> elicitation(ElicitRequest elicitRequest);
 

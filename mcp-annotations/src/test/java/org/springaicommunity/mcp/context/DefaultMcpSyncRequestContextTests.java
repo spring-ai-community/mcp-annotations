@@ -7,6 +7,7 @@ package org.springaicommunity.mcp.context;
 import java.util.Map;
 import java.util.Optional;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import io.modelcontextprotocol.server.McpSyncServerExchange;
 import io.modelcontextprotocol.spec.McpSchema;
 import io.modelcontextprotocol.spec.McpSchema.CallToolRequest;
@@ -126,22 +127,28 @@ public class DefaultMcpSyncRequestContextTests {
 	// Elicitation Tests
 
 	@Test
-	public void testElicitationWithConsumer() {
+	public void testElicitationWithTypeAndMessage() {
 		ClientCapabilities capabilities = mock(ClientCapabilities.class);
 		ClientCapabilities.Elicitation elicitation = mock(ClientCapabilities.Elicitation.class);
 		when(capabilities.elicitation()).thenReturn(elicitation);
 		when(exchange.getClientCapabilities()).thenReturn(capabilities);
 
+		Map<String, Object> contentMap = Map.of("name", "John", "age", 30);
 		ElicitResult expectedResult = mock(ElicitResult.class);
+		when(expectedResult.action()).thenReturn(ElicitResult.Action.ACCEPT);
+		when(expectedResult.content()).thenReturn(contentMap);
+		when(expectedResult.meta()).thenReturn(null);
 		when(exchange.createElicitation(any(ElicitRequest.class))).thenReturn(expectedResult);
 
-		Optional<ElicitResult> result = context.elicitation(spec -> {
-			spec.message("Test message");
-			spec.responseType(String.class);
-		});
+		Optional<StructuredElicitResult<Map<String, Object>>> result = context
+			.elicitation(new TypeReference<Map<String, Object>>() {
+			}, "Test message", null);
 
 		assertThat(result).isPresent();
-		assertThat(result.get()).isEqualTo(expectedResult);
+		assertThat(result.get().action()).isEqualTo(ElicitResult.Action.ACCEPT);
+		assertThat(result.get().structuredContent()).isNotNull();
+		assertThat(result.get().structuredContent()).containsEntry("name", "John");
+		assertThat(result.get().structuredContent()).containsEntry("age", 30);
 
 		ArgumentCaptor<ElicitRequest> captor = ArgumentCaptor.forClass(ElicitRequest.class);
 		verify(exchange).createElicitation(captor.capture());
@@ -152,22 +159,33 @@ public class DefaultMcpSyncRequestContextTests {
 	}
 
 	@Test
-	public void testElicitationWithConsumerAndMeta() {
+	public void testElicitationWithTypeMessageAndMeta() {
 		ClientCapabilities capabilities = mock(ClientCapabilities.class);
 		ClientCapabilities.Elicitation elicitation = mock(ClientCapabilities.Elicitation.class);
 		when(capabilities.elicitation()).thenReturn(elicitation);
 		when(exchange.getClientCapabilities()).thenReturn(capabilities);
 
+		record Person(String name, int age) {
+		}
+
+		Map<String, Object> contentMap = Map.of("name", "Jane", "age", 25);
+		Map<String, Object> requestMeta = Map.of("key", "value");
+		Map<String, Object> resultMeta = Map.of("resultKey", "resultValue");
 		ElicitResult expectedResult = mock(ElicitResult.class);
+		when(expectedResult.action()).thenReturn(ElicitResult.Action.ACCEPT);
+		when(expectedResult.content()).thenReturn(contentMap);
+		when(expectedResult.meta()).thenReturn(resultMeta);
 		when(exchange.createElicitation(any(ElicitRequest.class))).thenReturn(expectedResult);
 
-		Optional<ElicitResult> result = context.elicitation(spec -> {
-			spec.message("Test message");
-			spec.responseType(String.class);
-			spec.meta("key", "value");
-		});
+		Optional<StructuredElicitResult<Person>> result = context.elicitation(new TypeReference<Person>() {
+		}, "Test message", requestMeta);
 
 		assertThat(result).isPresent();
+		assertThat(result.get().action()).isEqualTo(ElicitResult.Action.ACCEPT);
+		assertThat(result.get().structuredContent()).isNotNull();
+		assertThat(result.get().structuredContent().name()).isEqualTo("Jane");
+		assertThat(result.get().structuredContent().age()).isEqualTo(25);
+		assertThat(result.get().meta()).containsEntry("resultKey", "resultValue");
 
 		ArgumentCaptor<ElicitRequest> captor = ArgumentCaptor.forClass(ElicitRequest.class);
 		verify(exchange).createElicitation(captor.capture());
@@ -177,43 +195,116 @@ public class DefaultMcpSyncRequestContextTests {
 	}
 
 	@Test
-	public void testElicitationWithNullConsumer() {
-		assertThatThrownBy(
-				() -> context.elicitation((java.util.function.Consumer<McpSyncRequestContext.ElicitationSpec>) null))
-			.isInstanceOf(IllegalArgumentException.class)
-			.hasMessageContaining("Elicitation spec consumer must not be null");
-	}
-
-	@Test
-	public void testElicitationWithEmptyMessage() {
-		assertThatThrownBy(() -> context.elicitation(spec -> {
-			spec.message("");
-			spec.responseType(String.class);
-		})).isInstanceOf(IllegalArgumentException.class).hasMessageContaining("Message must not be empty");
-	}
-
-	@Test
 	public void testElicitationWithNullResponseType() {
-		assertThatThrownBy(() -> context.elicitation(spec -> {
-			spec.message("Test message");
-			spec.responseType(null);
-		})).isInstanceOf(IllegalArgumentException.class).hasMessageContaining("Response type must not be null");
+		assertThatThrownBy(() -> context.elicitation((TypeReference<String>) null))
+			.isInstanceOf(IllegalArgumentException.class)
+			.hasMessageContaining("Elicitation response type must not be null");
 	}
 
 	@Test
-	public void testElicitationWithMessageAndType() {
+	public void testElicitationWithTypeReturnsEmptyWhenNotSupported() {
+		when(exchange.getClientCapabilities()).thenReturn(null);
+
+		Optional<Map<String, Object>> result = context.elicitation(new TypeReference<Map<String, Object>>() {
+		});
+
+		assertThat(result).isEmpty();
+	}
+
+	@Test
+	public void testElicitationWithTypeReturnsEmptyWhenActionIsNotAccept() {
 		ClientCapabilities capabilities = mock(ClientCapabilities.class);
 		ClientCapabilities.Elicitation elicitation = mock(ClientCapabilities.Elicitation.class);
 		when(capabilities.elicitation()).thenReturn(elicitation);
 		when(exchange.getClientCapabilities()).thenReturn(capabilities);
 
 		ElicitResult expectedResult = mock(ElicitResult.class);
+		when(expectedResult.action()).thenReturn(ElicitResult.Action.DECLINE);
 		when(exchange.createElicitation(any(ElicitRequest.class))).thenReturn(expectedResult);
 
-		Optional<ElicitResult> result = context.elicitation("Test message", String.class);
+		Optional<StructuredElicitResult<Map<String, Object>>> result = context
+			.elicitation(new TypeReference<Map<String, Object>>() {
+			}, "Test message", null);
+
+		assertThat(result).isEmpty();
+	}
+
+	@Test
+	public void testElicitationWithTypeConvertsComplexTypes() {
+		ClientCapabilities capabilities = mock(ClientCapabilities.class);
+		ClientCapabilities.Elicitation elicitation = mock(ClientCapabilities.Elicitation.class);
+		when(capabilities.elicitation()).thenReturn(elicitation);
+		when(exchange.getClientCapabilities()).thenReturn(capabilities);
+
+		record Address(String street, String city) {
+		}
+		record PersonWithAddress(String name, int age, Address address) {
+		}
+
+		Map<String, Object> addressMap = Map.of("street", "123 Main St", "city", "Springfield");
+		Map<String, Object> contentMap = Map.of("name", "John", "age", 30, "address", addressMap);
+		ElicitResult expectedResult = mock(ElicitResult.class);
+		when(expectedResult.action()).thenReturn(ElicitResult.Action.ACCEPT);
+		when(expectedResult.content()).thenReturn(contentMap);
+		when(expectedResult.meta()).thenReturn(null);
+		when(exchange.createElicitation(any(ElicitRequest.class))).thenReturn(expectedResult);
+
+		Optional<StructuredElicitResult<PersonWithAddress>> result = context
+			.elicitation(new TypeReference<PersonWithAddress>() {
+			}, "Test message", null);
 
 		assertThat(result).isPresent();
-		assertThat(result.get()).isEqualTo(expectedResult);
+		assertThat(result.get().action()).isEqualTo(ElicitResult.Action.ACCEPT);
+		assertThat(result.get().structuredContent()).isNotNull();
+		assertThat(result.get().structuredContent().name()).isEqualTo("John");
+		assertThat(result.get().structuredContent().age()).isEqualTo(30);
+		assertThat(result.get().structuredContent().address()).isNotNull();
+		assertThat(result.get().structuredContent().address().street()).isEqualTo("123 Main St");
+		assertThat(result.get().structuredContent().address().city()).isEqualTo("Springfield");
+	}
+
+	@Test
+	public void testElicitationWithTypeHandlesListTypes() {
+		ClientCapabilities capabilities = mock(ClientCapabilities.class);
+		ClientCapabilities.Elicitation elicitation = mock(ClientCapabilities.Elicitation.class);
+		when(capabilities.elicitation()).thenReturn(elicitation);
+		when(exchange.getClientCapabilities()).thenReturn(capabilities);
+
+		Map<String, Object> contentMap = Map.of("items",
+				java.util.List.of(Map.of("name", "Item1"), Map.of("name", "Item2")));
+		ElicitResult expectedResult = mock(ElicitResult.class);
+		when(expectedResult.action()).thenReturn(ElicitResult.Action.ACCEPT);
+		when(expectedResult.content()).thenReturn(contentMap);
+		when(expectedResult.meta()).thenReturn(null);
+		when(exchange.createElicitation(any(ElicitRequest.class))).thenReturn(expectedResult);
+
+		Optional<StructuredElicitResult<Map<String, Object>>> result = context
+			.elicitation(new TypeReference<Map<String, Object>>() {
+			}, "Test message", null);
+
+		assertThat(result).isPresent();
+		assertThat(result.get().structuredContent()).containsKey("items");
+	}
+
+	@Test
+	public void testElicitationWithTypeReference() {
+		ClientCapabilities capabilities = mock(ClientCapabilities.class);
+		ClientCapabilities.Elicitation elicitation = mock(ClientCapabilities.Elicitation.class);
+		when(capabilities.elicitation()).thenReturn(elicitation);
+		when(exchange.getClientCapabilities()).thenReturn(capabilities);
+
+		Map<String, Object> contentMap = Map.of("result", "success", "data", "test value");
+		ElicitResult expectedResult = mock(ElicitResult.class);
+		when(expectedResult.action()).thenReturn(ElicitResult.Action.ACCEPT);
+		when(expectedResult.content()).thenReturn(contentMap);
+		when(exchange.createElicitation(any(ElicitRequest.class))).thenReturn(expectedResult);
+
+		Optional<Map<String, Object>> result = context.elicitation(new TypeReference<Map<String, Object>>() {
+		});
+
+		assertThat(result).isPresent();
+		assertThat(result.get()).containsEntry("result", "success");
+		assertThat(result.get()).containsEntry("data", "test value");
 	}
 
 	@Test
