@@ -897,7 +897,7 @@ When a method parameter is of type `McpSyncRequestContext` or `McpAsyncRequestCo
 **Synchronous Context Example:**
 
 ```java
-public record ElicitReturnType(String message) {}
+public record UserInfo(String name, String email, Number age) {}
 
 @McpTool(name = "process-with-context", description = "Process data with unified context")
 public String processWithContext(
@@ -920,11 +920,20 @@ public String processWithContext(
         // Use exchange for additional operations...
     }
     
-    // Perform elicitation if needed
-    Optional<ElicitResult> userInput = context.elicitation(spec -> {
-        spec.message("Please provide additional information");
-        spec.regurnType(ElicitReturnType.class);
-    });
+    // Perform elicitation with default message - returns just the typed content
+    Optional<UserInfo> userInfo = context.elicitation(new TypeReference<UserInfo>() {});
+    
+    // Or perform elicitation with custom message and metadata - returns structured result
+    Optional<StructuredElicitResult<UserInfo>> structuredResult = context.elicitation(
+        new TypeReference<UserInfo>() {},
+        "Please provide your information",
+        Map.of("context", "user-registration")
+    );
+    
+    if (structuredResult.isPresent() && structuredResult.get().action() == ElicitResult.Action.ACCEPT) {
+        UserInfo info = structuredResult.get().structuredContent();
+        return "Processed: " + data + " for user " + info.name();
+    }
     
     return "Processed: " + data;
 }
@@ -968,8 +977,7 @@ public GetPromptResult generateWithContext(
 **Asynchronous Context Example:**
 
 ```java
-
-public record ElicitReturnType(String message) {}
+public record UserInfo(String name, String email, int age) {}
 
 @McpTool(name = "async-process-with-context", description = "Async process with unified context")
 public Mono<String> asyncProcessWithContext(
@@ -992,13 +1000,21 @@ public Mono<String> asyncProcessWithContext(
             .thenReturn(processedData);
     })
     .flatMap(processedData -> {
-        // Perform elicitation if needed (returns Mono<ElicitResult>)
-        return context.elicitation(spec -> {
-            spec.message("Please provide additional information");
-            spec.returnType(ElicitReturnType.class);
-        })
-        .map(result -> "Processed: " + processedData + " with user input");
-    });
+        // Perform elicitation with default message - returns Mono<UserInfo>
+        return context.elicitation(new TypeReference<UserInfo>() {})
+            .map(userInfo -> "Processed: " + processedData + " for user " + userInfo.name());
+    })
+    .switchIfEmpty(Mono.fromCallable(() -> {
+        // Or perform elicitation with custom message and metadata - returns Mono<StructuredElicitResult<UserInfo>>
+        return context.elicitation(
+            new TypeReference<UserInfo>() {},
+            "Please provide your information",
+            Map.of("context", "user-registration")
+        )
+        .filter(result -> result.action() == ElicitResult.Action.ACCEPT)
+        .map(result -> "Processed: " + data + " for user " + result.structuredContent().name())
+        .defaultIfEmpty("Processed: " + data);
+    }).flatMap(mono -> mono));
 }
 
 @McpResource(uri = "async-data://{id}", name = "Async Data Resource", 
@@ -1044,7 +1060,9 @@ public Mono<GetPromptResult> asyncGenerateWithContext(
 - `log(Consumer<LoggingSpec>)` - Send log messages with custom configuration
 - `debug(String)`, `info(String)`, `warn(String)`, `error(String)` - Convenience logging methods
 - `progress(int)`, `progress(Consumer<ProgressSpec>)` - Send progress updates
-- `elicitation(...)` - Request user input with various configuration options
+- `elicitation(TypeReference<T>)` - Request user input with default message, returns typed content directly
+- `elicitation(TypeReference<T>, String, Map<String, Object>)` - Request user input with custom message and metadata, returns `StructuredElicitResult<T>` with action, typed content, and metadata
+- `elicitation(ElicitRequest)` - Request user input with full control over the elicitation request
 - `sampling(...)` - Request LLM sampling with various configuration options
 - `roots()` - Access root directories (returns `Optional<ListRootsResult>`)
 - `ping()` - Send ping to check connection
@@ -1954,7 +1972,7 @@ public class AsyncElicitationHandler {
 public class MyMcpClient {
 
     public static McpSyncClient createSyncClientWithElicitation(ElicitationHandler elicitationHandler) {
-        Function<ElicitRequest, ElicitResult> elicitationHandler = 
+        Function<ElicitRequest, ElicitResult> elicitationHandlerFunc = 
             new SyncMcpElicitationProvider(List.of(elicitationHandler)).getElicitationHandler();
 
         McpSyncClient client = McpClient.sync(transport)
@@ -1962,14 +1980,14 @@ public class MyMcpClient {
                 .elicitation()  // Enable elicitation support
                 // Other capabilities...
                 .build())
-            .elicitationHandler(elicitationHandler)
+            .elicitationHandler(elicitationHandlerFunc)
             .build();
 
         return client;
     }
     
     public static McpAsyncClient createAsyncClientWithElicitation(AsyncElicitationHandler asyncElicitationHandler) {
-        Function<ElicitRequest, Mono<ElicitResult>> elicitationHandler = 
+        Function<ElicitRequest, Mono<ElicitResult>> elicitationHandlerFunc = 
             new AsyncMcpElicitationProvider(List.of(asyncElicitationHandler)).getElicitationHandler();
 
         McpAsyncClient client = McpClient.async(transport)
@@ -1977,7 +1995,7 @@ public class MyMcpClient {
                 .elicitation()  // Enable elicitation support
                 // Other capabilities...
                 .build())
-            .elicitationHandler(elicitationHandler)
+            .elicitationHandler(elicitationHandlerFunc)
             .build();
 
         return client;
