@@ -4,7 +4,6 @@
 
 package org.springaicommunity.mcp.context;
 
-import java.util.Map;
 import java.util.Optional;
 import java.util.function.Consumer;
 
@@ -30,21 +29,24 @@ public interface McpSyncRequestContext extends McpRequestContextTypes<McpSyncSer
 	// --------------------------------------
 	// Elicitation
 	// --------------------------------------
-	<T> Optional<T> elicitation(TypeReference<T> type);
+	<T> Optional<StructuredElicitResult<T>> elicit(Class<T> type);
 
-	<T> Optional<StructuredElicitResult<T>> elicitation(TypeReference<T> type, String message,
-			Map<String, Object> meta);
+	<T> Optional<StructuredElicitResult<T>> elicit(TypeReference<T> type);
 
-	Optional<ElicitResult> elicitation(ElicitRequest elicitRequest);
+	<T> Optional<StructuredElicitResult<T>> elicit(Consumer<ElicitationSpec> params, Class<T> returnType);
+
+	<T> Optional<StructuredElicitResult<T>> elicit(Consumer<ElicitationSpec> params, TypeReference<T> returnType);
+
+	Optional<ElicitResult> elicit(ElicitRequest elicitRequest);
 
 	// --------------------------------------
 	// Sampling
 	// --------------------------------------
-	Optional<CreateMessageResult> sampling(String... messages);
+	Optional<CreateMessageResult> sample(String... messages);
 
-	Optional<CreateMessageResult> sampling(Consumer<SamplingSpec> samplingSpec);
+	Optional<CreateMessageResult> sample(Consumer<SamplingSpec> samplingSpec);
 
-	Optional<CreateMessageResult> sampling(CreateMessageRequest createMessageRequest);
+	Optional<CreateMessageResult> sample(CreateMessageRequest createMessageRequest);
 
 	// --------------------------------------
 	// Progress

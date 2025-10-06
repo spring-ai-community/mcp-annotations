@@ -73,31 +73,41 @@ public class DefaultMcpAsyncRequestContext implements McpAsyncRequestContext {
 	// Elicitation
 
 	@Override
-	public <T> Mono<StructuredElicitResult<T>> elicitation(TypeReference<T> type, String message,
-			Map<String, Object> meta) {
+	public <T> Mono<StructuredElicitResult<T>> elicit(Consumer<ElicitationSpec> spec, TypeReference<T> type) {
 		Assert.notNull(type, "Elicitation response type must not be null");
-		Assert.hasText(message, "Elicitation message must not be empty");
-
-		return this.elicitationInternal(message, type.getType(), meta)
-			.map(er -> new StructuredElicitResult<T>(er.action(), convertMapToType(er.content(), type.getType()),
-					er.meta()));
+		Assert.notNull(spec, "Elicitation spec consumer must not be null");
+		DefaultElicitationSpec elicitationSpec = new DefaultElicitationSpec();
+		spec.accept(elicitationSpec);
+		return this.elicitationInternal(elicitationSpec.message, type.getType(), elicitationSpec.meta)
+			.map(er -> new StructuredElicitResult<T>(er.action(), convertMapToType(er.content(), type), er.meta()));
 	}
 
 	@Override
-	public <T> Mono<T> elicitation(TypeReference<T> type) {
+	public <T> Mono<StructuredElicitResult<T>> elicit(Consumer<ElicitationSpec> spec, Class<T> type) {
+		Assert.notNull(type, "Elicitation response type must not be null");
+		Assert.notNull(spec, "Elicitation spec consumer must not be null");
+		DefaultElicitationSpec elicitationSpec = new DefaultElicitationSpec();
+		spec.accept(elicitationSpec);
+		return this.elicitationInternal(elicitationSpec.message, type, elicitationSpec.meta)
+			.map(er -> new StructuredElicitResult<T>(er.action(), convertMapToType(er.content(), type), er.meta()));
+	}
+
+	@Override
+	public <T> Mono<StructuredElicitResult<T>> elicit(TypeReference<T> type) {
 		Assert.notNull(type, "Elicitation response type must not be null");
 		return this.elicitationInternal("Please provide the required information.", type.getType(), null)
-			.map(er -> convertMapToType(er.content(), type.getType()));
-	}
-
-	private static <T> T convertMapToType(Map<String, Object> map, Type targetType) {
-		ObjectMapper mapper = new ObjectMapper();
-		JavaType javaType = mapper.getTypeFactory().constructType(targetType);
-		return mapper.convertValue(map, javaType);
+			.map(er -> new StructuredElicitResult<T>(er.action(), convertMapToType(er.content(), type), er.meta()));
 	}
 
 	@Override
-	public Mono<ElicitResult> elicitation(ElicitRequest elicitRequest) {
+	public <T> Mono<StructuredElicitResult<T>> elicit(Class<T> type) {
+		Assert.notNull(type, "Elicitation response type must not be null");
+		return this.elicitationInternal("Please provide the required information.", type, null)
+			.map(er -> new StructuredElicitResult<T>(er.action(), convertMapToType(er.content(), type), er.meta()));
+	}
+
+	@Override
+	public Mono<ElicitResult> elicit(ElicitRequest elicitRequest) {
 		Assert.notNull(elicitRequest, "Elicit request must not be null");
 
 		if (this.exchange.getClientCapabilities() == null
@@ -116,7 +126,7 @@ public class DefaultMcpAsyncRequestContext implements McpAsyncRequestContext {
 
 		Map<String, Object> schema = typeSchemaCache.computeIfAbsent(type, t -> this.generateElicitSchema(t));
 
-		return this.elicitation(ElicitRequest.builder().message(message).requestedSchema(schema).meta(meta).build());
+		return this.elicit(ElicitRequest.builder().message(message).requestedSchema(schema).meta(meta).build());
 	}
 
 	private Map<String, Object> generateElicitSchema(Type type) {
@@ -126,15 +136,27 @@ public class DefaultMcpAsyncRequestContext implements McpAsyncRequestContext {
 		return schema;
 	}
 
+	private static <T> T convertMapToType(Map<String, Object> map, Class<T> targetType) {
+		ObjectMapper mapper = new ObjectMapper();
+		JavaType javaType = mapper.getTypeFactory().constructType(targetType);
+		return mapper.convertValue(map, javaType);
+	}
+
+	private static <T> T convertMapToType(Map<String, Object> map, TypeReference<T> targetType) {
+		ObjectMapper mapper = new ObjectMapper();
+		JavaType javaType = mapper.getTypeFactory().constructType(targetType);
+		return mapper.convertValue(map, javaType);
+	}
+
 	// Sampling
 
 	@Override
-	public Mono<CreateMessageResult> sampling(String... messages) {
-		return this.sampling(s -> s.message(messages));
+	public Mono<CreateMessageResult> sample(String... messages) {
+		return this.sample(s -> s.message(messages));
 	}
 
 	@Override
-	public Mono<CreateMessageResult> sampling(Consumer<SamplingSpec> samplingSpec) {
+	public Mono<CreateMessageResult> sample(Consumer<SamplingSpec> samplingSpec) {
 		Assert.notNull(samplingSpec, "Sampling spec consumer must not be null");
 		DefaultSamplingSpec spec = new DefaultSamplingSpec();
 		samplingSpec.accept(spec);
@@ -144,7 +166,7 @@ public class DefaultMcpAsyncRequestContext implements McpAsyncRequestContext {
 		if (!Utils.hasText(progressToken)) {
 			logger.warn("Progress notification not supported by the client!");
 		}
-		return this.sampling(McpSchema.CreateMessageRequest.builder()
+		return this.sample(McpSchema.CreateMessageRequest.builder()
 			.messages(spec.messages)
 			.modelPreferences(spec.modelPreferences)
 			.systemPrompt(spec.systemPrompt)
@@ -159,7 +181,7 @@ public class DefaultMcpAsyncRequestContext implements McpAsyncRequestContext {
 	}
 
 	@Override
-	public Mono<CreateMessageResult> sampling(CreateMessageRequest createMessageRequest) {
+	public Mono<CreateMessageResult> sample(CreateMessageRequest createMessageRequest) {
 
 		// check if supported
 		if (this.exchange.getClientCapabilities() == null || this.exchange.getClientCapabilities().sampling() == null) {
@@ -356,38 +378,49 @@ public class DefaultMcpAsyncRequestContext implements McpAsyncRequestContext {
 		}
 
 		@Override
-		public <T> Mono<StructuredElicitResult<T>> elicitation(TypeReference<T> type, String message,
-				Map<String, Object> meta) {
+		public <T> Mono<StructuredElicitResult<T>> elicit(Consumer<ElicitationSpec> spec, TypeReference<T> returnType) {
 			logger.warn("Elicitation not supported by the client! Ignoring the elicitation request");
 			return Mono.empty();
 		}
 
 		@Override
-		public <T> Mono<T> elicitation(TypeReference<T> type) {
+		public <T> Mono<StructuredElicitResult<T>> elicit(TypeReference<T> type) {
 			logger.warn("Elicitation not supported by the client! Ignoring the elicitation request");
 			return Mono.empty();
 		}
 
 		@Override
-		public Mono<ElicitResult> elicitation(ElicitRequest elicitRequest) {
+		public <T> Mono<StructuredElicitResult<T>> elicit(Consumer<ElicitationSpec> spec, Class<T> returnType) {
 			logger.warn("Elicitation not supported by the client! Ignoring the elicitation request");
 			return Mono.empty();
 		}
 
 		@Override
-		public Mono<CreateMessageResult> sampling(String... messages) {
+		public <T> Mono<StructuredElicitResult<T>> elicit(Class<T> type) {
+			logger.warn("Elicitation not supported by the client! Ignoring the elicitation request");
+			return Mono.empty();
+		}
+
+		@Override
+		public Mono<ElicitResult> elicit(ElicitRequest elicitRequest) {
+			logger.warn("Elicitation not supported by the client! Ignoring the elicitation request");
+			return Mono.empty();
+		}
+
+		@Override
+		public Mono<CreateMessageResult> sample(String... messages) {
 			logger.warn("Sampling not supported by the client! Ignoring the sampling request");
 			return Mono.empty();
 		}
 
 		@Override
-		public Mono<CreateMessageResult> sampling(Consumer<SamplingSpec> samplingSpec) {
+		public Mono<CreateMessageResult> sample(Consumer<SamplingSpec> samplingSpec) {
 			logger.warn("Sampling not supported by the client! Ignoring the sampling request");
 			return Mono.empty();
 		}
 
 		@Override
-		public Mono<CreateMessageResult> sampling(CreateMessageRequest createMessageRequest) {
+		public Mono<CreateMessageResult> sample(CreateMessageRequest createMessageRequest) {
 			logger.warn("Sampling not supported by the client! Ignoring the sampling request");
 			return Mono.empty();
 		}

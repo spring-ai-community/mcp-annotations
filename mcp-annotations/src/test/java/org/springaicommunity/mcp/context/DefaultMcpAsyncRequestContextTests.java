@@ -140,9 +140,9 @@ public class DefaultMcpAsyncRequestContextTests {
 		when(expectedResult.meta()).thenReturn(null);
 		when(exchange.createElicitation(any(ElicitRequest.class))).thenReturn(Mono.just(expectedResult));
 
-		Mono<StructuredElicitResult<Map<String, Object>>> result = context
-			.elicitation(new TypeReference<Map<String, Object>>() {
-			}, "Test message", null);
+		Mono<StructuredElicitResult<Map<String, Object>>> result = context.elicit(e -> e.message("Test message"),
+				new TypeReference<Map<String, Object>>() {
+				});
 
 		StepVerifier.create(result).assertNext(structuredResult -> {
 			assertThat(structuredResult.action()).isEqualTo(ElicitResult.Action.ACCEPT);
@@ -177,8 +177,9 @@ public class DefaultMcpAsyncRequestContextTests {
 		when(exchange.createElicitation(any(ElicitRequest.class))).thenReturn(Mono.just(expectedResult));
 
 		Map<String, Object> meta = Map.of("key", "value");
-		Mono<StructuredElicitResult<Person>> result = context.elicitation(new TypeReference<Person>() {
-		}, "Test message", meta);
+		Mono<StructuredElicitResult<Person>> result = context.elicit(e -> e.message("Test message").meta(meta),
+				new TypeReference<Person>() {
+				});
 
 		StepVerifier.create(result).assertNext(structuredResult -> {
 			assertThat(structuredResult.action()).isEqualTo(ElicitResult.Action.ACCEPT);
@@ -197,23 +198,30 @@ public class DefaultMcpAsyncRequestContextTests {
 	@Test
 	public void testElicitationWithNullTypeReference() {
 		assertThat(org.junit.jupiter.api.Assertions.assertThrows(IllegalArgumentException.class, () -> {
-			context.elicitation(null, "Test message", null);
+			context.elicit((TypeReference<?>) null);
+		})).hasMessageContaining("Elicitation response type must not be null");
+	}
+
+	@Test
+	public void testElicitationWithNullClassType() {
+		assertThat(org.junit.jupiter.api.Assertions.assertThrows(IllegalArgumentException.class, () -> {
+			context.elicit((Class<?>) null);
 		})).hasMessageContaining("Elicitation response type must not be null");
 	}
 
 	@Test
 	public void testElicitationWithEmptyMessage() {
 		assertThat(org.junit.jupiter.api.Assertions.assertThrows(IllegalArgumentException.class, () -> {
-			context.elicitation(new TypeReference<String>() {
-			}, "", null);
+			context.elicit(e -> e.message("").meta(null), new TypeReference<String>() {
+			});
 		})).hasMessageContaining("Elicitation message must not be empty");
 	}
 
 	@Test
 	public void testElicitationWithNullMessage() {
 		assertThat(org.junit.jupiter.api.Assertions.assertThrows(IllegalArgumentException.class, () -> {
-			context.elicitation(new TypeReference<String>() {
-			}, null, null);
+			context.elicit(e -> e.message(null).meta(null), new TypeReference<String>() {
+			});
 		})).hasMessageContaining("Elicitation message must not be empty");
 	}
 
@@ -221,9 +229,9 @@ public class DefaultMcpAsyncRequestContextTests {
 	public void testElicitationReturnsEmptyWhenNotSupported() {
 		when(exchange.getClientCapabilities()).thenReturn(null);
 
-		Mono<StructuredElicitResult<Map<String, Object>>> result = context
-			.elicitation(new TypeReference<Map<String, Object>>() {
-			}, "Test message", null);
+		Mono<StructuredElicitResult<Map<String, Object>>> result = context.elicit(e -> e.message("Test message"),
+				new TypeReference<Map<String, Object>>() {
+				});
 
 		StepVerifier.create(result).verifyComplete();
 	}
@@ -242,9 +250,9 @@ public class DefaultMcpAsyncRequestContextTests {
 		when(expectedResult.meta()).thenReturn(null);
 		when(exchange.createElicitation(any(ElicitRequest.class))).thenReturn(Mono.just(expectedResult));
 
-		Mono<StructuredElicitResult<Map<String, Object>>> result = context
-			.elicitation(new TypeReference<Map<String, Object>>() {
-			}, "Test message", null);
+		Mono<StructuredElicitResult<Map<String, Object>>> result = context.elicit(e -> e.message("Test message"),
+				new TypeReference<Map<String, Object>>() {
+				});
 
 		StepVerifier.create(result).assertNext(structuredResult -> {
 			assertThat(structuredResult.action()).isEqualTo(ElicitResult.Action.DECLINE);
@@ -272,9 +280,9 @@ public class DefaultMcpAsyncRequestContextTests {
 		when(expectedResult.meta()).thenReturn(null);
 		when(exchange.createElicitation(any(ElicitRequest.class))).thenReturn(Mono.just(expectedResult));
 
-		Mono<StructuredElicitResult<PersonWithAddress>> result = context
-			.elicitation(new TypeReference<PersonWithAddress>() {
-			}, "Test message", null);
+		Mono<StructuredElicitResult<PersonWithAddress>> result = context.elicit(e -> e.message("Test message"),
+				new TypeReference<PersonWithAddress>() {
+				});
 
 		StepVerifier.create(result).assertNext(structuredResult -> {
 			assertThat(structuredResult.action()).isEqualTo(ElicitResult.Action.ACCEPT);
@@ -302,9 +310,9 @@ public class DefaultMcpAsyncRequestContextTests {
 		when(expectedResult.meta()).thenReturn(null);
 		when(exchange.createElicitation(any(ElicitRequest.class))).thenReturn(Mono.just(expectedResult));
 
-		Mono<StructuredElicitResult<Map<String, Object>>> result = context
-			.elicitation(new TypeReference<Map<String, Object>>() {
-			}, "Test message", null);
+		Mono<StructuredElicitResult<Map<String, Object>>> result = context.elicit(e -> e.message("Test message"),
+				new TypeReference<Map<String, Object>>() {
+				});
 
 		StepVerifier.create(result).assertNext(structuredResult -> {
 			assertThat(structuredResult.structuredContent()).containsKey("items");
@@ -324,12 +332,13 @@ public class DefaultMcpAsyncRequestContextTests {
 		when(expectedResult.content()).thenReturn(contentMap);
 		when(exchange.createElicitation(any(ElicitRequest.class))).thenReturn(Mono.just(expectedResult));
 
-		Mono<Map<String, Object>> result = context.elicitation(new TypeReference<Map<String, Object>>() {
-		});
+		Mono<StructuredElicitResult<Map<String, Object>>> result = context
+			.elicit(new TypeReference<Map<String, Object>>() {
+			});
 
 		StepVerifier.create(result).assertNext(map -> {
-			assertThat(map).containsEntry("result", "success");
-			assertThat(map).containsEntry("data", "test value");
+			assertThat(map.structuredContent()).containsEntry("result", "success");
+			assertThat(map.structuredContent()).containsEntry("data", "test value");
 		}).verifyComplete();
 	}
 
@@ -348,7 +357,7 @@ public class DefaultMcpAsyncRequestContextTests {
 
 		when(exchange.createElicitation(elicitRequest)).thenReturn(Mono.just(expectedResult));
 
-		Mono<ElicitResult> result = context.elicitation(elicitRequest);
+		Mono<ElicitResult> result = context.elicit(elicitRequest);
 
 		StepVerifier.create(result).expectNext(expectedResult).verifyComplete();
 	}
@@ -362,7 +371,7 @@ public class DefaultMcpAsyncRequestContextTests {
 			.requestedSchema(Map.of("type", "string"))
 			.build();
 
-		Mono<ElicitResult> result = context.elicitation(elicitRequest);
+		Mono<ElicitResult> result = context.elicit(elicitRequest);
 
 		StepVerifier.create(result).verifyComplete();
 	}
@@ -379,7 +388,7 @@ public class DefaultMcpAsyncRequestContextTests {
 		CreateMessageResult expectedResult = mock(CreateMessageResult.class);
 		when(exchange.createMessage(any(CreateMessageRequest.class))).thenReturn(Mono.just(expectedResult));
 
-		Mono<CreateMessageResult> result = context.sampling("Message 1", "Message 2");
+		Mono<CreateMessageResult> result = context.sample("Message 1", "Message 2");
 
 		StepVerifier.create(result).expectNext(expectedResult).verifyComplete();
 	}
@@ -394,7 +403,7 @@ public class DefaultMcpAsyncRequestContextTests {
 		CreateMessageResult expectedResult = mock(CreateMessageResult.class);
 		when(exchange.createMessage(any(CreateMessageRequest.class))).thenReturn(Mono.just(expectedResult));
 
-		Mono<CreateMessageResult> result = context.sampling(spec -> {
+		Mono<CreateMessageResult> result = context.sample(spec -> {
 			spec.message(new TextContent("Test message"));
 			spec.systemPrompt("System prompt");
 			spec.temperature(0.7);
@@ -427,7 +436,7 @@ public class DefaultMcpAsyncRequestContextTests {
 
 		when(exchange.createMessage(createRequest)).thenReturn(Mono.just(expectedResult));
 
-		Mono<CreateMessageResult> result = context.sampling(createRequest);
+		Mono<CreateMessageResult> result = context.sample(createRequest);
 
 		StepVerifier.create(result).expectNext(expectedResult).verifyComplete();
 	}
@@ -441,7 +450,7 @@ public class DefaultMcpAsyncRequestContextTests {
 			.maxTokens(500)
 			.build();
 
-		Mono<CreateMessageResult> result = context.sampling(createRequest);
+		Mono<CreateMessageResult> result = context.sample(createRequest);
 
 		StepVerifier.create(result).verifyComplete();
 	}

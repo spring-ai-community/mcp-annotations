@@ -33,20 +33,24 @@ public interface McpAsyncRequestContext extends McpRequestContextTypes<McpAsyncS
 	// Elicitation
 	// --------------------------------------
 
-	<T> Mono<T> elicitation(TypeReference<T> type);
+	<T> Mono<StructuredElicitResult<T>> elicit(Class<T> type);
 
-	<T> Mono<StructuredElicitResult<T>> elicitation(TypeReference<T> type, String message, Map<String, Object> meta);
+	<T> Mono<StructuredElicitResult<T>> elicit(TypeReference<T> type);
 
-	Mono<ElicitResult> elicitation(ElicitRequest elicitRequest);
+	<T> Mono<StructuredElicitResult<T>> elicit(Consumer<ElicitationSpec> spec, TypeReference<T> returnType);
+
+	<T> Mono<StructuredElicitResult<T>> elicit(Consumer<ElicitationSpec> spec, Class<T> returnType);
+
+	Mono<ElicitResult> elicit(ElicitRequest elicitRequest);
 
 	// --------------------------------------
 	// Sampling
 	// --------------------------------------
-	Mono<CreateMessageResult> sampling(String... messages);
+	Mono<CreateMessageResult> sample(String... messages);
 
-	Mono<CreateMessageResult> sampling(Consumer<SamplingSpec> samplingSpec);
+	Mono<CreateMessageResult> sample(Consumer<SamplingSpec> samplingSpec);
 
-	Mono<CreateMessageResult> sampling(CreateMessageRequest createMessageRequest);
+	Mono<CreateMessageResult> sample(CreateMessageRequest createMessageRequest);
 
 	// --------------------------------------
 	// Progress

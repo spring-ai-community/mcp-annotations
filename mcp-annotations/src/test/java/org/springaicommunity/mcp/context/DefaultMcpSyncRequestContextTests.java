@@ -140,9 +140,9 @@ public class DefaultMcpSyncRequestContextTests {
 		when(expectedResult.meta()).thenReturn(null);
 		when(exchange.createElicitation(any(ElicitRequest.class))).thenReturn(expectedResult);
 
-		Optional<StructuredElicitResult<Map<String, Object>>> result = context
-			.elicitation(new TypeReference<Map<String, Object>>() {
-			}, "Test message", null);
+		Optional<StructuredElicitResult<Map<String, Object>>> result = context.elicit(e -> e.message("Test message"),
+				new TypeReference<Map<String, Object>>() {
+				});
 
 		assertThat(result).isPresent();
 		assertThat(result.get().action()).isEqualTo(ElicitResult.Action.ACCEPT);
@@ -177,8 +177,9 @@ public class DefaultMcpSyncRequestContextTests {
 		when(expectedResult.meta()).thenReturn(resultMeta);
 		when(exchange.createElicitation(any(ElicitRequest.class))).thenReturn(expectedResult);
 
-		Optional<StructuredElicitResult<Person>> result = context.elicitation(new TypeReference<Person>() {
-		}, "Test message", requestMeta);
+		Optional<StructuredElicitResult<Person>> result = context
+			.elicit(e -> e.message("Test message").meta(requestMeta), new TypeReference<Person>() {
+			});
 
 		assertThat(result).isPresent();
 		assertThat(result.get().action()).isEqualTo(ElicitResult.Action.ACCEPT);
@@ -196,7 +197,7 @@ public class DefaultMcpSyncRequestContextTests {
 
 	@Test
 	public void testElicitationWithNullResponseType() {
-		assertThatThrownBy(() -> context.elicitation((TypeReference<String>) null))
+		assertThatThrownBy(() -> context.elicit((TypeReference<String>) null))
 			.isInstanceOf(IllegalArgumentException.class)
 			.hasMessageContaining("Elicitation response type must not be null");
 	}
@@ -205,8 +206,9 @@ public class DefaultMcpSyncRequestContextTests {
 	public void testElicitationWithTypeReturnsEmptyWhenNotSupported() {
 		when(exchange.getClientCapabilities()).thenReturn(null);
 
-		Optional<Map<String, Object>> result = context.elicitation(new TypeReference<Map<String, Object>>() {
-		});
+		Optional<StructuredElicitResult<Map<String, Object>>> result = context
+			.elicit(new TypeReference<Map<String, Object>>() {
+			});
 
 		assertThat(result).isEmpty();
 	}
@@ -222,9 +224,9 @@ public class DefaultMcpSyncRequestContextTests {
 		when(expectedResult.action()).thenReturn(ElicitResult.Action.DECLINE);
 		when(exchange.createElicitation(any(ElicitRequest.class))).thenReturn(expectedResult);
 
-		Optional<StructuredElicitResult<Map<String, Object>>> result = context
-			.elicitation(new TypeReference<Map<String, Object>>() {
-			}, "Test message", null);
+		Optional<StructuredElicitResult<Map<String, Object>>> result = context.elicit(e -> e.message("Test message"),
+				new TypeReference<Map<String, Object>>() {
+				});
 
 		assertThat(result).isEmpty();
 	}
@@ -250,8 +252,8 @@ public class DefaultMcpSyncRequestContextTests {
 		when(exchange.createElicitation(any(ElicitRequest.class))).thenReturn(expectedResult);
 
 		Optional<StructuredElicitResult<PersonWithAddress>> result = context
-			.elicitation(new TypeReference<PersonWithAddress>() {
-			}, "Test message", null);
+			.elicit(e -> e.message("Test message").meta(null), new TypeReference<PersonWithAddress>() {
+			});
 
 		assertThat(result).isPresent();
 		assertThat(result.get().action()).isEqualTo(ElicitResult.Action.ACCEPT);
@@ -279,8 +281,8 @@ public class DefaultMcpSyncRequestContextTests {
 		when(exchange.createElicitation(any(ElicitRequest.class))).thenReturn(expectedResult);
 
 		Optional<StructuredElicitResult<Map<String, Object>>> result = context
-			.elicitation(new TypeReference<Map<String, Object>>() {
-			}, "Test message", null);
+			.elicit(e -> e.message("Test message").meta(null), new TypeReference<Map<String, Object>>() {
+			});
 
 		assertThat(result).isPresent();
 		assertThat(result.get().structuredContent()).containsKey("items");
@@ -299,12 +301,13 @@ public class DefaultMcpSyncRequestContextTests {
 		when(expectedResult.content()).thenReturn(contentMap);
 		when(exchange.createElicitation(any(ElicitRequest.class))).thenReturn(expectedResult);
 
-		Optional<Map<String, Object>> result = context.elicitation(new TypeReference<Map<String, Object>>() {
-		});
+		Optional<StructuredElicitResult<Map<String, Object>>> result = context
+			.elicit(e -> e.message("Test message").meta(null), new TypeReference<Map<String, Object>>() {
+			});
 
 		assertThat(result).isPresent();
-		assertThat(result.get()).containsEntry("result", "success");
-		assertThat(result.get()).containsEntry("data", "test value");
+		assertThat(result.get().structuredContent()).containsEntry("result", "success");
+		assertThat(result.get().structuredContent()).containsEntry("data", "test value");
 	}
 
 	@Test
@@ -322,7 +325,7 @@ public class DefaultMcpSyncRequestContextTests {
 
 		when(exchange.createElicitation(elicitRequest)).thenReturn(expectedResult);
 
-		Optional<ElicitResult> result = context.elicitation(elicitRequest);
+		Optional<ElicitResult> result = context.elicit(elicitRequest);
 
 		assertThat(result).isPresent();
 		assertThat(result.get()).isEqualTo(expectedResult);
@@ -337,7 +340,7 @@ public class DefaultMcpSyncRequestContextTests {
 			.requestedSchema(Map.of("type", "string"))
 			.build();
 
-		Optional<ElicitResult> result = context.elicitation(elicitRequest);
+		Optional<ElicitResult> result = context.elicit(elicitRequest);
 
 		assertThat(result).isEmpty();
 	}
@@ -354,7 +357,7 @@ public class DefaultMcpSyncRequestContextTests {
 		CreateMessageResult expectedResult = mock(CreateMessageResult.class);
 		when(exchange.createMessage(any(CreateMessageRequest.class))).thenReturn(expectedResult);
 
-		Optional<CreateMessageResult> result = context.sampling("Message 1", "Message 2");
+		Optional<CreateMessageResult> result = context.sample("Message 1", "Message 2");
 
 		assertThat(result).isPresent();
 		assertThat(result.get()).isEqualTo(expectedResult);
@@ -370,7 +373,7 @@ public class DefaultMcpSyncRequestContextTests {
 		CreateMessageResult expectedResult = mock(CreateMessageResult.class);
 		when(exchange.createMessage(any(CreateMessageRequest.class))).thenReturn(expectedResult);
 
-		Optional<CreateMessageResult> result = context.sampling(spec -> {
+		Optional<CreateMessageResult> result = context.sample(spec -> {
 			spec.message(new TextContent("Test message"));
 			spec.systemPrompt("System prompt");
 			spec.temperature(0.7);
@@ -404,7 +407,7 @@ public class DefaultMcpSyncRequestContextTests {
 
 		when(exchange.createMessage(createRequest)).thenReturn(expectedResult);
 
-		Optional<CreateMessageResult> result = context.sampling(createRequest);
+		Optional<CreateMessageResult> result = context.sample(createRequest);
 
 		assertThat(result).isPresent();
 		assertThat(result.get()).isEqualTo(expectedResult);
@@ -419,7 +422,7 @@ public class DefaultMcpSyncRequestContextTests {
 			.maxTokens(500)
 			.build();
 
-		Optional<CreateMessageResult> result = context.sampling(createRequest);
+		Optional<CreateMessageResult> result = context.sample(createRequest);
 
 		assertThat(result).isEmpty();
 	}

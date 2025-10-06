@@ -920,14 +920,13 @@ public String processWithContext(
         // Use exchange for additional operations...
     }
     
-    // Perform elicitation with default message - returns just the typed content
-    Optional<UserInfo> userInfo = context.elicitation(new TypeReference<UserInfo>() {});
+    // Perform elicitation with default message - returns StructuredElicitResult
+    Optional<StructuredElicitResult<UserInfo>> result = context.elicit(new TypeReference<UserInfo>() {});
     
-    // Or perform elicitation with custom message and metadata - returns structured result
-    Optional<StructuredElicitResult<UserInfo>> structuredResult = context.elicitation(
-        new TypeReference<UserInfo>() {},
-        "Please provide your information",
-        Map.of("context", "user-registration")
+    // Or perform elicitation with custom configuration - returns StructuredElicitResult
+    Optional<StructuredElicitResult<UserInfo>> structuredResult = context.elicit(
+        e -> e.message("Please provide your information").meta("context", "user-registration"),
+        new TypeReference<UserInfo>() {}
     );
     
     if (structuredResult.isPresent() && structuredResult.get().action() == ElicitResult.Action.ACCEPT) {
@@ -964,7 +963,7 @@ public GetPromptResult generateWithContext(
     context.info("Generating prompt for topic: " + topic);
     
     // Perform sampling if needed
-    Optional<CreateMessageResult> samplingResult = context.sampling(
+    Optional<CreateMessageResult> samplingResult = context.sample(
         "What are the key points about " + topic + "?"
     );
     
@@ -1060,10 +1059,12 @@ public Mono<GetPromptResult> asyncGenerateWithContext(
 - `log(Consumer<LoggingSpec>)` - Send log messages with custom configuration
 - `debug(String)`, `info(String)`, `warn(String)`, `error(String)` - Convenience logging methods
 - `progress(int)`, `progress(Consumer<ProgressSpec>)` - Send progress updates
-- `elicitation(TypeReference<T>)` - Request user input with default message, returns typed content directly
-- `elicitation(TypeReference<T>, String, Map<String, Object>)` - Request user input with custom message and metadata, returns `StructuredElicitResult<T>` with action, typed content, and metadata
-- `elicitation(ElicitRequest)` - Request user input with full control over the elicitation request
-- `sampling(...)` - Request LLM sampling with various configuration options
+- `elicit(TypeReference<T>)` - Request user input with default message, returns `StructuredElicitResult<T>` with action, typed content, and metadata
+- `elicit(Class<T>)` - Request user input with default message using Class type, returns `StructuredElicitResult<T>`
+- `elicit(Consumer<ElicitationSpec>, TypeReference<T>)` - Request user input with custom configuration, returns `StructuredElicitResult<T>`
+- `elicit(Consumer<ElicitationSpec>, Class<T>)` - Request user input with custom configuration using Class type, returns `StructuredElicitResult<T>`
+- `elicit(ElicitRequest)` - Request user input with full control over the elicitation request
+- `sample(...)` - Request LLM sampling with various configuration options
 - `roots()` - Access root directories (returns `Optional<ListRootsResult>`)
 - `ping()` - Send ping to check connection
 

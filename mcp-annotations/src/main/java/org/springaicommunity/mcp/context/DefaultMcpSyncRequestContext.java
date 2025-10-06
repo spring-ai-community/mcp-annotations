@@ -69,25 +69,11 @@ public class DefaultMcpSyncRequestContext implements McpSyncRequestContext {
 	// Elicitation
 
 	@Override
-	public <T> Optional<T> elicitation(TypeReference<T> type) {
+	public <T> Optional<StructuredElicitResult<T>> elicit(Class<T> type) {
 		Assert.notNull(type, "Elicitation response type must not be null");
 
-		Optional<ElicitResult> elicitResult = this.elicitationInternal("Please provide the required information.",
-				type.getType(), null);
-
-		if (!elicitResult.isPresent() || elicitResult.get().action() != ElicitResult.Action.ACCEPT) {
-			return Optional.empty();
-		}
-
-		return Optional.of(convertMapToType(elicitResult.get().content(), type));
-	}
-
-	@Override
-	public <T> Optional<StructuredElicitResult<T>> elicitation(TypeReference<T> type, String message,
-			Map<String, Object> meta) {
-		Assert.notNull(type, "Elicitation response type must not be null");
-
-		Optional<ElicitResult> elicitResult = this.elicitationInternal(message, type.getType(), meta);
+		Optional<ElicitResult> elicitResult = this.elicitationInternal("Please provide the required information.", type,
+				null);
 
 		if (!elicitResult.isPresent() || elicitResult.get().action() != ElicitResult.Action.ACCEPT) {
 			return Optional.empty();
@@ -97,14 +83,62 @@ public class DefaultMcpSyncRequestContext implements McpSyncRequestContext {
 				convertMapToType(elicitResult.get().content(), type), elicitResult.get().meta()));
 	}
 
-	private static <T> T convertMapToType(Map<String, Object> map, TypeReference<T> targetType) {
-		ObjectMapper mapper = new ObjectMapper();
-		JavaType javaType = mapper.getTypeFactory().constructType(targetType);
-		return mapper.convertValue(map, javaType);
+	@Override
+	public <T> Optional<StructuredElicitResult<T>> elicit(TypeReference<T> type) {
+		Assert.notNull(type, "Elicitation response type must not be null");
+
+		Optional<ElicitResult> elicitResult = this.elicitationInternal("Please provide the required information.",
+				type.getType(), null);
+
+		if (!elicitResult.isPresent() || elicitResult.get().action() != ElicitResult.Action.ACCEPT) {
+			return Optional.empty();
+		}
+
+		return Optional.of(new StructuredElicitResult<>(elicitResult.get().action(),
+				convertMapToType(elicitResult.get().content(), type), elicitResult.get().meta()));
 	}
 
 	@Override
-	public Optional<ElicitResult> elicitation(ElicitRequest elicitRequest) {
+	public <T> Optional<StructuredElicitResult<T>> elicit(Consumer<ElicitationSpec> params, Class<T> returnType) {
+		Assert.notNull(returnType, "Elicitation response type must not be null");
+		Assert.notNull(params, "Elicitation params must not be null");
+
+		DefaultElicitationSpec paramSpec = new DefaultElicitationSpec();
+		params.accept(paramSpec);
+
+		Optional<ElicitResult> elicitResult = this.elicitationInternal(paramSpec.message(), returnType,
+				paramSpec.meta());
+
+		if (!elicitResult.isPresent() || elicitResult.get().action() != ElicitResult.Action.ACCEPT) {
+			return Optional.empty();
+		}
+
+		return Optional.of(new StructuredElicitResult<>(elicitResult.get().action(),
+				convertMapToType(elicitResult.get().content(), returnType), elicitResult.get().meta()));
+	}
+
+	@Override
+	public <T> Optional<StructuredElicitResult<T>> elicit(Consumer<ElicitationSpec> params,
+			TypeReference<T> returnType) {
+		Assert.notNull(returnType, "Elicitation response type must not be null");
+		Assert.notNull(params, "Elicitation params must not be null");
+
+		DefaultElicitationSpec paramSpec = new DefaultElicitationSpec();
+		params.accept(paramSpec);
+
+		Optional<ElicitResult> elicitResult = this.elicitationInternal(paramSpec.message(), returnType.getType(),
+				paramSpec.meta());
+
+		if (!elicitResult.isPresent() || elicitResult.get().action() != ElicitResult.Action.ACCEPT) {
+			return Optional.empty();
+		}
+
+		return Optional.of(new StructuredElicitResult<>(elicitResult.get().action(),
+				convertMapToType(elicitResult.get().content(), returnType), elicitResult.get().meta()));
+	}
+
+	@Override
+	public Optional<ElicitResult> elicit(ElicitRequest elicitRequest) {
 		Assert.notNull(elicitRequest, "Elicit request must not be null");
 
 		if (this.exchange.getClientCapabilities() == null
@@ -125,7 +159,7 @@ public class DefaultMcpSyncRequestContext implements McpSyncRequestContext {
 
 		Map<String, Object> schema = typeSchemaCache.computeIfAbsent(type, t -> this.generateElicitSchema(t));
 
-		return this.elicitation(ElicitRequest.builder().message(message).requestedSchema(schema).meta(meta).build());
+		return this.elicit(ElicitRequest.builder().message(message).requestedSchema(schema).meta(meta).build());
 	}
 
 	private Map<String, Object> generateElicitSchema(Type type) {
@@ -135,15 +169,27 @@ public class DefaultMcpSyncRequestContext implements McpSyncRequestContext {
 		return schema;
 	}
 
+	private static <T> T convertMapToType(Map<String, Object> map, Class<T> targetType) {
+		ObjectMapper mapper = new ObjectMapper();
+		JavaType javaType = mapper.getTypeFactory().constructType(targetType);
+		return mapper.convertValue(map, javaType);
+	}
+
+	private static <T> T convertMapToType(Map<String, Object> map, TypeReference<T> targetType) {
+		ObjectMapper mapper = new ObjectMapper();
+		JavaType javaType = mapper.getTypeFactory().constructType(targetType);
+		return mapper.convertValue(map, javaType);
+	}
+
 	// Sampling
 
 	@Override
-	public Optional<CreateMessageResult> sampling(String... messages) {
-		return this.sampling(s -> s.message(messages));
+	public Optional<CreateMessageResult> sample(String... messages) {
+		return this.sample(s -> s.message(messages));
 	}
 
 	@Override
-	public Optional<CreateMessageResult> sampling(Consumer<SamplingSpec> samplingSpec) {
+	public Optional<CreateMessageResult> sample(Consumer<SamplingSpec> samplingSpec) {
 		Assert.notNull(samplingSpec, "Sampling spec consumer must not be null");
 		DefaultSamplingSpec spec = new DefaultSamplingSpec();
 		samplingSpec.accept(spec);
@@ -153,7 +199,7 @@ public class DefaultMcpSyncRequestContext implements McpSyncRequestContext {
 		if (!Utils.hasText(progressToken)) {
 			logger.warn("Progress notification not supported by the client!");
 		}
-		return this.sampling(McpSchema.CreateMessageRequest.builder()
+		return this.sample(McpSchema.CreateMessageRequest.builder()
 			.messages(spec.messages)
 			.modelPreferences(spec.modelPreferences)
 			.systemPrompt(spec.systemPrompt)
@@ -168,7 +214,7 @@ public class DefaultMcpSyncRequestContext implements McpSyncRequestContext {
 	}
 
 	@Override
-	public Optional<CreateMessageResult> sampling(CreateMessageRequest createMessageRequest) {
+	public Optional<CreateMessageResult> sample(CreateMessageRequest createMessageRequest) {
 
 		// check if supported
 		if (this.exchange.getClientCapabilities() == null || this.exchange.getClientCapabilities().sampling() == null) {
@@ -363,38 +409,50 @@ public class DefaultMcpSyncRequestContext implements McpSyncRequestContext {
 		}
 
 		@Override
-		public <T> Optional<T> elicitation(TypeReference<T> type) {
+		public <T> Optional<StructuredElicitResult<T>> elicit(Class<T> type) {
 			logger.warn("Stateless servers do not support elicitation! Ignoring the elicitation request");
 			return Optional.empty();
 		}
 
 		@Override
-		public <T> Optional<StructuredElicitResult<T>> elicitation(TypeReference<T> type, String message,
-				Map<String, Object> meta) {
+		public <T> Optional<StructuredElicitResult<T>> elicit(Consumer<ElicitationSpec> params, Class<T> returnType) {
 			logger.warn("Stateless servers do not support elicitation! Ignoring the elicitation request");
 			return Optional.empty();
 		}
 
 		@Override
-		public Optional<ElicitResult> elicitation(ElicitRequest elicitRequest) {
+		public <T> Optional<StructuredElicitResult<T>> elicit(TypeReference<T> type) {
 			logger.warn("Stateless servers do not support elicitation! Ignoring the elicitation request");
 			return Optional.empty();
 		}
 
 		@Override
-		public Optional<CreateMessageResult> sampling(String... messages) {
+		public <T> Optional<StructuredElicitResult<T>> elicit(Consumer<ElicitationSpec> params,
+				TypeReference<T> returnType) {
+			logger.warn("Stateless servers do not support elicitation! Ignoring the elicitation request");
+			return Optional.empty();
+		}
+
+		@Override
+		public Optional<ElicitResult> elicit(ElicitRequest elicitRequest) {
+			logger.warn("Stateless servers do not support elicitation! Ignoring the elicitation request");
+			return Optional.empty();
+		}
+
+		@Override
+		public Optional<CreateMessageResult> sample(String... messages) {
 			logger.warn("Stateless servers do not support sampling! Ignoring the sampling request");
 			return Optional.empty();
 		}
 
 		@Override
-		public Optional<CreateMessageResult> sampling(Consumer<SamplingSpec> samplingSpec) {
+		public Optional<CreateMessageResult> sample(Consumer<SamplingSpec> samplingSpec) {
 			logger.warn("Stateless servers do not support sampling! Ignoring the sampling request");
 			return Optional.empty();
 		}
 
 		@Override
-		public Optional<CreateMessageResult> sampling(CreateMessageRequest createMessageRequest) {
+		public Optional<CreateMessageResult> sample(CreateMessageRequest createMessageRequest) {
 			logger.warn("Stateless servers do not support sampling! Ignoring the sampling request");
 			return Optional.empty();
 		}

@@ -26,6 +26,16 @@ import io.modelcontextprotocol.spec.McpSchema.TextContent;
  */
 public interface McpRequestContextTypes<ET> {
 
+	interface ElicitationSpec {
+
+		ElicitationSpec message(String message);
+
+		ElicitationSpec meta(Map<String, Object> m);
+
+		ElicitationSpec meta(String k, Object v);
+
+	}
+
 	// --------------------------------------
 	// Sampling
 	// --------------------------------------
