@@ -17,6 +17,7 @@ import net.javacrumbs.jsonunit.core.Option;
 import org.junit.jupiter.api.Test;
 import org.springaicommunity.mcp.annotation.McpTool;
 import org.springaicommunity.mcp.annotation.McpToolParam;
+import org.springaicommunity.mcp.context.McpSyncRequestContext;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -54,6 +55,11 @@ public class SyncMcpToolMethodCallbackTests {
 		@McpTool(name = "exchange-tool", description = "Tool with exchange parameter")
 		public String toolWithExchange(McpSyncServerExchange exchange, String message) {
 			return "Exchange tool: " + message;
+		}
+
+		@McpTool(name = "context-tool", description = "Tool with context parameter")
+		public String toolWithContext(McpSyncRequestContext context, String message) {
+			return "Context tool: " + message;
 		}
 
 		@McpTool(name = "list-tool", description = "Tool with list parameter")
@@ -443,10 +449,31 @@ public class SyncMcpToolMethodCallbackTests {
 		// Test that McpSyncServerExchange is recognized as exchange type
 		assertThat(callback.isExchangeOrContextType(McpSyncServerExchange.class)).isTrue();
 
+		// Test that McpSyncRequestContext is recognized as context type
+		assertThat(callback.isExchangeOrContextType(McpSyncRequestContext.class)).isTrue();
+
 		// Test that other types are not recognized as exchange type
 		assertThat(callback.isExchangeOrContextType(String.class)).isFalse();
 		assertThat(callback.isExchangeOrContextType(Integer.class)).isFalse();
 		assertThat(callback.isExchangeOrContextType(Object.class)).isFalse();
+	}
+
+	@Test
+	public void testToolWithContextParameter() throws Exception {
+		TestToolProvider provider = new TestToolProvider();
+		Method method = TestToolProvider.class.getMethod("toolWithContext", McpSyncRequestContext.class, String.class);
+		SyncMcpToolMethodCallback callback = new SyncMcpToolMethodCallback(ReturnMode.TEXT, method, provider);
+
+		McpSyncServerExchange exchange = mock(McpSyncServerExchange.class);
+		CallToolRequest request = new CallToolRequest("context-tool", Map.of("message", "hello"));
+
+		CallToolResult result = callback.apply(exchange, request);
+
+		assertThat(result).isNotNull();
+		assertThat(result.isError()).isFalse();
+		assertThat(result.content()).hasSize(1);
+		assertThat(result.content().get(0)).isInstanceOf(TextContent.class);
+		assertThat(((TextContent) result.content().get(0)).text()).isEqualTo("Context tool: hello");
 	}
 
 	@Test

@@ -18,10 +18,12 @@ package org.springaicommunity.mcp.method.tool;
 
 import java.util.function.BiFunction;
 
-import org.springaicommunity.mcp.annotation.McpTool;
 import io.modelcontextprotocol.common.McpTransportContext;
 import io.modelcontextprotocol.spec.McpSchema.CallToolRequest;
 import io.modelcontextprotocol.spec.McpSchema.CallToolResult;
+import org.springaicommunity.mcp.annotation.McpTool;
+import org.springaicommunity.mcp.context.DefaultMcpAsyncRequestContext;
+import org.springaicommunity.mcp.context.McpAsyncRequestContext;
 import reactor.core.publisher.Mono;
 
 /**
@@ -33,7 +35,8 @@ import reactor.core.publisher.Mono;
  *
  * @author Christian Tzolov
  */
-public final class AsyncStatelessMcpToolMethodCallback extends AbstractAsyncMcpToolMethodCallback<McpTransportContext>
+public final class AsyncStatelessMcpToolMethodCallback
+		extends AbstractAsyncMcpToolMethodCallback<McpTransportContext, McpAsyncRequestContext>
 		implements BiFunction<McpTransportContext, CallToolRequest, Mono<CallToolResult>> {
 
 	public AsyncStatelessMcpToolMethodCallback(ReturnMode returnMode, java.lang.reflect.Method toolMethod,
@@ -48,7 +51,18 @@ public final class AsyncStatelessMcpToolMethodCallback extends AbstractAsyncMcpT
 
 	@Override
 	protected boolean isExchangeOrContextType(Class<?> paramType) {
-		return McpTransportContext.class.isAssignableFrom(paramType);
+		return McpTransportContext.class.isAssignableFrom(paramType)
+				|| McpAsyncRequestContext.class.isAssignableFrom(paramType);
+	}
+
+	@Override
+	protected McpAsyncRequestContext createRequestContext(McpTransportContext exchange, CallToolRequest request) {
+
+		return DefaultMcpAsyncRequestContext.builder()
+			.request(request)
+			.transportContext(exchange)
+			.stateless(true)
+			.build();
 	}
 
 	/**

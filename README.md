@@ -120,11 +120,15 @@ Each operation type has both synchronous and asynchronous implementations, allow
   - **`@McpToolParam`** - Annotates tool method parameters with descriptions and requirement specifications
 
 #### Special Parameters and Annotations
-- **`@McpProgressToken`** - Marks a method parameter to receive the progress token from the request. This parameter is automatically injected and excluded from the generated JSON schema
-- **`McpMeta`** - Special parameter type that provides access to metadata from MCP requests, notifications, and results. This parameter is automatically injected and excluded from parameter count limits and JSON schema generation
-- **`McpSyncServerExchange`** - Special parameter type for stateful synchronous operations that provides access to server exchange functionality including logging notifications, progress updates, and other server-side operations. This parameter is automatically injected and excluded from JSON schema generation
-- **`McpAsyncServerExchange`** - Special parameter type for stateful asynchronous operations that provides access to server exchange functionality with reactive support. This parameter is automatically injected and excluded from JSON schema generation
+- **`McpSyncRequestContext`** - Special parameter type for synchronous operations that provides a unified interface for accessing MCP request context, including the original request, server exchange (for stateful operations), transport context (for stateless operations), and convenient methods for logging, progress, sampling, and elicitation. This parameter is automatically injected and excluded from JSON schema generation
+- **`McpAsyncRequestContext`** - Special parameter type for asynchronous operations that provides the same unified interface as `McpSyncRequestContext` but with reactive (Mono-based) return types. This parameter is automatically injected and excluded from JSON schema generation
+- **(Deprecated and replaced by `McpSyncRequestContext`) `McpSyncServerExchange`** - Special parameter type for stateful synchronous operations that provides access to server exchange functionality including logging notifications, progress updates, and other server-side operations. This parameter is automatically injected and excluded from JSON schema generation. 
+- **(Deprecated and replaced by `McpAsyncRequestContext`) `McpAsyncServerExchange`** - Special parameter type for stateful asynchronous operations that provides access to server exchange functionality with reactive support. This parameter is automatically injected and excluded from JSON schema generation
 - **`McpTransportContext`** - Special parameter type for stateless operations that provides lightweight access to transport-level context without full server exchange functionality. This parameter is automatically injected and excluded from JSON schema generation
+- **(Deprecated. Handled internally by `McpSyncRequestContext` and `McpAsyncRequestContext`)`@McpProgressToken`** - Marks a method parameter to receive the progress token from the request. This parameter is automatically injected and excluded from the generated JSON schema
+**Note:** if using the `McpSyncRequestContext` or `McpAsyncRequestContext` the progress token is handled internally.
+- **`McpMeta`** - Special parameter type that provides access to metadata from MCP requests, notifications, and results. This parameter is automatically injected and excluded from parameter count limits and JSON schema generation. 
+**Note:** if using the McpSyncRequestContext or McpAsyncRequestContext the meta can be obatined via `requestMeta()` instead.
 
 ### Method Callbacks
 
@@ -869,6 +873,204 @@ public List<String> smartComplete(
 ```
 
 This feature enables context-aware MCP operations where the behavior can be customized based on client-provided metadata such as user identity, preferences, session information, or any other contextual data.
+
+#### McpRequestContext Support
+
+The library provides unified request context interfaces (`McpSyncRequestContext` and `McpAsyncRequestContext`) that offer a higher-level abstraction over the underlying MCP infrastructure. These context objects provide convenient access to:
+
+- The original request (CallToolRequest, ReadResourceRequest, etc.)
+- Server exchange (for stateful operations) or transport context (for stateless operations)
+- Convenient methods for logging, progress updates, sampling, elicitation, and more
+
+**Key Benefits:**
+- **Unified API**: Single parameter type works for both stateful and stateless operations
+- **Convenience Methods**: Built-in helpers for common operations like logging and progress tracking
+- **Type Safety**: Strongly-typed access to request data and context
+- **Automatic Injection**: Context is automatically created and injected by the framework
+
+When a method parameter is of type `McpSyncRequestContext` or `McpAsyncRequestContext`:
+- The parameter is automatically injected with the appropriate context implementation
+- The parameter is excluded from JSON schema generation
+- For stateful operations, the context provides access to `McpSyncServerExchange` or `McpAsyncServerExchange`
+- For stateless operations, the context provides access to `McpTransportContext`
+
+**Synchronous Context Example:**
+
+```java
+public record UserInfo(String name, String email, Number age) {}
+
+@McpTool(name = "process-with-context", description = "Process data with unified context")
+public String processWithContext(
+        McpSyncRequestContext context,
+        @McpToolParam(description = "Data to process", required = true) String data) {
+    
+    // Access the original request
+    CallToolRequest request = (CallToolRequest) context.request();
+    
+    // Log information
+    context.info("Processing data: " + data);
+    
+    // Send progress updates
+    context.progress(50); // 50% complete
+    
+    // Check if running in stateful mode
+    if (!context.isStateless()) {
+        // Access server exchange for stateful operations
+        McpSyncServerExchange exchange = context.exchange().orElseThrow();
+        // Use exchange for additional operations...
+    }
+    
+    // Perform elicitation with default message - returns StructuredElicitResult
+    Optional<StructuredElicitResult<UserInfo>> result = context.elicit(new TypeReference<UserInfo>() {});
+    
+    // Or perform elicitation with custom configuration - returns StructuredElicitResult
+    Optional<StructuredElicitResult<UserInfo>> structuredResult = context.elicit(
+        e -> e.message("Please provide your information").meta("context", "user-registration"),
+        new TypeReference<UserInfo>() {}
+    );
+    
+    if (structuredResult.isPresent() && structuredResult.get().action() == ElicitResult.Action.ACCEPT) {
+        UserInfo info = structuredResult.get().structuredContent();
+        return "Processed: " + data + " for user " + info.name();
+    }
+    
+    return "Processed: " + data;
+}
+
+@McpResource(uri = "data://{id}", name = "Data Resource", description = "Resource with context")
+public ReadResourceResult getDataWithContext(
+        McpSyncRequestContext context,
+        String id) {
+    
+    // Log the resource access
+    context.debug("Accessing resource: " + id);
+    
+    // Access metadata from the request
+    Map<String, Object> metadata = context.request()._meta();
+    
+    String content = "Data for " + id;
+    return new ReadResourceResult(List.of(
+        new TextResourceContents("data://" + id, "text/plain", content)
+    ));
+}
+
+@McpPrompt(name = "generate-with-context", description = "Generate prompt with context")
+public GetPromptResult generateWithContext(
+        McpSyncRequestContext context,
+        @McpArg(name = "topic", required = true) String topic) {
+    
+    // Log prompt generation
+    context.info("Generating prompt for topic: " + topic);
+    
+    // Perform sampling if needed
+    Optional<CreateMessageResult> samplingResult = context.sample(
+        "What are the key points about " + topic + "?"
+    );
+    
+    String message = "Let's discuss " + topic;
+    return new GetPromptResult("Generated Prompt",
+        List.of(new PromptMessage(Role.ASSISTANT, new TextContent(message))));
+}
+```
+
+**Asynchronous Context Example:**
+
+```java
+public record UserInfo(String name, String email, int age) {}
+
+@McpTool(name = "async-process-with-context", description = "Async process with unified context")
+public Mono<String> asyncProcessWithContext(
+        McpAsyncRequestContext context,
+        @McpToolParam(description = "Data to process", required = true) String data) {
+    
+    return Mono.fromCallable(() -> {
+        // Access the original request
+        CallToolRequest request = (CallToolRequest) context.request();
+        return data;
+    })
+    .flatMap(processedData -> {
+        // Log information (returns Mono<Void>)
+        return context.info("Processing data: " + processedData)
+            .thenReturn(processedData);
+    })
+    .flatMap(processedData -> {
+        // Send progress updates (returns Mono<Void>)
+        return context.progress(50)
+            .thenReturn(processedData);
+    })
+    .flatMap(processedData -> {
+        // Perform elicitation with default message - returns Mono<UserInfo>
+        return context.elicitation(new TypeReference<UserInfo>() {})
+            .map(userInfo -> "Processed: " + processedData + " for user " + userInfo.name());
+    })
+    .switchIfEmpty(Mono.fromCallable(() -> {
+        // Or perform elicitation with custom message and metadata - returns Mono<StructuredElicitResult<UserInfo>>
+        return context.elicitation(
+            new TypeReference<UserInfo>() {},
+            "Please provide your information",
+            Map.of("context", "user-registration")
+        )
+        .filter(result -> result.action() == ElicitResult.Action.ACCEPT)
+        .map(result -> "Processed: " + data + " for user " + result.structuredContent().name())
+        .defaultIfEmpty("Processed: " + data);
+    }).flatMap(mono -> mono));
+}
+
+@McpResource(uri = "async-data://{id}", name = "Async Data Resource", 
+             description = "Async resource with context")
+public Mono<ReadResourceResult> getAsyncDataWithContext(
+        McpAsyncRequestContext context,
+        String id) {
+    
+    // Log the resource access (returns Mono<Void>)
+    return context.debug("Accessing async resource: " + id)
+        .then(Mono.fromCallable(() -> {
+            String content = "Async data for " + id;
+            return new ReadResourceResult(List.of(
+                new TextResourceContents("async-data://" + id, "text/plain", content)
+            ));
+        }));
+}
+
+@McpPrompt(name = "async-generate-with-context", 
+           description = "Async generate prompt with context")
+public Mono<GetPromptResult> asyncGenerateWithContext(
+        McpAsyncRequestContext context,
+        @McpArg(name = "topic", required = true) String topic) {
+    
+    // Log prompt generation and perform sampling
+    return context.info("Generating async prompt for topic: " + topic)
+        .then(context.sampling("What are the key points about " + topic + "?"))
+        .map(samplingResult -> {
+            String message = "Let's discuss " + topic;
+            return new GetPromptResult("Generated Async Prompt",
+                List.of(new PromptMessage(Role.ASSISTANT, new TextContent(message))));
+        });
+}
+```
+
+**Available Context Methods:**
+
+`McpSyncRequestContext` provides:
+- `request()` - Access the original request object
+- `exchange()` - Access the server exchange (for stateful operations)
+- `transportContext()` - Access the transport context (for stateless operations)
+- `isStateless()` - Check if running in stateless mode
+- `log(Consumer<LoggingSpec>)` - Send log messages with custom configuration
+- `debug(String)`, `info(String)`, `warn(String)`, `error(String)` - Convenience logging methods
+- `progress(int)`, `progress(Consumer<ProgressSpec>)` - Send progress updates
+- `elicit(TypeReference<T>)` - Request user input with default message, returns `StructuredElicitResult<T>` with action, typed content, and metadata
+- `elicit(Class<T>)` - Request user input with default message using Class type, returns `StructuredElicitResult<T>`
+- `elicit(Consumer<ElicitationSpec>, TypeReference<T>)` - Request user input with custom configuration, returns `StructuredElicitResult<T>`
+- `elicit(Consumer<ElicitationSpec>, Class<T>)` - Request user input with custom configuration using Class type, returns `StructuredElicitResult<T>`
+- `elicit(ElicitRequest)` - Request user input with full control over the elicitation request
+- `sample(...)` - Request LLM sampling with various configuration options
+- `roots()` - Access root directories (returns `Optional<ListRootsResult>`)
+- `ping()` - Send ping to check connection
+
+`McpAsyncRequestContext` provides the same methods but with reactive return types (`Mono<T>` instead of `T` or `Optional<T>`).
+
+This unified context approach simplifies method signatures and provides a consistent API across different operation types and execution modes (stateful vs stateless, sync vs async).
 
 ### Async Tool Example
 
@@ -1771,7 +1973,7 @@ public class AsyncElicitationHandler {
 public class MyMcpClient {
 
     public static McpSyncClient createSyncClientWithElicitation(ElicitationHandler elicitationHandler) {
-        Function<ElicitRequest, ElicitResult> elicitationHandler = 
+        Function<ElicitRequest, ElicitResult> elicitationHandlerFunc = 
             new SyncMcpElicitationProvider(List.of(elicitationHandler)).getElicitationHandler();
 
         McpSyncClient client = McpClient.sync(transport)
@@ -1779,14 +1981,14 @@ public class MyMcpClient {
                 .elicitation()  // Enable elicitation support
                 // Other capabilities...
                 .build())
-            .elicitationHandler(elicitationHandler)
+            .elicitationHandler(elicitationHandlerFunc)
             .build();
 
         return client;
     }
     
     public static McpAsyncClient createAsyncClientWithElicitation(AsyncElicitationHandler asyncElicitationHandler) {
-        Function<ElicitRequest, Mono<ElicitResult>> elicitationHandler = 
+        Function<ElicitRequest, Mono<ElicitResult>> elicitationHandlerFunc = 
             new AsyncMcpElicitationProvider(List.of(asyncElicitationHandler)).getElicitationHandler();
 
         McpAsyncClient client = McpClient.async(transport)
@@ -1794,7 +1996,7 @@ public class MyMcpClient {
                 .elicitation()  // Enable elicitation support
                 // Other capabilities...
                 .build())
-            .elicitationHandler(elicitationHandler)
+            .elicitationHandler(elicitationHandlerFunc)
             .build();
 
         return client;

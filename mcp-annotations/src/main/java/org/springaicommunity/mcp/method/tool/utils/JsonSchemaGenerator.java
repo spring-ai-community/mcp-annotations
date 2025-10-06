@@ -27,7 +27,8 @@ import java.util.Map;
 import org.springaicommunity.mcp.annotation.McpMeta;
 import org.springaicommunity.mcp.annotation.McpProgressToken;
 import org.springaicommunity.mcp.annotation.McpToolParam;
-
+import org.springaicommunity.mcp.context.McpAsyncRequestContext;
+import org.springaicommunity.mcp.context.McpSyncRequestContext;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyDescription;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -110,7 +111,9 @@ public class JsonSchemaGenerator {
 			// @McpProgressToken annotated parameters, and McpMeta parameters
 			boolean hasOtherParams = Arrays.stream(method.getParameters()).anyMatch(param -> {
 				Class<?> type = param.getType();
-				return !CallToolRequest.class.isAssignableFrom(type)
+				return !McpSyncRequestContext.class.isAssignableFrom(type)
+						&& !McpAsyncRequestContext.class.isAssignableFrom(type)
+						&& !CallToolRequest.class.isAssignableFrom(type)
 						&& !McpSyncServerExchange.class.isAssignableFrom(type)
 						&& !McpAsyncServerExchange.class.isAssignableFrom(type)
 						&& !param.isAnnotationPresent(McpProgressToken.class) && !McpMeta.class.isAssignableFrom(type);
@@ -150,7 +153,9 @@ public class JsonSchemaGenerator {
 
 			// Skip special parameter types
 			if (parameterType instanceof Class<?> parameterClass
-					&& (ClassUtils.isAssignable(McpSyncServerExchange.class, parameterClass)
+					&& (ClassUtils.isAssignable(McpSyncRequestContext.class, parameterClass)
+							|| ClassUtils.isAssignable(McpAsyncRequestContext.class, parameterClass)
+							|| ClassUtils.isAssignable(McpSyncServerExchange.class, parameterClass)
 							|| ClassUtils.isAssignable(McpAsyncServerExchange.class, parameterClass)
 							|| ClassUtils.isAssignable(CallToolRequest.class, parameterClass))) {
 				continue;

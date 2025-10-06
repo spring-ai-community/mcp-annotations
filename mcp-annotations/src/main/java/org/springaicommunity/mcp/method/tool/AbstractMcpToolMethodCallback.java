@@ -28,6 +28,9 @@ import io.modelcontextprotocol.spec.McpSchema.CallToolResult;
 import org.springaicommunity.mcp.annotation.McpMeta;
 import org.springaicommunity.mcp.annotation.McpProgressToken;
 import org.springaicommunity.mcp.annotation.McpTool;
+import org.springaicommunity.mcp.context.McpAsyncRequestContext;
+import org.springaicommunity.mcp.context.McpRequestContextTypes;
+import org.springaicommunity.mcp.context.McpSyncRequestContext;
 import org.springaicommunity.mcp.method.tool.utils.JsonParser;
 
 /**
@@ -41,7 +44,7 @@ import org.springaicommunity.mcp.method.tool.utils.JsonParser;
  * McpSyncServerExchange, or McpAsyncServerExchange)
  * @author Christian Tzolov
  */
-public abstract class AbstractMcpToolMethodCallback<T> {
+public abstract class AbstractMcpToolMethodCallback<T, RC extends McpRequestContextTypes> {
 
 	protected final Method toolMethod;
 
@@ -89,7 +92,15 @@ public abstract class AbstractMcpToolMethodCallback<T> {
 	 */
 	protected Object[] buildMethodArguments(T exchangeOrContext, Map<String, Object> toolInputArguments,
 			CallToolRequest request) {
+
 		return Stream.of(this.toolMethod.getParameters()).map(parameter -> {
+
+			if (McpSyncRequestContext.class.isAssignableFrom(parameter.getType())
+					|| McpAsyncRequestContext.class.isAssignableFrom(parameter.getType())) {
+
+				return this.createRequestContext(exchangeOrContext, request);
+			}
+
 			// Check if parameter is annotated with @McpProgressToken
 			if (parameter.isAnnotationPresent(McpProgressToken.class)) {
 				// Return the progress token from the request
@@ -202,5 +213,7 @@ public abstract class AbstractMcpToolMethodCallback<T> {
 		}
 		return rootCause;
 	}
+
+	protected abstract RC createRequestContext(T exchange, CallToolRequest request);
 
 }
