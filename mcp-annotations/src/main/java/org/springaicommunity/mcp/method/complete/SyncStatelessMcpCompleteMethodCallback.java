@@ -14,7 +14,7 @@ import io.modelcontextprotocol.common.McpTransportContext;
 import io.modelcontextprotocol.spec.McpSchema.CompleteRequest;
 import io.modelcontextprotocol.spec.McpSchema.CompleteResult;
 import io.modelcontextprotocol.spec.McpSchema.CompleteResult.CompleteCompletion;
-import io.modelcontextprotocol.util.DeafaultMcpUriTemplateManagerFactory;
+import io.modelcontextprotocol.util.DefaultMcpUriTemplateManagerFactory;
 
 /**
  * Class for creating BiFunction callbacks around complete methods for stateless contexts.
@@ -121,7 +121,7 @@ public final class SyncStatelessMcpCompleteMethodCallback extends AbstractMcpCom
 		 * Constructor for Builder.
 		 */
 		public Builder() {
-			this.uriTemplateManagerFactory = new DeafaultMcpUriTemplateManagerFactory();
+			this.uriTemplateManagerFactory = new DefaultMcpUriTemplateManagerFactory();
 		}
 
 		/**
