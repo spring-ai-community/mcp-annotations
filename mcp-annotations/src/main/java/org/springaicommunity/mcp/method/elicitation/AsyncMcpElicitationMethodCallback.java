@@ -8,7 +8,8 @@ import java.lang.reflect.Method;
 import java.util.function.Function;
 
 import org.springaicommunity.mcp.annotation.McpElicitation;
-
+import org.springaicommunity.mcp.context.StructuredElicitResult;
+import org.springaicommunity.mcp.method.tool.utils.JsonParser;
 import io.modelcontextprotocol.spec.McpSchema.ElicitRequest;
 import io.modelcontextprotocol.spec.McpSchema.ElicitResult;
 import reactor.core.publisher.Mono;
@@ -56,19 +57,34 @@ public final class AsyncMcpElicitationMethodCallback extends AbstractMcpElicitat
 
 			// If the method returns a Mono, handle it
 			if (result instanceof Mono) {
-				@SuppressWarnings("unchecked")
-				Mono<ElicitResult> monoResult = (Mono<ElicitResult>) result;
-				return monoResult;
-			}
-			// If the method returns an ElicitResult directly, wrap it in a Mono
-			else if (result instanceof ElicitResult) {
-				return Mono.just((ElicitResult) result);
+				Mono<?> monoResult = (Mono<?>) result;
+				return monoResult.flatMap(value -> {
+					if (value instanceof StructuredElicitResult) {
+						StructuredElicitResult<?> structuredElicitResult = (StructuredElicitResult<?>) value;
+
+						var content = structuredElicitResult.structuredContent() != null
+								? JsonParser.convertObjectToMap(structuredElicitResult.structuredContent()) : null;
+
+						return Mono.just(ElicitResult.builder()
+							.message(structuredElicitResult.action())
+							.content(content)
+							.meta(structuredElicitResult.meta())
+							.build());
+
+					}
+					else if (value instanceof ElicitResult) {
+						return Mono.just((ElicitResult) value);
+					}
+
+					return Mono.error(new McpElicitationMethodException(
+							"Method must return Mono<ElicitResult> or Mono<StructuredElicitResult>: "
+									+ this.method.getName()));
+
+				});
 			}
 			// Otherwise, throw an exception
-			else {
-				return Mono.error(new McpElicitationMethodException(
-						"Method must return Mono<ElicitResult> or ElicitResult: " + this.method.getName()));
-			}
+			return Mono.error(new McpElicitationMethodException(
+					"Method must return Mono<ElicitResult> or Mono<StructuredElicitResult>: " + this.method.getName()));
 		}
 		catch (Exception e) {
 			return Mono.error(new McpElicitationMethodException(
@@ -85,10 +101,10 @@ public final class AsyncMcpElicitationMethodCallback extends AbstractMcpElicitat
 	protected void validateReturnType(Method method) {
 		Class<?> returnType = method.getReturnType();
 
-		if (!Mono.class.isAssignableFrom(returnType) && !ElicitResult.class.isAssignableFrom(returnType)) {
+		if (!Mono.class.isAssignableFrom(returnType)) {
 			throw new IllegalArgumentException(
-					"Method must return Mono<ElicitResult> or ElicitResult: " + method.getName() + " in "
-							+ method.getDeclaringClass().getName() + " returns " + returnType.getName());
+					"Method must return Mono<ElicitResult> or Mono<StructuredElicitResult>: " + method.getName()
+							+ " in " + method.getDeclaringClass().getName() + " returns " + returnType.getName());
 		}
 	}
 

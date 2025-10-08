@@ -9,8 +9,6 @@ import java.util.Map;
 import java.util.function.Consumer;
 
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.JavaType;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.modelcontextprotocol.common.McpTransportContext;
 import io.modelcontextprotocol.server.McpAsyncServerExchange;
 import io.modelcontextprotocol.spec.McpSchema;
@@ -79,7 +77,8 @@ public class DefaultMcpAsyncRequestContext implements McpAsyncRequestContext {
 		DefaultElicitationSpec elicitationSpec = new DefaultElicitationSpec();
 		spec.accept(elicitationSpec);
 		return this.elicitationInternal(elicitationSpec.message, type.getType(), elicitationSpec.meta)
-			.map(er -> new StructuredElicitResult<T>(er.action(), convertMapToType(er.content(), type), er.meta()));
+			.map(er -> new StructuredElicitResult<T>(er.action(), JsonParser.convertMapToType(er.content(), type),
+					er.meta()));
 	}
 
 	@Override
@@ -89,21 +88,24 @@ public class DefaultMcpAsyncRequestContext implements McpAsyncRequestContext {
 		DefaultElicitationSpec elicitationSpec = new DefaultElicitationSpec();
 		spec.accept(elicitationSpec);
 		return this.elicitationInternal(elicitationSpec.message, type, elicitationSpec.meta)
-			.map(er -> new StructuredElicitResult<T>(er.action(), convertMapToType(er.content(), type), er.meta()));
+			.map(er -> new StructuredElicitResult<T>(er.action(), JsonParser.convertMapToType(er.content(), type),
+					er.meta()));
 	}
 
 	@Override
 	public <T> Mono<StructuredElicitResult<T>> elicit(TypeReference<T> type) {
 		Assert.notNull(type, "Elicitation response type must not be null");
 		return this.elicitationInternal("Please provide the required information.", type.getType(), null)
-			.map(er -> new StructuredElicitResult<T>(er.action(), convertMapToType(er.content(), type), er.meta()));
+			.map(er -> new StructuredElicitResult<T>(er.action(), JsonParser.convertMapToType(er.content(), type),
+					er.meta()));
 	}
 
 	@Override
 	public <T> Mono<StructuredElicitResult<T>> elicit(Class<T> type) {
 		Assert.notNull(type, "Elicitation response type must not be null");
 		return this.elicitationInternal("Please provide the required information.", type, null)
-			.map(er -> new StructuredElicitResult<T>(er.action(), convertMapToType(er.content(), type), er.meta()));
+			.map(er -> new StructuredElicitResult<T>(er.action(), JsonParser.convertMapToType(er.content(), type),
+					er.meta()));
 	}
 
 	@Override
@@ -124,6 +126,9 @@ public class DefaultMcpAsyncRequestContext implements McpAsyncRequestContext {
 		Assert.hasText(message, "Elicitation message must not be empty");
 		Assert.notNull(type, "Elicitation response type must not be null");
 
+		// TODO add validation for the Elicitation Schema
+		// https://modelcontextprotocol.io/specification/2025-06-18/client/elicitation#supported-schema-types
+
 		Map<String, Object> schema = typeSchemaCache.computeIfAbsent(type, t -> this.generateElicitSchema(t));
 
 		return this.elicit(ElicitRequest.builder().message(message).requestedSchema(schema).meta(meta).build());
@@ -134,18 +139,6 @@ public class DefaultMcpAsyncRequestContext implements McpAsyncRequestContext {
 		// remove as elicitation schema does not support it
 		schema.remove("$schema");
 		return schema;
-	}
-
-	private static <T> T convertMapToType(Map<String, Object> map, Class<T> targetType) {
-		ObjectMapper mapper = new ObjectMapper();
-		JavaType javaType = mapper.getTypeFactory().constructType(targetType);
-		return mapper.convertValue(map, javaType);
-	}
-
-	private static <T> T convertMapToType(Map<String, Object> map, TypeReference<T> targetType) {
-		ObjectMapper mapper = new ObjectMapper();
-		JavaType javaType = mapper.getTypeFactory().constructType(targetType);
-		return mapper.convertValue(map, javaType);
 	}
 
 	// Sampling

@@ -10,8 +10,6 @@ import java.util.Optional;
 import java.util.function.Consumer;
 
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.JavaType;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.modelcontextprotocol.common.McpTransportContext;
 import io.modelcontextprotocol.server.McpSyncServerExchange;
 import io.modelcontextprotocol.spec.McpSchema;
@@ -80,7 +78,7 @@ public class DefaultMcpSyncRequestContext implements McpSyncRequestContext {
 		}
 
 		return Optional.of(new StructuredElicitResult<>(elicitResult.get().action(),
-				convertMapToType(elicitResult.get().content(), type), elicitResult.get().meta()));
+				JsonParser.convertMapToType(elicitResult.get().content(), type), elicitResult.get().meta()));
 	}
 
 	@Override
@@ -95,7 +93,7 @@ public class DefaultMcpSyncRequestContext implements McpSyncRequestContext {
 		}
 
 		return Optional.of(new StructuredElicitResult<>(elicitResult.get().action(),
-				convertMapToType(elicitResult.get().content(), type), elicitResult.get().meta()));
+				JsonParser.convertMapToType(elicitResult.get().content(), type), elicitResult.get().meta()));
 	}
 
 	@Override
@@ -114,7 +112,7 @@ public class DefaultMcpSyncRequestContext implements McpSyncRequestContext {
 		}
 
 		return Optional.of(new StructuredElicitResult<>(elicitResult.get().action(),
-				convertMapToType(elicitResult.get().content(), returnType), elicitResult.get().meta()));
+				JsonParser.convertMapToType(elicitResult.get().content(), returnType), elicitResult.get().meta()));
 	}
 
 	@Override
@@ -134,7 +132,7 @@ public class DefaultMcpSyncRequestContext implements McpSyncRequestContext {
 		}
 
 		return Optional.of(new StructuredElicitResult<>(elicitResult.get().action(),
-				convertMapToType(elicitResult.get().content(), returnType), elicitResult.get().meta()));
+				JsonParser.convertMapToType(elicitResult.get().content(), returnType), elicitResult.get().meta()));
 	}
 
 	@Override
@@ -157,6 +155,9 @@ public class DefaultMcpSyncRequestContext implements McpSyncRequestContext {
 		Assert.hasText(message, "Elicitation message must not be empty");
 		Assert.notNull(type, "Elicitation response type must not be null");
 
+		// TODO add validation for the Elicitation Schema
+		// https://modelcontextprotocol.io/specification/2025-06-18/client/elicitation#supported-schema-types
+
 		Map<String, Object> schema = typeSchemaCache.computeIfAbsent(type, t -> this.generateElicitSchema(t));
 
 		return this.elicit(ElicitRequest.builder().message(message).requestedSchema(schema).meta(meta).build());
@@ -167,18 +168,6 @@ public class DefaultMcpSyncRequestContext implements McpSyncRequestContext {
 		// remove $schema as elicitation schema does not support it
 		schema.remove("$schema");
 		return schema;
-	}
-
-	private static <T> T convertMapToType(Map<String, Object> map, Class<T> targetType) {
-		ObjectMapper mapper = new ObjectMapper();
-		JavaType javaType = mapper.getTypeFactory().constructType(targetType);
-		return mapper.convertValue(map, javaType);
-	}
-
-	private static <T> T convertMapToType(Map<String, Object> map, TypeReference<T> targetType) {
-		ObjectMapper mapper = new ObjectMapper();
-		JavaType javaType = mapper.getTypeFactory().constructType(targetType);
-		return mapper.convertValue(map, javaType);
 	}
 
 	// Sampling

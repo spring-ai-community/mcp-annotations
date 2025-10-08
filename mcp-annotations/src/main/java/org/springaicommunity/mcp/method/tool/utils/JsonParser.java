@@ -18,10 +18,12 @@ package org.springaicommunity.mcp.method.tool.utils;
 
 import java.lang.reflect.Type;
 import java.math.BigDecimal;
+import java.util.Map;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.json.JsonMapper;
@@ -33,6 +35,14 @@ import io.modelcontextprotocol.util.Assert;
  * Utilities to perform parsing operations between JSON and Java.
  */
 public final class JsonParser {
+
+	private static TypeReference<Map<String, Object>> MAP_TYPE_REF = new TypeReference<Map<String, Object>>() {
+	};
+
+	public static Map<String, Object> convertObjectToMap(Object object) {
+		Assert.notNull(object, "object cannot be null");
+		return OBJECT_MAPPER.convertValue(object, MAP_TYPE_REF);
+	}
 
 	private static final ObjectMapper OBJECT_MAPPER = JsonMapper.builder()
 		.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
@@ -169,6 +179,16 @@ public final class JsonParser {
 
 		String json = JsonParser.toJson(value);
 		return JsonParser.fromJson(json, javaType);
+	}
+
+	public static <T> T convertMapToType(Map<String, Object> map, Class<T> targetType) {
+		JavaType javaType = OBJECT_MAPPER.getTypeFactory().constructType(targetType);
+		return OBJECT_MAPPER.convertValue(map, javaType);
+	}
+
+	public static <T> T convertMapToType(Map<String, Object> map, TypeReference<T> targetType) {
+		JavaType javaType = OBJECT_MAPPER.getTypeFactory().constructType(targetType);
+		return OBJECT_MAPPER.convertValue(map, javaType);
 	}
 
 }
