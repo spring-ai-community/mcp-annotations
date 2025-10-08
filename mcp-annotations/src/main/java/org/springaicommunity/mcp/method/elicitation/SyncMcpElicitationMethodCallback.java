@@ -7,10 +7,11 @@ package org.springaicommunity.mcp.method.elicitation;
 import java.lang.reflect.Method;
 import java.util.function.Function;
 
-import org.springaicommunity.mcp.annotation.McpElicitation;
-
 import io.modelcontextprotocol.spec.McpSchema.ElicitRequest;
 import io.modelcontextprotocol.spec.McpSchema.ElicitResult;
+import org.springaicommunity.mcp.annotation.McpElicitation;
+import org.springaicommunity.mcp.context.StructuredElicitResult;
+import org.springaicommunity.mcp.method.tool.utils.JsonParser;
 
 /**
  * Class for creating Function callbacks around elicitation methods.
@@ -53,8 +54,31 @@ public final class SyncMcpElicitationMethodCallback extends AbstractMcpElicitati
 			this.method.setAccessible(true);
 			Object result = this.method.invoke(this.bean, args);
 
-			// Return the result
-			return (ElicitResult) result;
+			if (this.method.getReturnType().isAssignableFrom(StructuredElicitResult.class)) {
+				StructuredElicitResult<?> structuredElicitResult = (StructuredElicitResult<?>) result;
+				var content = structuredElicitResult.structuredContent() != null
+						? JsonParser.convertObjectToMap(structuredElicitResult.structuredContent()) : null;
+
+				return ElicitResult.builder()
+					.message(structuredElicitResult.action())
+					.content(content)
+					.meta(structuredElicitResult.meta())
+					.build();
+			}
+			else if (this.method.getReturnType().isAssignableFrom(ElicitResult.class)) {
+				// If the method returns ElicitResult, return it directly
+				return (ElicitResult) result;
+
+			}
+			else {
+
+				// TODO add support for methods returning simple types or Objects of
+				// elicitation schema type.
+
+				throw new IllegalStateException("Method must return ElicitResult or StructuredElicitResult: "
+						+ this.method.getName() + " in " + this.method.getDeclaringClass().getName() + " returns "
+						+ this.method.getReturnType().getName());
+			}
 		}
 		catch (Exception e) {
 			throw new McpElicitationMethodException("Error invoking elicitation method: " + this.method.getName(), e);
@@ -70,7 +94,8 @@ public final class SyncMcpElicitationMethodCallback extends AbstractMcpElicitati
 	protected void validateReturnType(Method method) {
 		Class<?> returnType = method.getReturnType();
 
-		if (!ElicitResult.class.isAssignableFrom(returnType)) {
+		if (!ElicitResult.class.isAssignableFrom(returnType)
+				&& !StructuredElicitResult.class.isAssignableFrom(returnType)) {
 			throw new IllegalArgumentException("Method must return ElicitResult: " + method.getName() + " in "
 					+ method.getDeclaringClass().getName() + " returns " + returnType.getName());
 		}

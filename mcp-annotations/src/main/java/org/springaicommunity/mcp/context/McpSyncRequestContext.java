@@ -51,7 +51,7 @@ public interface McpSyncRequestContext extends McpRequestContextTypes<McpSyncSer
 	// --------------------------------------
 	// Progress
 	// --------------------------------------
-	void progress(int progress);
+	void progress(int percentage);
 
 	void progress(Consumer<ProgressSpec> progressSpec);
 

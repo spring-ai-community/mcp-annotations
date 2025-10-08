@@ -20,6 +20,7 @@ import io.modelcontextprotocol.spec.McpSchema.LoggingLevel;
 import io.modelcontextprotocol.spec.McpSchema.ResourceLink;
 import io.modelcontextprotocol.spec.McpSchema.SamplingMessage;
 import io.modelcontextprotocol.spec.McpSchema.TextContent;
+import io.modelcontextprotocol.util.Assert;
 
 /**
  * @author Christian Tzolov
@@ -110,6 +111,11 @@ public interface McpRequestContextTypes<ET> {
 
 		ProgressSpec meta(String k, Object v);
 
+		default ProgressSpec percentage(int percentage) {
+			Assert.isTrue(percentage >= 0 && percentage <= 100, "Percentage must be between 0 and 100");
+			return this.progress(percentage).total(100.0);
+		}
+
 	}
 
 	// --------------------------------------
@@ -143,6 +149,7 @@ public interface McpRequestContextTypes<ET> {
 
 	ClientCapabilities clientCapabilities();
 
+	// TODO: Should we rename it to meta()?
 	Map<String, Object> requestMeta();
 
 	McpTransportContext transportContext();
