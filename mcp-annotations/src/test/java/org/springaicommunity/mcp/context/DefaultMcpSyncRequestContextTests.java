@@ -5,7 +5,7 @@
 package org.springaicommunity.mcp.context;
 
 import java.util.Map;
-import java.util.Optional;
+import java.util.function.Consumer;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import io.modelcontextprotocol.server.McpSyncServerExchange;
@@ -27,6 +27,7 @@ import io.modelcontextprotocol.spec.McpSchema.TextContent;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
+import org.springaicommunity.mcp.context.McpRequestContextTypes.ElicitationSpec;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -88,6 +89,32 @@ public class DefaultMcpSyncRequestContextTests {
 	// Roots Tests
 
 	@Test
+	public void testRootsEnabledWhenSupported() {
+		ClientCapabilities capabilities = mock(ClientCapabilities.class);
+		McpSchema.ClientCapabilities.RootCapabilities roots = mock(McpSchema.ClientCapabilities.RootCapabilities.class);
+		when(capabilities.roots()).thenReturn(roots);
+		when(exchange.getClientCapabilities()).thenReturn(capabilities);
+
+		assertThat(context.rootsEnabled()).isTrue();
+	}
+
+	@Test
+	public void testRootsEnabledWhenNotSupported() {
+		when(exchange.getClientCapabilities()).thenReturn(null);
+
+		assertThat(context.rootsEnabled()).isFalse();
+	}
+
+	@Test
+	public void testRootsEnabledWhenCapabilitiesNullRoots() {
+		ClientCapabilities capabilities = mock(ClientCapabilities.class);
+		when(capabilities.roots()).thenReturn(null);
+		when(exchange.getClientCapabilities()).thenReturn(capabilities);
+
+		assertThat(context.rootsEnabled()).isFalse();
+	}
+
+	@Test
 	public void testRootsWhenSupported() {
 		ClientCapabilities capabilities = mock(ClientCapabilities.class);
 		McpSchema.ClientCapabilities.RootCapabilities roots = mock(McpSchema.ClientCapabilities.RootCapabilities.class);
@@ -97,10 +124,10 @@ public class DefaultMcpSyncRequestContextTests {
 		ListRootsResult expectedResult = mock(ListRootsResult.class);
 		when(exchange.listRoots()).thenReturn(expectedResult);
 
-		Optional<ListRootsResult> result = context.roots();
+		ListRootsResult result = context.roots();
 
-		assertThat(result).isPresent();
-		assertThat(result.get()).isEqualTo(expectedResult);
+		assertThat(result).isNotNull();
+		assertThat(result).isEqualTo(expectedResult);
 		verify(exchange).listRoots();
 	}
 
@@ -108,9 +135,8 @@ public class DefaultMcpSyncRequestContextTests {
 	public void testRootsWhenNotSupported() {
 		when(exchange.getClientCapabilities()).thenReturn(null);
 
-		Optional<ListRootsResult> result = context.roots();
-
-		assertThat(result).isEmpty();
+		assertThatThrownBy(() -> context.roots()).isInstanceOf(IllegalStateException.class)
+			.hasMessageContaining("Roots not supported");
 	}
 
 	@Test
@@ -119,12 +145,37 @@ public class DefaultMcpSyncRequestContextTests {
 		when(capabilities.roots()).thenReturn(null);
 		when(exchange.getClientCapabilities()).thenReturn(capabilities);
 
-		Optional<ListRootsResult> result = context.roots();
-
-		assertThat(result).isEmpty();
+		assertThatThrownBy(() -> context.roots()).isInstanceOf(IllegalStateException.class)
+			.hasMessageContaining("Roots not supported");
 	}
 
 	// Elicitation Tests
+
+	@Test
+	public void testElicitEnabledWhenSupported() {
+		ClientCapabilities capabilities = mock(ClientCapabilities.class);
+		ClientCapabilities.Elicitation elicitation = mock(ClientCapabilities.Elicitation.class);
+		when(capabilities.elicitation()).thenReturn(elicitation);
+		when(exchange.getClientCapabilities()).thenReturn(capabilities);
+
+		assertThat(context.elicitEnabled()).isTrue();
+	}
+
+	@Test
+	public void testElicitEnabledWhenNotSupported() {
+		when(exchange.getClientCapabilities()).thenReturn(null);
+
+		assertThat(context.elicitEnabled()).isFalse();
+	}
+
+	@Test
+	public void testElicitEnabledWhenCapabilitiesNullElicitation() {
+		ClientCapabilities capabilities = mock(ClientCapabilities.class);
+		when(capabilities.elicitation()).thenReturn(null);
+		when(exchange.getClientCapabilities()).thenReturn(capabilities);
+
+		assertThat(context.elicitEnabled()).isFalse();
+	}
 
 	@Test
 	public void testElicitationWithTypeAndMessage() {
@@ -140,15 +191,15 @@ public class DefaultMcpSyncRequestContextTests {
 		when(expectedResult.meta()).thenReturn(null);
 		when(exchange.createElicitation(any(ElicitRequest.class))).thenReturn(expectedResult);
 
-		Optional<StructuredElicitResult<Map<String, Object>>> result = context.elicit(e -> e.message("Test message"),
+		StructuredElicitResult<Map<String, Object>> result = context.elicit(e -> e.message("Test message"),
 				new TypeReference<Map<String, Object>>() {
 				});
 
-		assertThat(result).isPresent();
-		assertThat(result.get().action()).isEqualTo(ElicitResult.Action.ACCEPT);
-		assertThat(result.get().structuredContent()).isNotNull();
-		assertThat(result.get().structuredContent()).containsEntry("name", "John");
-		assertThat(result.get().structuredContent()).containsEntry("age", 30);
+		assertThat(result).isNotNull();
+		assertThat(result.action()).isEqualTo(ElicitResult.Action.ACCEPT);
+		assertThat(result.structuredContent()).isNotNull();
+		assertThat(result.structuredContent()).containsEntry("name", "John");
+		assertThat(result.structuredContent()).containsEntry("age", 30);
 
 		ArgumentCaptor<ElicitRequest> captor = ArgumentCaptor.forClass(ElicitRequest.class);
 		verify(exchange).createElicitation(captor.capture());
@@ -177,16 +228,16 @@ public class DefaultMcpSyncRequestContextTests {
 		when(expectedResult.meta()).thenReturn(resultMeta);
 		when(exchange.createElicitation(any(ElicitRequest.class))).thenReturn(expectedResult);
 
-		Optional<StructuredElicitResult<Person>> result = context
-			.elicit(e -> e.message("Test message").meta(requestMeta), new TypeReference<Person>() {
-			});
+		StructuredElicitResult<Person> result = context.elicit(e -> e.message("Test message").meta(requestMeta),
+				new TypeReference<Person>() {
+				});
 
-		assertThat(result).isPresent();
-		assertThat(result.get().action()).isEqualTo(ElicitResult.Action.ACCEPT);
-		assertThat(result.get().structuredContent()).isNotNull();
-		assertThat(result.get().structuredContent().name()).isEqualTo("Jane");
-		assertThat(result.get().structuredContent().age()).isEqualTo(25);
-		assertThat(result.get().meta()).containsEntry("resultKey", "resultValue");
+		assertThat(result).isNotNull();
+		assertThat(result.action()).isEqualTo(ElicitResult.Action.ACCEPT);
+		assertThat(result.structuredContent()).isNotNull();
+		assertThat(result.structuredContent().name()).isEqualTo("Jane");
+		assertThat(result.structuredContent().age()).isEqualTo(25);
+		assertThat(result.meta()).containsEntry("resultKey", "resultValue");
 
 		ArgumentCaptor<ElicitRequest> captor = ArgumentCaptor.forClass(ElicitRequest.class);
 		verify(exchange).createElicitation(captor.capture());
@@ -197,24 +248,18 @@ public class DefaultMcpSyncRequestContextTests {
 
 	@Test
 	public void testElicitationWithNullResponseType() {
+		ClientCapabilities capabilities = mock(ClientCapabilities.class);
+		ClientCapabilities.Elicitation elicitation = mock(ClientCapabilities.Elicitation.class);
+		when(capabilities.elicitation()).thenReturn(elicitation);
+		when(exchange.getClientCapabilities()).thenReturn(capabilities);
+
 		assertThatThrownBy(() -> context.elicit((TypeReference<String>) null))
 			.isInstanceOf(IllegalArgumentException.class)
 			.hasMessageContaining("Elicitation response type must not be null");
 	}
 
 	@Test
-	public void testElicitationWithTypeReturnsEmptyWhenNotSupported() {
-		when(exchange.getClientCapabilities()).thenReturn(null);
-
-		Optional<StructuredElicitResult<Map<String, Object>>> result = context
-			.elicit(new TypeReference<Map<String, Object>>() {
-			});
-
-		assertThat(result).isEmpty();
-	}
-
-	@Test
-	public void testElicitationWithTypeReturnsEmptyWhenActionIsNotAccept() {
+	public void testElicitationWithTypeWhenActionIsNotAccept() {
 		ClientCapabilities capabilities = mock(ClientCapabilities.class);
 		ClientCapabilities.Elicitation elicitation = mock(ClientCapabilities.Elicitation.class);
 		when(capabilities.elicitation()).thenReturn(elicitation);
@@ -222,13 +267,16 @@ public class DefaultMcpSyncRequestContextTests {
 
 		ElicitResult expectedResult = mock(ElicitResult.class);
 		when(expectedResult.action()).thenReturn(ElicitResult.Action.DECLINE);
+		when(expectedResult.meta()).thenReturn(null);
 		when(exchange.createElicitation(any(ElicitRequest.class))).thenReturn(expectedResult);
 
-		Optional<StructuredElicitResult<Map<String, Object>>> result = context.elicit(e -> e.message("Test message"),
+		StructuredElicitResult<Map<String, Object>> result = context.elicit(e -> e.message("Test message"),
 				new TypeReference<Map<String, Object>>() {
 				});
 
-		assertThat(result).isEmpty();
+		assertThat(result).isNotNull();
+		assertThat(result.action()).isEqualTo(ElicitResult.Action.DECLINE);
+		assertThat(result.structuredContent()).isNull();
 	}
 
 	@Test
@@ -251,18 +299,18 @@ public class DefaultMcpSyncRequestContextTests {
 		when(expectedResult.meta()).thenReturn(null);
 		when(exchange.createElicitation(any(ElicitRequest.class))).thenReturn(expectedResult);
 
-		Optional<StructuredElicitResult<PersonWithAddress>> result = context
-			.elicit(e -> e.message("Test message").meta(null), new TypeReference<PersonWithAddress>() {
-			});
+		StructuredElicitResult<PersonWithAddress> result = context.elicit(e -> e.message("Test message").meta(null),
+				new TypeReference<PersonWithAddress>() {
+				});
 
-		assertThat(result).isPresent();
-		assertThat(result.get().action()).isEqualTo(ElicitResult.Action.ACCEPT);
-		assertThat(result.get().structuredContent()).isNotNull();
-		assertThat(result.get().structuredContent().name()).isEqualTo("John");
-		assertThat(result.get().structuredContent().age()).isEqualTo(30);
-		assertThat(result.get().structuredContent().address()).isNotNull();
-		assertThat(result.get().structuredContent().address().street()).isEqualTo("123 Main St");
-		assertThat(result.get().structuredContent().address().city()).isEqualTo("Springfield");
+		assertThat(result).isNotNull();
+		assertThat(result.action()).isEqualTo(ElicitResult.Action.ACCEPT);
+		assertThat(result.structuredContent()).isNotNull();
+		assertThat(result.structuredContent().name()).isEqualTo("John");
+		assertThat(result.structuredContent().age()).isEqualTo(30);
+		assertThat(result.structuredContent().address()).isNotNull();
+		assertThat(result.structuredContent().address().street()).isEqualTo("123 Main St");
+		assertThat(result.structuredContent().address().city()).isEqualTo("Springfield");
 	}
 
 	@Test
@@ -280,12 +328,12 @@ public class DefaultMcpSyncRequestContextTests {
 		when(expectedResult.meta()).thenReturn(null);
 		when(exchange.createElicitation(any(ElicitRequest.class))).thenReturn(expectedResult);
 
-		Optional<StructuredElicitResult<Map<String, Object>>> result = context
-			.elicit(e -> e.message("Test message").meta(null), new TypeReference<Map<String, Object>>() {
-			});
+		StructuredElicitResult<Map<String, Object>> result = context.elicit(e -> e.message("Test message").meta(null),
+				new TypeReference<Map<String, Object>>() {
+				});
 
-		assertThat(result).isPresent();
-		assertThat(result.get().structuredContent()).containsKey("items");
+		assertThat(result).isNotNull();
+		assertThat(result.structuredContent()).containsKey("items");
 	}
 
 	@Test
@@ -301,13 +349,13 @@ public class DefaultMcpSyncRequestContextTests {
 		when(expectedResult.content()).thenReturn(contentMap);
 		when(exchange.createElicitation(any(ElicitRequest.class))).thenReturn(expectedResult);
 
-		Optional<StructuredElicitResult<Map<String, Object>>> result = context
-			.elicit(e -> e.message("Test message").meta(null), new TypeReference<Map<String, Object>>() {
-			});
+		StructuredElicitResult<Map<String, Object>> result = context.elicit(e -> e.message("Test message").meta(null),
+				new TypeReference<Map<String, Object>>() {
+				});
 
-		assertThat(result).isPresent();
-		assertThat(result.get().structuredContent()).containsEntry("result", "success");
-		assertThat(result.get().structuredContent()).containsEntry("data", "test value");
+		assertThat(result).isNotNull();
+		assertThat(result.structuredContent()).containsEntry("result", "success");
+		assertThat(result.structuredContent()).containsEntry("data", "test value");
 	}
 
 	@Test
@@ -325,27 +373,61 @@ public class DefaultMcpSyncRequestContextTests {
 
 		when(exchange.createElicitation(elicitRequest)).thenReturn(expectedResult);
 
-		Optional<ElicitResult> result = context.elicit(elicitRequest);
+		ElicitResult result = context.elicit(elicitRequest);
 
-		assertThat(result).isPresent();
-		assertThat(result.get()).isEqualTo(expectedResult);
+		assertThat(result).isNotNull();
+		assertThat(result).isEqualTo(expectedResult);
 	}
 
 	@Test
 	public void testElicitationWhenNotSupported() {
 		when(exchange.getClientCapabilities()).thenReturn(null);
 
-		ElicitRequest elicitRequest = ElicitRequest.builder()
-			.message("Test message")
-			.requestedSchema(Map.of("type", "string"))
-			.build();
+		assertThatThrownBy(() -> context.elicit((ElicitRequest) null)).isInstanceOf(IllegalStateException.class)
+			.hasMessageContaining("Elicitation not supported by the clien");
 
-		Optional<ElicitResult> result = context.elicit(elicitRequest);
+		assertThatThrownBy(() -> context.elicit((Consumer<ElicitationSpec>) null, (TypeReference<?>) null))
+			.isInstanceOf(IllegalStateException.class)
+			.hasMessageContaining("Elicitation not supported by the clien");
 
-		assertThat(result).isEmpty();
+		assertThatThrownBy(() -> context.elicit((Consumer<ElicitationSpec>) null, (Class<?>) null))
+			.isInstanceOf(IllegalStateException.class)
+			.hasMessageContaining("Elicitation not supported by the clien");
+
+		assertThatThrownBy(() -> context.elicit((TypeReference<?>) null)).isInstanceOf(IllegalStateException.class)
+			.hasMessageContaining("Elicitation not supported by the clien");
+
+		assertThatThrownBy(() -> context.elicit((Class<?>) null)).isInstanceOf(IllegalStateException.class)
+			.hasMessageContaining("Elicitation not supported by the clien");
 	}
 
 	// Sampling Tests
+
+	@Test
+	public void testSampleEnabledWhenSupported() {
+		ClientCapabilities capabilities = mock(ClientCapabilities.class);
+		ClientCapabilities.Sampling sampling = mock(ClientCapabilities.Sampling.class);
+		when(capabilities.sampling()).thenReturn(sampling);
+		when(exchange.getClientCapabilities()).thenReturn(capabilities);
+
+		assertThat(context.sampleEnabled()).isTrue();
+	}
+
+	@Test
+	public void testSampleEnabledWhenNotSupported() {
+		when(exchange.getClientCapabilities()).thenReturn(null);
+
+		assertThat(context.sampleEnabled()).isFalse();
+	}
+
+	@Test
+	public void testSampleEnabledWhenCapabilitiesNullSampling() {
+		ClientCapabilities capabilities = mock(ClientCapabilities.class);
+		when(capabilities.sampling()).thenReturn(null);
+		when(exchange.getClientCapabilities()).thenReturn(capabilities);
+
+		assertThat(context.sampleEnabled()).isFalse();
+	}
 
 	@Test
 	public void testSamplingWithMessages() {
@@ -357,10 +439,10 @@ public class DefaultMcpSyncRequestContextTests {
 		CreateMessageResult expectedResult = mock(CreateMessageResult.class);
 		when(exchange.createMessage(any(CreateMessageRequest.class))).thenReturn(expectedResult);
 
-		Optional<CreateMessageResult> result = context.sample("Message 1", "Message 2");
+		CreateMessageResult result = context.sample("Message 1", "Message 2");
 
-		assertThat(result).isPresent();
-		assertThat(result.get()).isEqualTo(expectedResult);
+		assertThat(result).isNotNull();
+		assertThat(result).isEqualTo(expectedResult);
 	}
 
 	@Test
@@ -373,15 +455,15 @@ public class DefaultMcpSyncRequestContextTests {
 		CreateMessageResult expectedResult = mock(CreateMessageResult.class);
 		when(exchange.createMessage(any(CreateMessageRequest.class))).thenReturn(expectedResult);
 
-		Optional<CreateMessageResult> result = context.sample(spec -> {
+		CreateMessageResult result = context.sample(spec -> {
 			spec.message(new TextContent("Test message"));
 			spec.systemPrompt("System prompt");
 			spec.temperature(0.7);
 			spec.maxTokens(100);
 		});
 
-		assertThat(result).isPresent();
-		assertThat(result.get()).isEqualTo(expectedResult);
+		assertThat(result).isNotNull();
+		assertThat(result).isEqualTo(expectedResult);
 
 		ArgumentCaptor<CreateMessageRequest> captor = ArgumentCaptor.forClass(CreateMessageRequest.class);
 		verify(exchange).createMessage(captor.capture());
@@ -407,10 +489,10 @@ public class DefaultMcpSyncRequestContextTests {
 
 		when(exchange.createMessage(createRequest)).thenReturn(expectedResult);
 
-		Optional<CreateMessageResult> result = context.sample(createRequest);
+		CreateMessageResult result = context.sample(createRequest);
 
-		assertThat(result).isPresent();
-		assertThat(result.get()).isEqualTo(expectedResult);
+		assertThat(result).isNotNull();
+		assertThat(result).isEqualTo(expectedResult);
 	}
 
 	@Test
@@ -422,9 +504,14 @@ public class DefaultMcpSyncRequestContextTests {
 			.maxTokens(500)
 			.build();
 
-		Optional<CreateMessageResult> result = context.sample(createRequest);
+		assertThatThrownBy(() -> context.sample(createRequest)).isInstanceOf(IllegalStateException.class)
+			.hasMessageContaining("Sampling not supported by the client");
 
-		assertThat(result).isEmpty();
+		assertThatThrownBy(() -> context.sample("Message 1")).isInstanceOf(IllegalStateException.class)
+			.hasMessageContaining("Sampling not supported by the client");
+
+		assertThatThrownBy(() -> context.sample(spec -> spec.message("Test"))).isInstanceOf(IllegalStateException.class)
+			.hasMessageContaining("Sampling not supported by the client");
 	}
 
 	// Progress Tests

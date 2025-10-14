@@ -68,6 +68,7 @@ public class SyncStatelessMcpCompleteProvider {
 			.map(completeObject -> Stream.of(doGetClassMethods(completeObject))
 				.filter(method -> method.isAnnotationPresent(McpComplete.class))
 				.filter(McpProviderUtils.filterReactiveReturnTypeMethod())
+				.filter(McpProviderUtils.filterMethodWithBidirectionalParameters())
 				.sorted((m1, m2) -> m1.getName().compareTo(m2.getName()))
 				.map(mcpCompleteMethod -> {
 					var completeAnnotation = mcpCompleteMethod.getAnnotation(McpComplete.class);

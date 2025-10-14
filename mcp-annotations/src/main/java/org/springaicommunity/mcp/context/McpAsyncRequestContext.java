@@ -4,7 +4,6 @@
 
 package org.springaicommunity.mcp.context;
 
-import java.util.Map;
 import java.util.function.Consumer;
 
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -27,11 +26,14 @@ public interface McpAsyncRequestContext extends McpRequestContextTypes<McpAsyncS
 	// --------------------------------------
 	// Roots
 	// --------------------------------------
+	Mono<Boolean> rootsEnabled();
+
 	Mono<ListRootsResult> roots();
 
 	// --------------------------------------
 	// Elicitation
 	// --------------------------------------
+	Mono<Boolean> elicitEnabled();
 
 	<T> Mono<StructuredElicitResult<T>> elicit(Class<T> type);
 
@@ -46,6 +48,8 @@ public interface McpAsyncRequestContext extends McpRequestContextTypes<McpAsyncS
 	// --------------------------------------
 	// Sampling
 	// --------------------------------------
+	Mono<Boolean> sampleEnabled();
+
 	Mono<CreateMessageResult> sample(String... messages);
 
 	Mono<CreateMessageResult> sample(Consumer<SamplingSpec> samplingSpec);

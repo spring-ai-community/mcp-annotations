@@ -71,6 +71,7 @@ public class AsyncStatelessMcpResourceProvider {
 			.map(resourceObject -> Stream.of(doGetClassMethods(resourceObject))
 				.filter(method -> method.isAnnotationPresent(McpResource.class))
 				.filter(McpProviderUtils.filterNonReactiveReturnTypeMethod())
+				.filter(McpProviderUtils.filterMethodWithBidirectionalParameters())
 				.sorted((m1, m2) -> m1.getName().compareTo(m2.getName()))
 				.map(mcpResourceMethod -> {
 

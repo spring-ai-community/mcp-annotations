@@ -24,29 +24,35 @@ public interface McpSyncRequestContext extends McpRequestContextTypes<McpSyncSer
 	// --------------------------------------
 	// Roots
 	// --------------------------------------
-	Optional<ListRootsResult> roots();
+	boolean rootsEnabled();
+
+	ListRootsResult roots();
 
 	// --------------------------------------
 	// Elicitation
 	// --------------------------------------
-	<T> Optional<StructuredElicitResult<T>> elicit(Class<T> type);
+	boolean elicitEnabled();
 
-	<T> Optional<StructuredElicitResult<T>> elicit(TypeReference<T> type);
+	<T> StructuredElicitResult<T> elicit(Class<T> type);
 
-	<T> Optional<StructuredElicitResult<T>> elicit(Consumer<ElicitationSpec> params, Class<T> returnType);
+	<T> StructuredElicitResult<T> elicit(TypeReference<T> type);
 
-	<T> Optional<StructuredElicitResult<T>> elicit(Consumer<ElicitationSpec> params, TypeReference<T> returnType);
+	<T> StructuredElicitResult<T> elicit(Consumer<ElicitationSpec> params, Class<T> returnType);
 
-	Optional<ElicitResult> elicit(ElicitRequest elicitRequest);
+	<T> StructuredElicitResult<T> elicit(Consumer<ElicitationSpec> params, TypeReference<T> returnType);
+
+	ElicitResult elicit(ElicitRequest elicitRequest);
 
 	// --------------------------------------
 	// Sampling
 	// --------------------------------------
-	Optional<CreateMessageResult> sample(String... messages);
+	boolean sampleEnabled();
 
-	Optional<CreateMessageResult> sample(Consumer<SamplingSpec> samplingSpec);
+	CreateMessageResult sample(String... messages);
 
-	Optional<CreateMessageResult> sample(CreateMessageRequest createMessageRequest);
+	CreateMessageResult sample(Consumer<SamplingSpec> samplingSpec);
+
+	CreateMessageResult sample(CreateMessageRequest createMessageRequest);
 
 	// --------------------------------------
 	// Progress

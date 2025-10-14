@@ -112,7 +112,10 @@ public class DefaultMcpAsyncRequestContextTests {
 	public void testRootsWhenNotSupported() {
 		when(exchange.getClientCapabilities()).thenReturn(null);
 
-		StepVerifier.create(context.roots()).verifyComplete();
+		StepVerifier.create(context.roots()).verifyErrorSatisfies(e -> {
+			assertThat(e).isInstanceOf(IllegalStateException.class)
+				.hasMessageContaining("Roots not supported by the client");
+		});
 	}
 
 	@Test
@@ -121,7 +124,11 @@ public class DefaultMcpAsyncRequestContextTests {
 		when(capabilities.roots()).thenReturn(null);
 		when(exchange.getClientCapabilities()).thenReturn(capabilities);
 
-		StepVerifier.create(context.roots()).verifyComplete();
+		StepVerifier.create(context.roots()).verifyErrorSatisfies(e -> {
+			assertThat(e).isInstanceOf(IllegalStateException.class)
+				.hasMessageContaining("Roots not supported by the client");
+		});
+
 	}
 
 	// Elicitation Tests
@@ -197,16 +204,16 @@ public class DefaultMcpAsyncRequestContextTests {
 
 	@Test
 	public void testElicitationWithNullTypeReference() {
-		assertThat(org.junit.jupiter.api.Assertions.assertThrows(IllegalArgumentException.class, () -> {
-			context.elicit((TypeReference<?>) null);
-		})).hasMessageContaining("Elicitation response type must not be null");
+		assertThat(org.junit.jupiter.api.Assertions.assertThrows(IllegalArgumentException.class,
+				() -> context.elicit((TypeReference<?>) null)))
+			.hasMessageContaining("Elicitation response type must not be null");
 	}
 
 	@Test
 	public void testElicitationWithNullClassType() {
-		assertThat(org.junit.jupiter.api.Assertions.assertThrows(IllegalArgumentException.class, () -> {
-			context.elicit((Class<?>) null);
-		})).hasMessageContaining("Elicitation response type must not be null");
+		assertThat(org.junit.jupiter.api.Assertions.assertThrows(IllegalArgumentException.class,
+				() -> context.elicit((Class<?>) null)))
+			.hasMessageContaining("Elicitation response type must not be null");
 	}
 
 	@Test
@@ -229,11 +236,11 @@ public class DefaultMcpAsyncRequestContextTests {
 	public void testElicitationReturnsEmptyWhenNotSupported() {
 		when(exchange.getClientCapabilities()).thenReturn(null);
 
-		Mono<StructuredElicitResult<Map<String, Object>>> result = context.elicit(e -> e.message("Test message"),
-				new TypeReference<Map<String, Object>>() {
-				});
-
-		StepVerifier.create(result).verifyComplete();
+		StepVerifier.create(context.elicit(e -> e.message("Test message"), new TypeReference<Map<String, Object>>() {
+		})).verifyErrorSatisfies(e -> {
+			assertThat(e).isInstanceOf(IllegalStateException.class)
+				.hasMessageContaining("Elicitation not supported by the client");
+		});
 	}
 
 	@Test
@@ -371,9 +378,10 @@ public class DefaultMcpAsyncRequestContextTests {
 			.requestedSchema(Map.of("type", "string"))
 			.build();
 
-		Mono<ElicitResult> result = context.elicit(elicitRequest);
-
-		StepVerifier.create(result).verifyComplete();
+		StepVerifier.create(context.elicit(elicitRequest)).verifyErrorSatisfies(e -> {
+			assertThat(e).isInstanceOf(IllegalStateException.class)
+				.hasMessageContaining("Elicitation not supported by the client");
+		});
 	}
 
 	// Sampling Tests
@@ -450,9 +458,10 @@ public class DefaultMcpAsyncRequestContextTests {
 			.maxTokens(500)
 			.build();
 
-		Mono<CreateMessageResult> result = context.sample(createRequest);
-
-		StepVerifier.create(result).verifyComplete();
+		StepVerifier.create(context.sample(createRequest)).verifyErrorSatisfies(e -> {
+			assertThat(e).isInstanceOf(IllegalStateException.class)
+				.hasMessageContaining("Sampling not supported by the client");
+		});
 	}
 
 	// Progress Tests
