@@ -588,9 +588,9 @@ public class SyncMcpToolProviderTests {
 	void testToolWithOutputSchemaGeneration() {
 
 		// Define a custom result class
-		record CustomResult(@JsonPropertyDescription("customResultMessage") @JsonProperty(required = false)
-							 String message,
-							@JsonProperty(required = true) int count) {
+		record CustomResult(
+				@JsonPropertyDescription("customResultMessage") @JsonProperty(required = false) String message,
+				@JsonProperty(required = true) int count) {
 		}
 
 		class OutputSchemaTool {

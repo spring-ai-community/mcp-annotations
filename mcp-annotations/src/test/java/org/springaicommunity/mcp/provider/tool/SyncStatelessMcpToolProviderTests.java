@@ -26,7 +26,7 @@ import java.util.function.BiFunction;
 
 import org.junit.jupiter.api.Test;
 import org.springaicommunity.mcp.annotation.McpTool;
-
+import org.springaicommunity.mcp.method.tool.utils.JsonParser;
 import io.modelcontextprotocol.server.McpStatelessServerFeatures.SyncToolSpecification;
 import io.modelcontextprotocol.common.McpTransportContext;
 import io.modelcontextprotocol.spec.McpSchema;
@@ -608,12 +608,31 @@ public class SyncStatelessMcpToolProviderTests {
 		assertThat(toolSpec.tool().name()).isEqualTo("output-schema-tool");
 		// Output schema should be generated for complex types
 		assertThat(toolSpec.tool().outputSchema()).isNotNull();
-		String outputSchemaString = toolSpec.tool().outputSchema().toString();
+		String outputSchemaString = JsonParser.toJson(toolSpec.tool().outputSchema());
 		assertThat(outputSchemaString).contains("message");
 		assertThat(outputSchemaString).contains("count");
-		assertThat(outputSchemaString).isEqualTo(
-				"{$schema=https://json-schema.org/draft/2020-12/schema, type=array, items={type=object, properties={count={type=integer, format=int32}, message={type=string}}}}");
-
+		assertThatJson(outputSchemaString).when(Option.IGNORING_ARRAY_ORDER).isEqualTo(json("""
+				{
+					"$schema": "https://json-schema.org/draft/2020-12/schema",
+					"type": "array",
+					"items": {
+						"type": "object",
+						"properties": {
+							"count": {
+								"type": "integer",
+								"format": "int32"
+							},
+							"message": {
+								"type": "string"
+							}
+						},
+						"required": [
+							"count",
+							"message"
+						]
+					}
+				}
+					"""));
 	}
 
 	@Test
