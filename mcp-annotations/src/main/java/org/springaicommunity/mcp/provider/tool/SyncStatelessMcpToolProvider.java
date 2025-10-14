@@ -65,6 +65,7 @@ public class SyncStatelessMcpToolProvider extends AbstractMcpToolProvider {
 			.map(toolObject -> Stream.of(this.doGetClassMethods(toolObject))
 				.filter(method -> method.isAnnotationPresent(McpTool.class))
 				.filter(McpProviderUtils.filterReactiveReturnTypeMethod())
+				.filter(McpProviderUtils.filterMethodWithBidirectionalParameters())
 				.sorted((m1, m2) -> m1.getName().compareTo(m2.getName()))
 				.map(mcpToolMethod -> {
 
@@ -106,8 +107,6 @@ public class SyncStatelessMcpToolProvider extends AbstractMcpToolProvider {
 						title = toolName;
 					}
 					toolBuilder.title(title);
-
-					// ReactiveUtils.isReactiveReturnTypeOfCallToolResult(mcpToolMethod);
 
 					// Generate Output Schema from the method return type.
 					// Output schema is not generated for primitive types, void,

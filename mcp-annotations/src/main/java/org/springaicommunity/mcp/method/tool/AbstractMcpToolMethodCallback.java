@@ -44,7 +44,7 @@ import org.springaicommunity.mcp.method.tool.utils.JsonParser;
  * McpSyncServerExchange, or McpAsyncServerExchange)
  * @author Christian Tzolov
  */
-public abstract class AbstractMcpToolMethodCallback<T, RC extends McpRequestContextTypes> {
+public abstract class AbstractMcpToolMethodCallback<T, RC extends McpRequestContextTypes<?>> {
 
 	protected final Method toolMethod;
 

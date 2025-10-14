@@ -6,7 +6,6 @@ package org.springaicommunity.mcp.context;
 
 import java.lang.reflect.Type;
 import java.util.Map;
-import java.util.Optional;
 import java.util.function.Consumer;
 
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -56,111 +55,145 @@ public class DefaultMcpSyncRequestContext implements McpSyncRequestContext {
 
 	// Roots
 
-	public Optional<ListRootsResult> roots() {
-		if (this.exchange.getClientCapabilities() == null || this.exchange.getClientCapabilities().roots() == null) {
-			logger.warn("Roots not supported by the client! Ignoring the roots request for request:" + this.request);
-			return Optional.empty();
+	@Override
+	public boolean rootsEnabled() {
+		return !(this.exchange.getClientCapabilities() == null
+				|| this.exchange.getClientCapabilities().roots() == null);
+	}
+
+	@Override
+	public ListRootsResult roots() {
+		if (!this.rootsEnabled()) {
+			throw new IllegalStateException("Roots not supported by the client: " + this.exchange.getClientInfo());
 		}
-		return Optional.of(this.exchange.listRoots());
+		return this.exchange.listRoots();
 	}
 
 	// Elicitation
 
 	@Override
-	public <T> Optional<StructuredElicitResult<T>> elicit(Class<T> type) {
+	public boolean elicitEnabled() {
+		return !(this.exchange.getClientCapabilities() == null
+				|| this.exchange.getClientCapabilities().elicitation() == null);
+	}
+
+	@Override
+	public <T> StructuredElicitResult<T> elicit(Class<T> type) {
+
+		if (!this.elicitEnabled()) {
+			throw new IllegalStateException(
+					"Elicitation not supported by the client: " + this.exchange.getClientInfo());
+		}
+
 		Assert.notNull(type, "Elicitation response type must not be null");
 
-		Optional<ElicitResult> elicitResult = this.elicitationInternal("Please provide the required information.", type,
+		ElicitResult elicitResult = this.elicitationInternal("Please provide the required information.", type, null);
+
+		if (elicitResult.action() != ElicitResult.Action.ACCEPT) {
+			return new StructuredElicitResult<>(elicitResult.action(), null, elicitResult.meta());
+		}
+
+		return new StructuredElicitResult<>(elicitResult.action(),
+				JsonParser.convertMapToType(elicitResult.content(), type), elicitResult.meta());
+	}
+
+	@Override
+	public <T> StructuredElicitResult<T> elicit(TypeReference<T> type) {
+
+		if (!this.elicitEnabled()) {
+			throw new IllegalStateException(
+					"Elicitation not supported by the client: " + this.exchange.getClientInfo());
+		}
+
+		Assert.notNull(type, "Elicitation response type must not be null");
+
+		ElicitResult elicitResult = this.elicitationInternal("Please provide the required information.", type.getType(),
 				null);
 
-		if (!elicitResult.isPresent() || elicitResult.get().action() != ElicitResult.Action.ACCEPT) {
-			return Optional.empty();
+		if (elicitResult.action() != ElicitResult.Action.ACCEPT) {
+			return new StructuredElicitResult<>(elicitResult.action(), null, elicitResult.meta());
 		}
 
-		return Optional.of(new StructuredElicitResult<>(elicitResult.get().action(),
-				JsonParser.convertMapToType(elicitResult.get().content(), type), elicitResult.get().meta()));
+		return new StructuredElicitResult<>(elicitResult.action(),
+				JsonParser.convertMapToType(elicitResult.content(), type), elicitResult.meta());
 	}
 
 	@Override
-	public <T> Optional<StructuredElicitResult<T>> elicit(TypeReference<T> type) {
-		Assert.notNull(type, "Elicitation response type must not be null");
+	public <T> StructuredElicitResult<T> elicit(Consumer<ElicitationSpec> params, Class<T> returnType) {
 
-		Optional<ElicitResult> elicitResult = this.elicitationInternal("Please provide the required information.",
-				type.getType(), null);
-
-		if (!elicitResult.isPresent() || elicitResult.get().action() != ElicitResult.Action.ACCEPT) {
-			return Optional.empty();
+		if (!this.elicitEnabled()) {
+			throw new IllegalStateException(
+					"Elicitation not supported by the client: " + this.exchange.getClientInfo());
 		}
 
-		return Optional.of(new StructuredElicitResult<>(elicitResult.get().action(),
-				JsonParser.convertMapToType(elicitResult.get().content(), type), elicitResult.get().meta()));
+		Assert.notNull(returnType, "Elicitation response type must not be null");
+		Assert.notNull(params, "Elicitation params must not be null");
+
+		DefaultElicitationSpec paramSpec = new DefaultElicitationSpec();
+
+		params.accept(paramSpec);
+
+		ElicitResult elicitResult = this.elicitationInternal(paramSpec.message(), returnType, paramSpec.meta());
+
+		if (elicitResult.action() != ElicitResult.Action.ACCEPT) {
+			return new StructuredElicitResult<>(elicitResult.action(), null, null);
+		}
+
+		return new StructuredElicitResult<>(elicitResult.action(),
+				JsonParser.convertMapToType(elicitResult.content(), returnType), elicitResult.meta());
 	}
 
 	@Override
-	public <T> Optional<StructuredElicitResult<T>> elicit(Consumer<ElicitationSpec> params, Class<T> returnType) {
+	public <T> StructuredElicitResult<T> elicit(Consumer<ElicitationSpec> params, TypeReference<T> returnType) {
+
+		if (!this.elicitEnabled()) {
+			throw new IllegalStateException(
+					"Elicitation not supported by the client: " + this.exchange.getClientInfo());
+		}
+
 		Assert.notNull(returnType, "Elicitation response type must not be null");
 		Assert.notNull(params, "Elicitation params must not be null");
 
 		DefaultElicitationSpec paramSpec = new DefaultElicitationSpec();
 		params.accept(paramSpec);
 
-		Optional<ElicitResult> elicitResult = this.elicitationInternal(paramSpec.message(), returnType,
+		ElicitResult elicitResult = this.elicitationInternal(paramSpec.message(), returnType.getType(),
 				paramSpec.meta());
 
-		if (!elicitResult.isPresent() || elicitResult.get().action() != ElicitResult.Action.ACCEPT) {
-			return Optional.empty();
+		if (elicitResult.action() != ElicitResult.Action.ACCEPT) {
+			return new StructuredElicitResult<>(elicitResult.action(), null, null);
 		}
 
-		return Optional.of(new StructuredElicitResult<>(elicitResult.get().action(),
-				JsonParser.convertMapToType(elicitResult.get().content(), returnType), elicitResult.get().meta()));
+		return new StructuredElicitResult<>(elicitResult.action(),
+				JsonParser.convertMapToType(elicitResult.content(), returnType), elicitResult.meta());
 	}
 
 	@Override
-	public <T> Optional<StructuredElicitResult<T>> elicit(Consumer<ElicitationSpec> params,
-			TypeReference<T> returnType) {
-		Assert.notNull(returnType, "Elicitation response type must not be null");
-		Assert.notNull(params, "Elicitation params must not be null");
-
-		DefaultElicitationSpec paramSpec = new DefaultElicitationSpec();
-		params.accept(paramSpec);
-
-		Optional<ElicitResult> elicitResult = this.elicitationInternal(paramSpec.message(), returnType.getType(),
-				paramSpec.meta());
-
-		if (!elicitResult.isPresent() || elicitResult.get().action() != ElicitResult.Action.ACCEPT) {
-			return Optional.empty();
+	public ElicitResult elicit(ElicitRequest elicitRequest) {
+		if (!this.elicitEnabled()) {
+			throw new IllegalStateException(
+					"Elicitation not supported by the client: " + this.exchange.getClientInfo());
 		}
 
-		return Optional.of(new StructuredElicitResult<>(elicitResult.get().action(),
-				JsonParser.convertMapToType(elicitResult.get().content(), returnType), elicitResult.get().meta()));
-	}
-
-	@Override
-	public Optional<ElicitResult> elicit(ElicitRequest elicitRequest) {
 		Assert.notNull(elicitRequest, "Elicit request must not be null");
 
-		if (this.exchange.getClientCapabilities() == null
-				|| this.exchange.getClientCapabilities().elicitation() == null) {
-			logger.warn("Elicitation not supported by the client! Ignoring the elicitation request for request:"
-					+ elicitRequest);
-			return Optional.empty();
-		}
-
-		ElicitResult elicitResult = this.exchange.createElicitation(elicitRequest);
-
-		return Optional.of(elicitResult);
+		return this.exchange.createElicitation(elicitRequest);
 	}
 
-	private Optional<ElicitResult> elicitationInternal(String message, Type type, Map<String, Object> meta) {
-		Assert.hasText(message, "Elicitation message must not be empty");
-		Assert.notNull(type, "Elicitation response type must not be null");
+	private ElicitResult elicitationInternal(String message, Type type, Map<String, Object> meta) {
 
 		// TODO add validation for the Elicitation Schema
 		// https://modelcontextprotocol.io/specification/2025-06-18/client/elicitation#supported-schema-types
 
 		Map<String, Object> schema = typeSchemaCache.computeIfAbsent(type, t -> this.generateElicitSchema(t));
 
-		return this.elicit(ElicitRequest.builder().message(message).requestedSchema(schema).meta(meta).build());
+		ElicitRequest elicitRequest = ElicitRequest.builder()
+			.message(message)
+			.requestedSchema(schema)
+			.meta(meta)
+			.build();
+
+		return this.exchange.createElicitation(elicitRequest);
 	}
 
 	private Map<String, Object> generateElicitSchema(Type type) {
@@ -173,21 +206,30 @@ public class DefaultMcpSyncRequestContext implements McpSyncRequestContext {
 	// Sampling
 
 	@Override
-	public Optional<CreateMessageResult> sample(String... messages) {
+	public boolean sampleEnabled() {
+		return !(this.exchange.getClientCapabilities() == null
+				|| this.exchange.getClientCapabilities().sampling() == null);
+	}
+
+	@Override
+	public CreateMessageResult sample(String... messages) {
 		return this.sample(s -> s.message(messages));
 	}
 
 	@Override
-	public Optional<CreateMessageResult> sample(Consumer<SamplingSpec> samplingSpec) {
+	public CreateMessageResult sample(Consumer<SamplingSpec> samplingSpec) {
+
+		if (!this.sampleEnabled()) {
+			throw new IllegalStateException("Sampling not supported by the client: " + this.exchange.getClientInfo());
+		}
+
 		Assert.notNull(samplingSpec, "Sampling spec consumer must not be null");
+
 		DefaultSamplingSpec spec = new DefaultSamplingSpec();
 		samplingSpec.accept(spec);
 
 		var progressToken = this.request.progressToken();
 
-		if (!Utils.hasText(progressToken)) {
-			logger.warn("Progress notification not supported by the client!");
-		}
 		return this.sample(McpSchema.CreateMessageRequest.builder()
 			.messages(spec.messages)
 			.modelPreferences(spec.modelPreferences)
@@ -203,16 +245,13 @@ public class DefaultMcpSyncRequestContext implements McpSyncRequestContext {
 	}
 
 	@Override
-	public Optional<CreateMessageResult> sample(CreateMessageRequest createMessageRequest) {
+	public CreateMessageResult sample(CreateMessageRequest createMessageRequest) {
 
-		// check if supported
-		if (this.exchange.getClientCapabilities() == null || this.exchange.getClientCapabilities().sampling() == null) {
-			logger.warn("Sampling not supported by the client! Ignoring the sampling request for messages:"
-					+ createMessageRequest);
-			return Optional.empty();
+		if (!this.sampleEnabled()) {
+			throw new IllegalStateException("Sampling not supported by the client: " + this.exchange.getClientInfo());
 		}
 
-		return Optional.of(this.exchange.createMessage(createMessageRequest));
+		return this.exchange.createMessage(createMessageRequest);
 	}
 
 	// Progress
@@ -342,10 +381,6 @@ public class DefaultMcpSyncRequestContext implements McpSyncRequestContext {
 
 		private McpSyncServerExchange exchange;
 
-		private McpTransportContext transportContext;
-
-		private boolean isStateless = false;
-
 		private Builder() {
 		}
 
@@ -359,169 +394,8 @@ public class DefaultMcpSyncRequestContext implements McpSyncRequestContext {
 			return this;
 		}
 
-		public Builder transportContext(McpTransportContext transportContext) {
-			this.transportContext = transportContext;
-			return this;
-		}
-
-		public Builder stateless(boolean isStateless) {
-			this.isStateless = isStateless;
-			return this;
-		}
-
 		public McpSyncRequestContext build() {
-			if (this.isStateless) {
-				return new StatelessMcpSyncRequestContext(this.request, this.transportContext);
-			}
 			return new DefaultMcpSyncRequestContext(this.request, this.exchange);
-		}
-
-	}
-
-	public final static class StatelessMcpSyncRequestContext implements McpSyncRequestContext {
-
-		private static final Logger logger = LoggerFactory.getLogger(StatelessMcpSyncRequestContext.class);
-
-		private final McpSchema.Request request;
-
-		private final McpTransportContext transportContext;
-
-		private StatelessMcpSyncRequestContext(McpSchema.Request request, McpTransportContext transportContext) {
-			this.request = request;
-			this.transportContext = transportContext;
-		}
-
-		@Override
-		public Optional<ListRootsResult> roots() {
-			logger.warn("Roots not supported by the client! Ignoring the roots request");
-			return Optional.empty();
-		}
-
-		@Override
-		public <T> Optional<StructuredElicitResult<T>> elicit(Class<T> type) {
-			logger.warn("Stateless servers do not support elicitation! Ignoring the elicitation request");
-			return Optional.empty();
-		}
-
-		@Override
-		public <T> Optional<StructuredElicitResult<T>> elicit(Consumer<ElicitationSpec> params, Class<T> returnType) {
-			logger.warn("Stateless servers do not support elicitation! Ignoring the elicitation request");
-			return Optional.empty();
-		}
-
-		@Override
-		public <T> Optional<StructuredElicitResult<T>> elicit(TypeReference<T> type) {
-			logger.warn("Stateless servers do not support elicitation! Ignoring the elicitation request");
-			return Optional.empty();
-		}
-
-		@Override
-		public <T> Optional<StructuredElicitResult<T>> elicit(Consumer<ElicitationSpec> params,
-				TypeReference<T> returnType) {
-			logger.warn("Stateless servers do not support elicitation! Ignoring the elicitation request");
-			return Optional.empty();
-		}
-
-		@Override
-		public Optional<ElicitResult> elicit(ElicitRequest elicitRequest) {
-			logger.warn("Stateless servers do not support elicitation! Ignoring the elicitation request");
-			return Optional.empty();
-		}
-
-		@Override
-		public Optional<CreateMessageResult> sample(String... messages) {
-			logger.warn("Stateless servers do not support sampling! Ignoring the sampling request");
-			return Optional.empty();
-		}
-
-		@Override
-		public Optional<CreateMessageResult> sample(Consumer<SamplingSpec> samplingSpec) {
-			logger.warn("Stateless servers do not support sampling! Ignoring the sampling request");
-			return Optional.empty();
-		}
-
-		@Override
-		public Optional<CreateMessageResult> sample(CreateMessageRequest createMessageRequest) {
-			logger.warn("Stateless servers do not support sampling! Ignoring the sampling request");
-			return Optional.empty();
-		}
-
-		@Override
-		public void progress(int progress) {
-			logger.warn("Stateless servers do not support progress notifications! Ignoring the progress request");
-		}
-
-		@Override
-		public void progress(Consumer<ProgressSpec> progressSpec) {
-			logger.warn("Stateless servers do not support progress notifications! Ignoring the progress request");
-		}
-
-		@Override
-		public void progress(ProgressNotification progressNotification) {
-			logger.warn("Stateless servers do not support progress notifications! Ignoring the progress request");
-		}
-
-		@Override
-		public void ping() {
-			logger.warn("Stateless servers do not support ping! Ignoring the ping request");
-		}
-
-		@Override
-		public void log(Consumer<LoggingSpec> logSpec) {
-			logger.warn("Stateless servers do not support logging! Ignoring the logging request");
-		}
-
-		@Override
-		public void debug(String message) {
-			logger.warn("Stateless servers do not support debugging! Ignoring the debugging request");
-		}
-
-		@Override
-		public void info(String message) {
-			logger.warn("Stateless servers do not support info logging! Ignoring the info request");
-		}
-
-		@Override
-		public void warn(String message) {
-			logger.warn("Stateless servers do not support warning logging! Ignoring the warning request");
-		}
-
-		@Override
-		public void error(String message) {
-			logger.warn("Stateless servers do not support error logging! Ignoring the error request");
-		}
-
-		public McpSchema.Request request() {
-			return this.request;
-		}
-
-		public McpTransportContext transportContext() {
-			return transportContext;
-		}
-
-		public String sessionId() {
-			logger.warn("Stateless servers do not support session ID! Returning null");
-			return null;
-		}
-
-		public Implementation clientInfo() {
-			logger.warn("Stateless servers do not support client info! Returning null");
-			return null;
-		}
-
-		public ClientCapabilities clientCapabilities() {
-			logger.warn("Stateless servers do not support client capabilities! Returning null");
-			return null;
-		}
-
-		public Map<String, Object> requestMeta() {
-			return this.request.meta();
-		}
-
-		@Override
-		public McpSyncServerExchange exchange() {
-			logger.warn("Stateless servers do not support exchange! Returning null");
-			return null;
 		}
 
 	}

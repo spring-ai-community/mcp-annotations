@@ -60,15 +60,29 @@ public class DefaultMcpAsyncRequestContext implements McpAsyncRequestContext {
 	// Roots
 
 	@Override
+	public Mono<Boolean> rootsEnabled() {
+		return Mono.just(!(this.exchange.getClientCapabilities() == null
+				|| this.exchange.getClientCapabilities().roots() == null));
+	}
+
+	@Override
 	public Mono<ListRootsResult> roots() {
-		if (this.exchange.getClientCapabilities() == null || this.exchange.getClientCapabilities().roots() == null) {
-			logger.warn("Roots not supported by the client! Ignoring the roots request for request:" + this.request);
-			return Mono.empty();
-		}
-		return this.exchange.listRoots();
+		return this.rootsEnabled().flatMap(enabled -> {
+			if (!enabled) {
+				return Mono.error(new IllegalStateException(
+						"Roots not supported by the client: " + this.exchange.getClientInfo()));
+			}
+			return this.exchange.listRoots();
+		});
 	}
 
 	// Elicitation
+
+	@Override
+	public Mono<Boolean> elicitEnabled() {
+		return Mono.just(!(this.exchange.getClientCapabilities() == null
+				|| this.exchange.getClientCapabilities().elicitation() == null));
+	}
 
 	@Override
 	public <T> Mono<StructuredElicitResult<T>> elicit(Consumer<ElicitationSpec> spec, TypeReference<T> type) {
@@ -112,14 +126,13 @@ public class DefaultMcpAsyncRequestContext implements McpAsyncRequestContext {
 	public Mono<ElicitResult> elicit(ElicitRequest elicitRequest) {
 		Assert.notNull(elicitRequest, "Elicit request must not be null");
 
-		if (this.exchange.getClientCapabilities() == null
-				|| this.exchange.getClientCapabilities().elicitation() == null) {
-			logger.warn("Elicitation not supported by the client! Ignoring the elicitation request for request:"
-					+ elicitRequest);
-			return Mono.empty();
-		}
-
-		return this.exchange.createElicitation(elicitRequest);
+		return this.elicitEnabled().flatMap(enabled -> {
+			if (!enabled) {
+				return Mono.error(new IllegalStateException(
+						"Elicitation not supported by the client: " + this.exchange.getClientInfo()));
+			}
+			return this.exchange.createElicitation(elicitRequest);
+		});
 	}
 
 	public Mono<ElicitResult> elicitationInternal(String message, Type type, Map<String, Object> meta) {
@@ -142,6 +155,12 @@ public class DefaultMcpAsyncRequestContext implements McpAsyncRequestContext {
 	}
 
 	// Sampling
+
+	@Override
+	public Mono<Boolean> sampleEnabled() {
+		return Mono.just(!(this.exchange.getClientCapabilities() == null
+				|| this.exchange.getClientCapabilities().sampling() == null));
+	}
 
 	@Override
 	public Mono<CreateMessageResult> sample(String... messages) {
@@ -176,14 +195,13 @@ public class DefaultMcpAsyncRequestContext implements McpAsyncRequestContext {
 	@Override
 	public Mono<CreateMessageResult> sample(CreateMessageRequest createMessageRequest) {
 
-		// check if supported
-		if (this.exchange.getClientCapabilities() == null || this.exchange.getClientCapabilities().sampling() == null) {
-			logger.warn("Sampling not supported by the client! Ignoring the sampling request for messages:"
-					+ createMessageRequest);
-			return Mono.empty();
-		}
-
-		return this.exchange.createMessage(createMessageRequest);
+		return this.sampleEnabled().flatMap(enabled -> {
+			if (!enabled) {
+				return Mono.error(new IllegalStateException(
+						"Sampling not supported by the client: " + this.exchange.getClientInfo()));
+			}
+			return this.exchange.createMessage(createMessageRequest);
+		});
 	}
 
 	// Progress
@@ -317,10 +335,6 @@ public class DefaultMcpAsyncRequestContext implements McpAsyncRequestContext {
 
 		private McpAsyncServerExchange exchange;
 
-		private boolean isStateless = false;
-
-		private McpTransportContext transportContext;
-
 		private Builder() {
 		}
 
@@ -334,176 +348,8 @@ public class DefaultMcpAsyncRequestContext implements McpAsyncRequestContext {
 			return this;
 		}
 
-		public Builder stateless(boolean isStateless) {
-			this.isStateless = isStateless;
-			return this;
-		}
-
-		public Builder transportContext(McpTransportContext transportContext) {
-			this.transportContext = transportContext;
-			return this;
-		}
-
 		public McpAsyncRequestContext build() {
-			if (this.isStateless) {
-				return new StatelessAsyncRequestContext(this.request, this.transportContext);
-			}
 			return new DefaultMcpAsyncRequestContext(this.request, this.exchange);
-		}
-
-	}
-
-	private static class StatelessAsyncRequestContext implements McpAsyncRequestContext {
-
-		private final McpSchema.Request request;
-
-		private McpTransportContext transportContext;
-
-		public StatelessAsyncRequestContext(McpSchema.Request request, McpTransportContext transportContext) {
-			this.request = request;
-			this.transportContext = transportContext;
-		}
-
-		@Override
-		public Mono<ListRootsResult> roots() {
-			logger.warn("Roots not supported by the client! Ignoring the roots request");
-			return Mono.empty();
-		}
-
-		@Override
-		public <T> Mono<StructuredElicitResult<T>> elicit(Consumer<ElicitationSpec> spec, TypeReference<T> returnType) {
-			logger.warn("Elicitation not supported by the client! Ignoring the elicitation request");
-			return Mono.empty();
-		}
-
-		@Override
-		public <T> Mono<StructuredElicitResult<T>> elicit(TypeReference<T> type) {
-			logger.warn("Elicitation not supported by the client! Ignoring the elicitation request");
-			return Mono.empty();
-		}
-
-		@Override
-		public <T> Mono<StructuredElicitResult<T>> elicit(Consumer<ElicitationSpec> spec, Class<T> returnType) {
-			logger.warn("Elicitation not supported by the client! Ignoring the elicitation request");
-			return Mono.empty();
-		}
-
-		@Override
-		public <T> Mono<StructuredElicitResult<T>> elicit(Class<T> type) {
-			logger.warn("Elicitation not supported by the client! Ignoring the elicitation request");
-			return Mono.empty();
-		}
-
-		@Override
-		public Mono<ElicitResult> elicit(ElicitRequest elicitRequest) {
-			logger.warn("Elicitation not supported by the client! Ignoring the elicitation request");
-			return Mono.empty();
-		}
-
-		@Override
-		public Mono<CreateMessageResult> sample(String... messages) {
-			logger.warn("Sampling not supported by the client! Ignoring the sampling request");
-			return Mono.empty();
-		}
-
-		@Override
-		public Mono<CreateMessageResult> sample(Consumer<SamplingSpec> samplingSpec) {
-			logger.warn("Sampling not supported by the client! Ignoring the sampling request");
-			return Mono.empty();
-		}
-
-		@Override
-		public Mono<CreateMessageResult> sample(CreateMessageRequest createMessageRequest) {
-			logger.warn("Sampling not supported by the client! Ignoring the sampling request");
-			return Mono.empty();
-		}
-
-		@Override
-		public Mono<Void> progress(int progress) {
-			logger.warn("Progress not supported by the client! Ignoring the progress request");
-			return Mono.empty();
-		}
-
-		@Override
-		public Mono<Void> progress(Consumer<ProgressSpec> progressSpec) {
-			logger.warn("Progress not supported by the client! Ignoring the progress request");
-			return Mono.empty();
-		}
-
-		@Override
-		public Mono<Void> progress(ProgressNotification progressNotification) {
-			logger.warn("Progress not supported by the client! Ignoring the progress request");
-			return Mono.empty();
-		}
-
-		@Override
-		public Mono<Object> ping() {
-			logger.warn("Ping not supported by the client! Ignoring the ping request");
-			return Mono.empty();
-		}
-
-		@Override
-		public Mono<Void> log(Consumer<LoggingSpec> logSpec) {
-			logger.warn("Logging not supported by the client! Ignoring the logging request");
-			return Mono.empty();
-		}
-
-		@Override
-		public Mono<Void> debug(String message) {
-			logger.warn("Debug not supported by the client! Ignoring the debug request");
-			return Mono.empty();
-		}
-
-		@Override
-		public Mono<Void> info(String message) {
-			logger.warn("Info not supported by the client! Ignoring the info request");
-			return Mono.empty();
-		}
-
-		@Override
-		public Mono<Void> warn(String message) {
-			logger.warn("Warn not supported by the client! Ignoring the warn request");
-			return Mono.empty();
-		}
-
-		@Override
-		public Mono<Void> error(String message) {
-			logger.warn("Error not supported by the client! Ignoring the error request");
-			return Mono.empty();
-		}
-
-		// Getters
-
-		public McpSchema.Request request() {
-			return this.request;
-		}
-
-		public McpAsyncServerExchange exchange() {
-			logger.warn("Stateless servers do not support exchange! Returning null");
-			return null;
-		}
-
-		public String sessionId() {
-			logger.warn("Stateless servers do not support session ID! Returning null");
-			return null;
-		}
-
-		public Implementation clientInfo() {
-			logger.warn("Stateless servers do not support client info! Returning null");
-			return null;
-		}
-
-		public ClientCapabilities clientCapabilities() {
-			logger.warn("Stateless servers do not support client capabilities! Returning null");
-			return null;
-		}
-
-		public Map<String, Object> requestMeta() {
-			return this.request.meta();
-		}
-
-		public McpTransportContext transportContext() {
-			return transportContext;
 		}
 
 	}

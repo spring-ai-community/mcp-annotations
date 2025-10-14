@@ -68,6 +68,7 @@ public class AsyncStatelessMcpToolProvider extends AbstractMcpToolProvider {
 			.map(toolObject -> Stream.of(doGetClassMethods(toolObject))
 				.filter(method -> method.isAnnotationPresent(McpTool.class))
 				.filter(McpProviderUtils.filterNonReactiveReturnTypeMethod())
+				.filter(McpProviderUtils.filterMethodWithBidirectionalParameters())
 				.sorted((m1, m2) -> m1.getName().compareTo(m2.getName()))
 				.map(mcpToolMethod -> {
 

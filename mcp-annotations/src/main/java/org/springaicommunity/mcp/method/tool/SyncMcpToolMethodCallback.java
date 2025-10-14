@@ -54,7 +54,6 @@ public final class SyncMcpToolMethodCallback
 
 	@Override
 	protected McpSyncRequestContext createRequestContext(McpSyncServerExchange exchange, CallToolRequest request) {
-
 		return DefaultMcpSyncRequestContext.builder().request(request).exchange(exchange).build();
 	}
 

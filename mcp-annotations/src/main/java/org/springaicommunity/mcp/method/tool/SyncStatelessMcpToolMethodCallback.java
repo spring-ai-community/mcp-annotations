@@ -56,12 +56,8 @@ public final class SyncStatelessMcpToolMethodCallback
 
 	@Override
 	protected McpSyncRequestContext createRequestContext(McpTransportContext exchange, CallToolRequest request) {
-
-		return DefaultMcpSyncRequestContext.builder()
-			.request(request)
-			.transportContext(exchange)
-			.stateless(true)
-			.build();
+		throw new UnsupportedOperationException(
+				"Stateless tool methods do not support McpSyncRequestContext parameter.");
 	}
 
 	@Override

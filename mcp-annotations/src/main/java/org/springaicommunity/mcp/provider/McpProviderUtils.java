@@ -20,9 +20,13 @@ import java.lang.reflect.Method;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
 
+import io.modelcontextprotocol.server.McpAsyncServerExchange;
+import io.modelcontextprotocol.server.McpSyncServerExchange;
 import org.reactivestreams.Publisher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springaicommunity.mcp.context.McpAsyncRequestContext;
+import org.springaicommunity.mcp.context.McpSyncRequestContext;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -49,7 +53,7 @@ public class McpProviderUtils {
 			if (isReactiveReturnType.test(method)) {
 				return true;
 			}
-			logger.info(
+			logger.warn(
 					"Sync providers doesn't support reactive return types. Skipping method {} with reactive return type {}",
 					method, method.getReturnType());
 			return false;
@@ -61,9 +65,36 @@ public class McpProviderUtils {
 			if (isNotReactiveReturnType.test(method)) {
 				return true;
 			}
-			logger.info(
+			logger.warn(
 					"Sync providers doesn't support reactive return types. Skipping method {} with reactive return type {}",
 					method, method.getReturnType());
+			return false;
+		};
+	}
+
+	private static boolean hasBidirectionalParameters(Method method) {
+
+		for (Class<?> paramType : method.getParameterTypes()) {
+			if (McpSyncRequestContext.class.isAssignableFrom(paramType)
+					|| McpAsyncRequestContext.class.isAssignableFrom(paramType)
+					|| McpSyncServerExchange.class.isAssignableFrom(paramType)
+					|| McpAsyncServerExchange.class.isAssignableFrom(paramType)) {
+
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	public static Predicate<Method> filterMethodWithBidirectionalParameters() {
+		return method -> {
+			if (!hasBidirectionalParameters(method)) {
+				return true;
+			}
+			logger.warn(
+					"Stateless servers doesn't support bidirectional parameters. Skipping method {} with bidirectional parameters",
+					method);
 			return false;
 		};
 	}

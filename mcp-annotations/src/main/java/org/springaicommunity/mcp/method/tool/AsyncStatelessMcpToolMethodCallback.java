@@ -22,7 +22,6 @@ import io.modelcontextprotocol.common.McpTransportContext;
 import io.modelcontextprotocol.spec.McpSchema.CallToolRequest;
 import io.modelcontextprotocol.spec.McpSchema.CallToolResult;
 import org.springaicommunity.mcp.annotation.McpTool;
-import org.springaicommunity.mcp.context.DefaultMcpAsyncRequestContext;
 import org.springaicommunity.mcp.context.McpAsyncRequestContext;
 import reactor.core.publisher.Mono;
 
@@ -57,12 +56,8 @@ public final class AsyncStatelessMcpToolMethodCallback
 
 	@Override
 	protected McpAsyncRequestContext createRequestContext(McpTransportContext exchange, CallToolRequest request) {
-
-		return DefaultMcpAsyncRequestContext.builder()
-			.request(request)
-			.transportContext(exchange)
-			.stateless(true)
-			.build();
+		throw new UnsupportedOperationException(
+				"Stateless tool methods do not support McpAsyncRequestContext parameter.");
 	}
 
 	/**

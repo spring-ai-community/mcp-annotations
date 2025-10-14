@@ -920,18 +920,21 @@ public String processWithContext(
         // Use exchange for additional operations...
     }
     
-    // Perform elicitation with default message - returns StructuredElicitResult
-    Optional<StructuredElicitResult<UserInfo>> result = context.elicit(new TypeReference<UserInfo>() {});
-    
-    // Or perform elicitation with custom configuration - returns StructuredElicitResult
-    Optional<StructuredElicitResult<UserInfo>> structuredResult = context.elicit(
-        e -> e.message("Please provide your information").meta("context", "user-registration"),
-        new TypeReference<UserInfo>() {}
-    );
-    
-    if (structuredResult.isPresent() && structuredResult.get().action() == ElicitResult.Action.ACCEPT) {
-        UserInfo info = structuredResult.get().structuredContent();
-        return "Processed: " + data + " for user " + info.name();
+    // Check if elicitation is supported before using it
+    if (context.elicitEnabled()) {
+        // Perform elicitation with default message - returns StructuredElicitResult
+        StructuredElicitResult<UserInfo> result = context.elicit(new TypeReference<UserInfo>() {});
+        
+        // Or perform elicitation with custom configuration - returns StructuredElicitResult
+        StructuredElicitResult<UserInfo> structuredResult = context.elicit(
+            e -> e.message("Please provide your information").meta("context", "user-registration"),
+            new TypeReference<UserInfo>() {}
+        );
+        
+        if (structuredResult.action() == ElicitResult.Action.ACCEPT) {
+            UserInfo info = structuredResult.structuredContent();
+            return "Processed: " + data + " for user " + info.name();
+        }
     }
     
     return "Processed: " + data;
@@ -962,10 +965,14 @@ public GetPromptResult generateWithContext(
     // Log prompt generation
     context.info("Generating prompt for topic: " + topic);
     
-    // Perform sampling if needed
-    Optional<CreateMessageResult> samplingResult = context.sample(
-        "What are the key points about " + topic + "?"
-    );
+    // Check if sampling is supported before using it
+    if (context.sampleEnabled()) {
+        // Perform sampling if needed
+        CreateMessageResult samplingResult = context.sample(
+            "What are the key points about " + topic + "?"
+        );
+        // Use sampling result...
+    }
     
     String message = "Let's discuss " + topic;
     return new GetPromptResult("Generated Prompt",
@@ -1059,16 +1066,24 @@ public Mono<GetPromptResult> asyncGenerateWithContext(
 - `log(Consumer<LoggingSpec>)` - Send log messages with custom configuration
 - `debug(String)`, `info(String)`, `warn(String)`, `error(String)` - Convenience logging methods
 - `progress(int)`, `progress(Consumer<ProgressSpec>)` - Send progress updates
-- `elicit(TypeReference<T>)` - Request user input with default message, returns `StructuredElicitResult<T>` with action, typed content, and metadata
-- `elicit(Class<T>)` - Request user input with default message using Class type, returns `StructuredElicitResult<T>`
-- `elicit(Consumer<ElicitationSpec>, TypeReference<T>)` - Request user input with custom configuration, returns `StructuredElicitResult<T>`
-- `elicit(Consumer<ElicitationSpec>, Class<T>)` - Request user input with custom configuration using Class type, returns `StructuredElicitResult<T>`
-- `elicit(ElicitRequest)` - Request user input with full control over the elicitation request
-- `sample(...)` - Request LLM sampling with various configuration options
-- `roots()` - Access root directories (returns `Optional<ListRootsResult>`)
+- `rootsEnabled()` - Check if roots capability is supported by the client
+- `roots()` - Access root directories (throws `IllegalStateException` if not supported)
+- `elicitEnabled()` - Check if elicitation capability is supported by the client
+- `elicit(TypeReference<T>)` - Request user input with default message, returns `StructuredElicitResult<T>` with action, typed content, and metadata (throws `IllegalStateException` if not supported)
+- `elicit(Class<T>)` - Request user input with default message using Class type, returns `StructuredElicitResult<T>` (throws `IllegalStateException` if not supported)
+- `elicit(Consumer<ElicitationSpec>, TypeReference<T>)` - Request user input with custom configuration, returns `StructuredElicitResult<T>` (throws `IllegalStateException` if not supported)
+- `elicit(Consumer<ElicitationSpec>, Class<T>)` - Request user input with custom configuration using Class type, returns `StructuredElicitResult<T>` (throws `IllegalStateException` if not supported)
+- `elicit(ElicitRequest)` - Request user input with full control over the elicitation request (throws `IllegalStateException` if not supported)
+- `sampleEnabled()` - Check if sampling capability is supported by the client
+- `sample(...)` - Request LLM sampling with various configuration options (throws `IllegalStateException` if not supported)
 - `ping()` - Send ping to check connection
 
-`McpAsyncRequestContext` provides the same methods but with reactive return types (`Mono<T>` instead of `T` or `Optional<T>`).
+`McpAsyncRequestContext` provides the same methods but with reactive return types (`Mono<T>` instead of `T`). Methods that throw `IllegalStateException` in sync context return `Mono.error(IllegalStateException)` in async context.
+
+**Important Notes on Capability Checking:**
+- Always check capability support using `rootsEnabled()`, `elicitEnabled()`, or `sampleEnabled()` before calling the corresponding methods
+- Calling capability methods when not supported will throw `IllegalStateException` (sync) or return `Mono.error()` (async)
+- Stateless servers do not support bidirectional operations (roots, elicitation, sampling) and will always return `false` for capability checks
 
 This unified context approach simplifies method signatures and provides a consistent API across different operation types and execution modes (stateful vs stateless, sync vs async).
 
@@ -2103,6 +2118,9 @@ public class StatelessResourceProvider {
     }
 }
 ```
+
+**Important Note on Stateless Operations:**
+Stateless server methods cannot use bidirectional parameters like `McpSyncRequestContext`, `McpAsyncRequestContext`, `McpSyncServerExchange`, or `McpAsyncServerExchange`. These parameters require client capabilities (roots, elicitation, sampling) that are not available in stateless mode. Methods with these parameters will be automatically filtered out and not registered as stateless operations.
 
 #### Stateless Tool Example
 
