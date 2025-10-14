@@ -24,6 +24,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.BiFunction;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonPropertyDescription;
 import org.junit.jupiter.api.Test;
 import org.springaicommunity.mcp.annotation.McpTool;
 
@@ -586,7 +588,9 @@ public class SyncMcpToolProviderTests {
 	void testToolWithOutputSchemaGeneration() {
 
 		// Define a custom result class
-		record CustomResult(String message, int count) {
+		record CustomResult(@JsonPropertyDescription("customResultMessage") @JsonProperty(required = false)
+							 String message,
+							@JsonProperty(required = true) int count) {
 		}
 
 		class OutputSchemaTool {
@@ -613,7 +617,7 @@ public class SyncMcpToolProviderTests {
 		assertThat(outputSchemaString).contains("message");
 		assertThat(outputSchemaString).contains("count");
 		assertThat(outputSchemaString).isEqualTo(
-				"{$schema=https://json-schema.org/draft/2020-12/schema, type=array, items={type=object, properties={count={type=integer, format=int32}, message={type=string}}}}");
+				"{$schema=https://json-schema.org/draft/2020-12/schema, type=array, items={type=object, properties={count={type=integer, format=int32}, message={type=string, description=customResultMessage}}, required=[count]}}");
 	}
 
 	@Test
