@@ -18,7 +18,7 @@ import io.modelcontextprotocol.util.Assert;
  */
 public record StructuredElicitResult<T>(Action action, T structuredContent, Map<String, Object> meta) {
 
-	public static <T> Builder<T> builder() {
+	public static Builder<?> builder() {
 		return new Builder<>();
 	}
 
@@ -50,12 +50,15 @@ public record StructuredElicitResult<T>(Action action, T structuredContent, Map<
 
 		/**
 		 * Sets the structured content.
+		 * @param <U> the type of the structured content
 		 * @param structuredContent the structured content to set
-		 * @return this builder instance
+		 * @return this builder instance with the correct type
 		 */
-		public Builder<T> structuredContent(T structuredContent) {
-			this.structuredContent = structuredContent;
-			return this;
+		@SuppressWarnings("unchecked")
+		public <U> Builder<U> structuredContent(U structuredContent) {
+			Builder<U> typedBuilder = (Builder<U>) this;
+			typedBuilder.structuredContent = structuredContent;
+			return typedBuilder;
 		}
 
 		/**
