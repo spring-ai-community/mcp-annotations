@@ -26,11 +26,11 @@ import io.modelcontextprotocol.spec.McpSchema.ElicitResult;
 import io.modelcontextprotocol.util.Assert;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springaicommunity.mcp.McpPredicates;
 import org.springaicommunity.mcp.annotation.McpElicitation;
 import org.springaicommunity.mcp.context.StructuredElicitResult;
 import org.springaicommunity.mcp.method.elicitation.SyncElicitationSpecification;
 import org.springaicommunity.mcp.method.elicitation.SyncMcpElicitationMethodCallback;
-import org.springaicommunity.mcp.provider.McpProviderUtils;
 
 /**
  * Provider for synchronous elicitation callbacks.
@@ -87,7 +87,7 @@ public class SyncMcpElicitationProvider {
 		List<SyncElicitationSpecification> elicitationHandlers = this.elicitationObjects.stream()
 			.map(elicitationObject -> Stream.of(doGetClassMethods(elicitationObject))
 				.filter(method -> method.isAnnotationPresent(McpElicitation.class))
-				.filter(McpProviderUtils.filterReactiveReturnTypeMethod())
+				.filter(McpPredicates.filterReactiveReturnTypeMethod())
 				.filter(method -> ElicitResult.class.isAssignableFrom(method.getReturnType())
 						|| StructuredElicitResult.class.isAssignableFrom(method.getReturnType()))
 				.filter(method -> method.getParameterCount() == 1

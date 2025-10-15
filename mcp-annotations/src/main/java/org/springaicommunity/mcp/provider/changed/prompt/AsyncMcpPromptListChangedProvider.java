@@ -23,10 +23,10 @@ import java.util.stream.Stream;
 
 import io.modelcontextprotocol.spec.McpSchema;
 import io.modelcontextprotocol.util.Assert;
+import org.springaicommunity.mcp.McpPredicates;
 import org.springaicommunity.mcp.annotation.McpPromptListChanged;
 import org.springaicommunity.mcp.method.changed.prompt.AsyncMcpPromptListChangedMethodCallback;
 import org.springaicommunity.mcp.method.changed.prompt.AsyncPromptListChangedSpecification;
-import org.springaicommunity.mcp.provider.McpProviderUtils;
 import reactor.core.publisher.Mono;
 
 /**
@@ -82,7 +82,7 @@ public class AsyncMcpPromptListChangedProvider {
 			.stream()
 			.map(consumerObject -> Stream.of(doGetClassMethods(consumerObject))
 				.filter(method -> method.isAnnotationPresent(McpPromptListChanged.class))
-				.filter(McpProviderUtils.filterNonReactiveReturnTypeMethod())
+				.filter(McpPredicates.filterNonReactiveReturnTypeMethod())
 				.sorted((m1, m2) -> m1.getName().compareTo(m2.getName()))
 				.map(mcpPromptListChangedConsumerMethod -> {
 					var promptListChangedAnnotation = mcpPromptListChangedConsumerMethod

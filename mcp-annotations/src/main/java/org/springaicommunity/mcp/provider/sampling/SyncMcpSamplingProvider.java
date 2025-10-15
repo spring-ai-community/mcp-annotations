@@ -26,10 +26,10 @@ import io.modelcontextprotocol.spec.McpSchema.CreateMessageResult;
 import io.modelcontextprotocol.util.Assert;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springaicommunity.mcp.McpPredicates;
 import org.springaicommunity.mcp.annotation.McpSampling;
 import org.springaicommunity.mcp.method.sampling.SyncMcpSamplingMethodCallback;
 import org.springaicommunity.mcp.method.sampling.SyncSamplingSpecification;
-import org.springaicommunity.mcp.provider.McpProviderUtils;
 
 /**
  * Provider for synchronous sampling callbacks.
@@ -86,7 +86,7 @@ public class SyncMcpSamplingProvider {
 		List<SyncSamplingSpecification> samplingHandlers = this.samplingObjects.stream()
 			.map(samplingObject -> Stream.of(doGetClassMethods(samplingObject))
 				.filter(method -> method.isAnnotationPresent(McpSampling.class))
-				.filter(McpProviderUtils.filterReactiveReturnTypeMethod())
+				.filter(McpPredicates.filterReactiveReturnTypeMethod())
 				.filter(method -> CreateMessageResult.class.isAssignableFrom(method.getReturnType()))
 				.filter(method -> method.getParameterCount() == 1
 						&& CreateMessageRequest.class.isAssignableFrom(method.getParameterTypes()[0]))

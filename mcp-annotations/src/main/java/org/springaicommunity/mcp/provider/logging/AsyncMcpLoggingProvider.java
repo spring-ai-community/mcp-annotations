@@ -21,10 +21,10 @@ import java.util.List;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
+import org.springaicommunity.mcp.McpPredicates;
 import org.springaicommunity.mcp.annotation.McpLogging;
 import org.springaicommunity.mcp.method.logging.AsyncLoggingSpecification;
 import org.springaicommunity.mcp.method.logging.AsyncMcpLoggingMethodCallback;
-import org.springaicommunity.mcp.provider.McpProviderUtils;
 import io.modelcontextprotocol.spec.McpSchema.LoggingMessageNotification;
 import io.modelcontextprotocol.util.Assert;
 import reactor.core.publisher.Mono;
@@ -80,7 +80,7 @@ public class AsyncMcpLoggingProvider {
 		List<AsyncLoggingSpecification> loggingConsumers = this.loggingConsumerObjects.stream()
 			.map(consumerObject -> Stream.of(this.doGetClassMethods(consumerObject))
 				.filter(method -> method.isAnnotationPresent(McpLogging.class))
-				.filter(McpProviderUtils.filterNonReactiveReturnTypeMethod())
+				.filter(McpPredicates.filterNonReactiveReturnTypeMethod())
 				.sorted((m1, m2) -> m1.getName().compareTo(m2.getName()))
 				.map(mcpLoggingConsumerMethod -> {
 					var loggingConsumerAnnotation = mcpLoggingConsumerMethod.getAnnotation(McpLogging.class);

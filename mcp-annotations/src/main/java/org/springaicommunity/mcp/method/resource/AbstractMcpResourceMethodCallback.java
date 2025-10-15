@@ -10,13 +10,13 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import org.springaicommunity.mcp.McpPredicates;
 import org.springaicommunity.mcp.annotation.McpMeta;
 import org.springaicommunity.mcp.annotation.McpProgressToken;
 import org.springaicommunity.mcp.context.DefaultMcpAsyncRequestContext;
 import org.springaicommunity.mcp.context.DefaultMcpSyncRequestContext;
 import org.springaicommunity.mcp.context.McpAsyncRequestContext;
 import org.springaicommunity.mcp.context.McpSyncRequestContext;
-import org.springaicommunity.mcp.provider.McpProviderUtils;
 import io.modelcontextprotocol.common.McpTransportContext;
 import io.modelcontextprotocol.server.McpAsyncServerExchange;
 import io.modelcontextprotocol.server.McpSyncServerExchange;
@@ -192,7 +192,7 @@ public abstract class AbstractMcpResourceMethodCallback {
 					throw new IllegalArgumentException("Method cannot have more than one request context parameter: "
 							+ method.getName() + " in " + method.getDeclaringClass().getName());
 				}
-				if (McpProviderUtils.isReactiveReturnType.test(method)) {
+				if (McpPredicates.isReactiveReturnType.test(method)) {
 					throw new IllegalArgumentException(
 							"Sync complete methods should use McpSyncRequestContext instead of McpAsyncRequestContext parameter: "
 									+ method.getName() + " in " + method.getDeclaringClass().getName());
@@ -204,7 +204,7 @@ public abstract class AbstractMcpResourceMethodCallback {
 					throw new IllegalArgumentException("Method cannot have more than one request context parameter: "
 							+ method.getName() + " in " + method.getDeclaringClass().getName());
 				}
-				if (McpProviderUtils.isNotReactiveReturnType.test(method)) {
+				if (McpPredicates.isNotReactiveReturnType.test(method)) {
 					throw new IllegalArgumentException(
 							"Async complete methods should use McpAsyncRequestContext instead of McpSyncRequestContext parameter: "
 									+ method.getName() + " in " + method.getDeclaringClass().getName());
@@ -293,7 +293,7 @@ public abstract class AbstractMcpResourceMethodCallback {
 								"Method cannot have more than one request context parameter: " + method.getName()
 										+ " in " + method.getDeclaringClass().getName());
 					}
-					if (McpProviderUtils.isReactiveReturnType.test(method)) {
+					if (McpPredicates.isReactiveReturnType.test(method)) {
 						throw new IllegalArgumentException(
 								"Sync complete methods should use McpSyncRequestContext instead of McpAsyncRequestContext parameter: "
 										+ method.getName() + " in " + method.getDeclaringClass().getName());
@@ -306,7 +306,7 @@ public abstract class AbstractMcpResourceMethodCallback {
 								"Method cannot have more than one request context parameter: " + method.getName()
 										+ " in " + method.getDeclaringClass().getName());
 					}
-					if (McpProviderUtils.isNotReactiveReturnType.test(method)) {
+					if (McpPredicates.isNotReactiveReturnType.test(method)) {
 						throw new IllegalArgumentException(
 								"Async complete methods should use McpAsyncRequestContext instead of McpSyncRequestContext parameter: "
 										+ method.getName() + " in " + method.getDeclaringClass().getName());

@@ -23,10 +23,10 @@ import java.util.stream.Stream;
 
 import io.modelcontextprotocol.spec.McpSchema;
 import io.modelcontextprotocol.util.Assert;
+import org.springaicommunity.mcp.McpPredicates;
 import org.springaicommunity.mcp.annotation.McpResourceListChanged;
 import org.springaicommunity.mcp.method.changed.resource.SyncMcpResourceListChangedMethodCallback;
 import org.springaicommunity.mcp.method.changed.resource.SyncResourceListChangedSpecification;
-import org.springaicommunity.mcp.provider.McpProviderUtils;
 
 /**
  * Provider for synchronous resource list changed consumer callbacks.
@@ -80,7 +80,7 @@ public class SyncMcpResourceListChangedProvider {
 			.stream()
 			.map(consumerObject -> Stream.of(doGetClassMethods(consumerObject))
 				.filter(method -> method.isAnnotationPresent(McpResourceListChanged.class))
-				.filter(McpProviderUtils.filterReactiveReturnTypeMethod())
+				.filter(McpPredicates.filterReactiveReturnTypeMethod())
 				.sorted((m1, m2) -> m1.getName().compareTo(m2.getName()))
 				.map(mcpResourceListChangedConsumerMethod -> {
 					var resourceListChangedAnnotation = mcpResourceListChangedConsumerMethod

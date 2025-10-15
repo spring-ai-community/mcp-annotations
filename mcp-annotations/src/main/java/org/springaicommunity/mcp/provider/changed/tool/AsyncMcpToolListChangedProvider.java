@@ -23,10 +23,10 @@ import java.util.stream.Stream;
 
 import io.modelcontextprotocol.spec.McpSchema;
 import io.modelcontextprotocol.util.Assert;
+import org.springaicommunity.mcp.McpPredicates;
 import org.springaicommunity.mcp.annotation.McpToolListChanged;
 import org.springaicommunity.mcp.method.changed.tool.AsyncMcpToolListChangedMethodCallback;
 import org.springaicommunity.mcp.method.changed.tool.AsyncToolListChangedSpecification;
-import org.springaicommunity.mcp.provider.McpProviderUtils;
 import reactor.core.publisher.Mono;
 
 /**
@@ -81,7 +81,7 @@ public class AsyncMcpToolListChangedProvider {
 		List<AsyncToolListChangedSpecification> toolListChangedConsumers = this.toolListChangedConsumerObjects.stream()
 			.map(consumerObject -> Stream.of(doGetClassMethods(consumerObject))
 				.filter(method -> method.isAnnotationPresent(McpToolListChanged.class))
-				.filter(McpProviderUtils.filterNonReactiveReturnTypeMethod())
+				.filter(McpPredicates.filterNonReactiveReturnTypeMethod())
 				.sorted((m1, m2) -> m1.getName().compareTo(m2.getName()))
 				.map(mcpToolListChangedConsumerMethod -> {
 					var toolListChangedAnnotation = mcpToolListChangedConsumerMethod

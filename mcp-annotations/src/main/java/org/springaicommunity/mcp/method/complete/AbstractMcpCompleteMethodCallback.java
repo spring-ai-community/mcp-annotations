@@ -18,6 +18,7 @@ import io.modelcontextprotocol.util.Assert;
 import io.modelcontextprotocol.util.DefaultMcpUriTemplateManagerFactory;
 import io.modelcontextprotocol.util.McpUriTemplateManager;
 import io.modelcontextprotocol.util.McpUriTemplateManagerFactory;
+import org.springaicommunity.mcp.McpPredicates;
 import org.springaicommunity.mcp.adapter.CompleteAdapter;
 import org.springaicommunity.mcp.annotation.McpComplete;
 import org.springaicommunity.mcp.annotation.McpMeta;
@@ -26,7 +27,6 @@ import org.springaicommunity.mcp.context.DefaultMcpAsyncRequestContext;
 import org.springaicommunity.mcp.context.DefaultMcpSyncRequestContext;
 import org.springaicommunity.mcp.context.McpAsyncRequestContext;
 import org.springaicommunity.mcp.context.McpSyncRequestContext;
-import org.springaicommunity.mcp.provider.McpProviderUtils;
 
 /**
  * Abstract base class for creating callbacks around complete methods.
@@ -187,7 +187,7 @@ public abstract class AbstractMcpCompleteMethodCallback {
 					throw new IllegalArgumentException("Method cannot have more than one request context parameter: "
 							+ method.getName() + " in " + method.getDeclaringClass().getName());
 				}
-				if (McpProviderUtils.isReactiveReturnType.test(method)) {
+				if (McpPredicates.isReactiveReturnType.test(method)) {
 					throw new IllegalArgumentException(
 							"Async complete methods should use McpAsyncRequestContext instead of McpSyncRequestContext parameter: "
 									+ method.getName() + " in " + method.getDeclaringClass().getName());
@@ -200,7 +200,7 @@ public abstract class AbstractMcpCompleteMethodCallback {
 					throw new IllegalArgumentException("Method cannot have more than one request context parameter: "
 							+ method.getName() + " in " + method.getDeclaringClass().getName());
 				}
-				if (McpProviderUtils.isNotReactiveReturnType.test(method)) {
+				if (McpPredicates.isNotReactiveReturnType.test(method)) {
 					throw new IllegalArgumentException(
 							"Sync complete methods should use McpSyncRequestContext instead of McpAsyncRequestContext parameter: "
 									+ method.getName() + " in " + method.getDeclaringClass().getName());

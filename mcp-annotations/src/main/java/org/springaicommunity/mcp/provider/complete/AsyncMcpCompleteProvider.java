@@ -25,10 +25,10 @@ import io.modelcontextprotocol.server.McpServerFeatures.AsyncCompletionSpecifica
 import io.modelcontextprotocol.util.Assert;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springaicommunity.mcp.McpPredicates;
 import org.springaicommunity.mcp.adapter.CompleteAdapter;
 import org.springaicommunity.mcp.annotation.McpComplete;
 import org.springaicommunity.mcp.method.complete.AsyncMcpCompleteMethodCallback;
-import org.springaicommunity.mcp.provider.McpProviderUtils;
 
 /**
  * Provider for asynchronous MCP complete methods.
@@ -64,7 +64,7 @@ public class AsyncMcpCompleteProvider {
 		List<AsyncCompletionSpecification> asyncCompleteSpecification = this.completeObjects.stream()
 			.map(completeObject -> Stream.of(doGetClassMethods(completeObject))
 				.filter(method -> method.isAnnotationPresent(McpComplete.class))
-				.filter(McpProviderUtils.filterNonReactiveReturnTypeMethod())
+				.filter(McpPredicates.filterNonReactiveReturnTypeMethod())
 				.sorted((m1, m2) -> m1.getName().compareTo(m2.getName()))
 				.map(mcpCompleteMethod -> {
 					var completeAnnotation = mcpCompleteMethod.getAnnotation(McpComplete.class);

@@ -98,6 +98,35 @@ The core module provides a set of annotations and callback implementations for p
 
 Each operation type has both synchronous and asynchronous implementations, allowing for flexible integration with different application architectures.
 
+### Method Filtering by Server Type
+
+The library automatically filters methods based on the server type and method characteristics:
+
+#### Synchronous vs Asynchronous Servers
+
+- **Synchronous Providers** (`SyncMcpToolProvider`, `SyncMcpResourceProvider`, `SyncMcpPromptProvider`, `SyncMcpCompleteProvider`):
+  - Accept methods with **non-reactive return types** (e.g., `String`, `int`, `CallToolResult`, `ReadResourceResult`)
+  - **Filter out** methods returning reactive types (`Mono`, `Flux`, `Publisher`)
+  - Methods with reactive return types are logged as warnings and skipped
+
+- **Asynchronous Providers** (`AsyncMcpToolProvider`, `AsyncMcpResourceProvider`, `AsyncMcpPromptProvider`, `AsyncMcpCompleteProvider`):
+  - Accept methods with **reactive return types** (`Mono<T>`, `Flux<T>`, `Publisher<T>`)
+  - **Filter out** methods with non-reactive return types
+  - Methods with non-reactive return types are logged as warnings and skipped
+
+#### Stateful vs Stateless Servers
+
+- **Stateful Providers** (using `McpSyncServerExchange` or `McpAsyncServerExchange`):
+  - Accept methods with **bidirectional parameters**: `McpSyncRequestContext`, `McpAsyncRequestContext`, `McpSyncServerExchange`, `McpAsyncServerExchange`
+  - Support full server exchange functionality including roots, elicitation, and sampling capabilities
+
+- **Stateless Providers** (`SyncStatelessMcpToolProvider`, `AsyncStatelessMcpToolProvider`, `SyncStatelessMcpResourceProvider`, `AsyncStatelessMcpResourceProvider`, `SyncStatelessMcpPromptProvider`, `AsyncStatelessMcpPromptProvider`, `SyncStatelessMcpCompleteProvider`, `AsyncStatelessMcpCompleteProvider`):
+  - **Filter out** methods with bidirectional parameters (`McpSyncRequestContext`, `McpAsyncRequestContext`, `McpSyncServerExchange`, `McpAsyncServerExchange`)
+  - Accept methods with `McpTransportContext` or no context parameter
+  - Methods with bidirectional parameters are logged as warnings and skipped
+  - Do not support bidirectional operations (roots, elicitation, sampling)
+
+
 ## Key Components
 
 ### Annotations
