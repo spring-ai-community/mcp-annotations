@@ -122,8 +122,8 @@ Each operation type has both synchronous and asynchronous implementations, allow
 #### Special Parameters and Annotations
 - **`McpSyncRequestContext`** - Special parameter type for synchronous operations that provides a unified interface for accessing MCP request context, including the original request, server exchange (for stateful operations), transport context (for stateless operations), and convenient methods for logging, progress, sampling, and elicitation. This parameter is automatically injected and excluded from JSON schema generation. **Supported in Complete, Prompt, Resource, and Tool methods.**
 - **`McpAsyncRequestContext`** - Special parameter type for asynchronous operations that provides the same unified interface as `McpSyncRequestContext` but with reactive (Mono-based) return types. This parameter is automatically injected and excluded from JSON schema generation. **Supported in Complete, Prompt, Resource, and Tool methods.**
-- **(Deprecated and replaced by `McpSyncRequestContext`) `McpSyncServerExchange`** - Special parameter type for stateful synchronous operations that provides access to server exchange functionality including logging notifications, progress updates, and other server-side operations. This parameter is automatically injected and excluded from JSON schema generation. 
-- **(Deprecated and replaced by `McpAsyncRequestContext`) `McpAsyncServerExchange`** - Special parameter type for stateful asynchronous operations that provides access to server exchange functionality with reactive support. This parameter is automatically injected and excluded from JSON schema generation
+- **(Deprecated and replaced by `McpSyncRequestContext`) `McpSyncServerExchange`** - Legacy parameter type for stateful synchronous operations. Use `McpSyncRequestContext` instead for a unified interface that works with both stateful and stateless operations.
+- **(Deprecated and replaced by `McpAsyncRequestContext`) `McpAsyncServerExchange`** - Legacy parameter type for stateful asynchronous operations. Use `McpAsyncRequestContext` instead for a unified interface that works with both stateful and stateless operations.
 - **`McpTransportContext`** - Special parameter type for stateless operations that provides lightweight access to transport-level context without full server exchange functionality. This parameter is automatically injected and excluded from JSON schema generation
 - **`@McpProgressToken`** - Marks a method parameter to receive the progress token from the request. This parameter is automatically injected and excluded from the generated JSON schema. **Supported in Complete, Prompt, Resource, and Tool methods.**
 **Note:** When using `McpSyncRequestContext` or `McpAsyncRequestContext`, the progress token can be accessed via `ctx.request().progressToken()` instead of using this annotation.
@@ -197,7 +197,7 @@ The modules provide callback implementations for each operation type:
 
 The project includes provider classes that scan for annotated methods and create appropriate callbacks:
 
-#### Stateful Providers (using McpSyncServerExchange/McpAsyncServerExchange)
+#### Stateful Providers (using McpSyncRequestContext/McpAsyncRequestContext)
 - `SyncMcpCompleteProvider` - Processes `@McpComplete` annotations for synchronous operations
 - `AsyncMcpCompleteProvider` - Processes `@McpComplete` annotations for asynchronous operations
 - `SyncMcpPromptProvider` - Processes `@McpPrompt` annotations for synchronous operations
@@ -241,14 +241,12 @@ public class PromptProvider {
 
     @McpPrompt(name = "personalized-message",
             description = "Generates a personalized message based on user information")
-    public GetPromptResult personalizedMessage(McpSyncServerExchange exchange,
+    public GetPromptResult personalizedMessage(McpSyncRequestContext context,
             @McpArg(name = "name", description = "The user's name", required = true) String name,
             @McpArg(name = "age", description = "The user's age", required = false) Integer age,
             @McpArg(name = "interests", description = "The user's interests", required = false) String interests) {
 
-        exchange.loggingNotification(LoggingMessageNotification.builder()
-            .level(LoggingLevel.INFO)	
-            .data("personalized-message event").build());
+        context.info("personalized-message event");
 
         StringBuilder message = new StringBuilder();
         message.append("Hello, ").append(name).append("!\n\n");
@@ -384,13 +382,10 @@ public class MyResourceProvider {
 
     @McpResource(uri = "user-profile-exchange://{username}", 
         name = "User Profile with Exchange", 
-        description = "Provides user profile information with server exchange context")
-	public ReadResourceResult getProfileWithExchange(McpSyncServerExchange exchange, String username) {
+        description = "Provides user profile information with request context")
+	public ReadResourceResult getProfileWithContext(McpSyncRequestContext context, String username) {
 
-        exchange.loggingNotification(LoggingMessageNotification.builder()
-			.level(LoggingLevel.INFO)	
-			.data("user-profile-exchange")
-            .build());
+        context.info("user-profile-exchange");
 
 		String profileInfo = formatProfileInfo(userProfiles.getOrDefault(username.toLowerCase(), new HashMap<>()));
 
@@ -435,15 +430,12 @@ public class CalculatorToolProvider {
         return new AreaResult(area, "square units");
     }
 
-    @McpTool(name = "process-data", description = "Process data with exchange context")
+    @McpTool(name = "process-data", description = "Process data with request context")
     public String processData(
-            McpSyncServerExchange exchange,
+            McpSyncRequestContext context,
             @McpToolParam(description = "Data to process", required = true) String data) {
         
-        exchange.loggingNotification(LoggingMessageNotification.builder()
-            .level(LoggingLevel.INFO)
-            .data("Processing data: " + data)
-            .build());
+        context.info("Processing data: " + data);
         
         return "Processed: " + data.toUpperCase();
     }
@@ -916,7 +908,7 @@ public String processWithContext(
     // Check if running in stateful mode
     if (!context.isStateless()) {
         // Access server exchange for stateful operations
-        McpSyncServerExchange exchange = context.exchange().orElseThrow();
+        McpSyncServerExchange exchange = context.exchange();
         // Use exchange for additional operations...
     }
     
@@ -2120,7 +2112,7 @@ public class StatelessResourceProvider {
 ```
 
 **Important Note on Stateless Operations:**
-Stateless server methods cannot use bidirectional parameters like `McpSyncRequestContext`, `McpAsyncRequestContext`, `McpSyncServerExchange`, or `McpAsyncServerExchange`. These parameters require client capabilities (roots, elicitation, sampling) that are not available in stateless mode. Methods with these parameters will be automatically filtered out and not registered as stateless operations.
+Stateless server methods can use `McpSyncRequestContext` and `McpAsyncRequestContext`, but bidirectional operations (roots, elicitation, sampling) will not be available. The legacy `McpSyncServerExchange` and `McpAsyncServerExchange` parameters are not supported in stateless mode. Methods using the legacy parameters will be automatically filtered out and not registered as stateless operations.
 
 #### Stateless Tool Example
 
@@ -2242,7 +2234,7 @@ Override `AbstractMcpToolProvider#doGetToolCallException()` to customize the exc
 
 - **Annotation-based method handling** - Simplifies the creation and registration of MCP methods
 - **Support for both synchronous and asynchronous operations** - Flexible integration with different application architectures
-- **Stateful and stateless implementations** - Choose between full server exchange context (`McpSyncServerExchange`/`McpAsyncServerExchange`) or lightweight transport context (`McpTransportContext`) for all MCP operations
+- **Stateful and stateless implementations** - Choose between unified request context (`McpSyncRequestContext`/`McpAsyncRequestContext`) or lightweight transport context (`McpTransportContext`) for all MCP operations
 - **Comprehensive stateless support** - All MCP operations (Complete, Prompt, Resource, Tool) support stateless implementations for scenarios where full server context is not needed
 - **Builder pattern for callback creation** - Clean and fluent API for creating method callbacks
 - **Comprehensive validation** - Ensures method signatures are compatible with MCP operations
