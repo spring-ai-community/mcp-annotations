@@ -18,6 +18,8 @@ import org.junit.jupiter.api.Test;
 import org.springaicommunity.mcp.annotation.McpComplete;
 import org.springaicommunity.mcp.annotation.McpMeta;
 import org.springaicommunity.mcp.annotation.McpProgressToken;
+import org.springaicommunity.mcp.context.McpAsyncRequestContext;
+import org.springaicommunity.mcp.context.McpSyncRequestContext;
 
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
@@ -25,6 +27,7 @@ import reactor.test.StepVerifier;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 /**
  * Tests for {@link AsyncMcpCompleteMethodCallback}.
@@ -171,6 +174,33 @@ public class AsyncMcpCompleteMethodCallbackTests {
 
 		public Mono<CompleteResult> duplicateMetaParameters(McpMeta meta1, McpMeta meta2) {
 			return Mono.just(new CompleteResult(new CompleteCompletion(List.of(), 0, false)));
+		}
+
+		public Mono<CompleteResult> getCompletionWithAsyncRequestContext(McpAsyncRequestContext context) {
+			CompleteRequest request = (CompleteRequest) context.request();
+			return Mono.just(new CompleteResult(new CompleteCompletion(
+					List.of("Async completion with async context for: " + request.argument().value()), 1, false)));
+		}
+
+		public Mono<CompleteResult> getCompletionWithAsyncRequestContextAndValue(McpAsyncRequestContext context,
+				String value) {
+			CompleteRequest request = (CompleteRequest) context.request();
+			return Mono.just(new CompleteResult(new CompleteCompletion(List
+				.of("Async completion with async context and value: " + value + " for: " + request.argument().value()),
+					1, false)));
+		}
+
+		public Mono<CompleteResult> duplicateAsyncRequestContextParameters(McpAsyncRequestContext context1,
+				McpAsyncRequestContext context2) {
+			return Mono.just(new CompleteResult(new CompleteCompletion(List.of(), 0, false)));
+		}
+
+		public Mono<CompleteResult> invalidSyncRequestContextInAsyncMethod(McpSyncRequestContext context) {
+			return Mono.just(new CompleteResult(new CompleteCompletion(List.of(), 0, false)));
+		}
+
+		public CompleteResult invalidAsyncRequestContextInSyncMethod(McpAsyncRequestContext context) {
+			return new CompleteResult(new CompleteCompletion(List.of(), 0, false));
 		}
 
 	}
@@ -847,6 +877,121 @@ public class AsyncMcpCompleteMethodCallbackTests {
 			.prompt("test-prompt")
 			.build()).isInstanceOf(IllegalArgumentException.class)
 			.hasMessageContaining("Method cannot have more than one McpMeta parameter");
+	}
+
+	@Test
+	public void testCallbackWithAsyncRequestContext() throws Exception {
+		TestAsyncCompleteProvider provider = new TestAsyncCompleteProvider();
+		Method method = TestAsyncCompleteProvider.class.getMethod("getCompletionWithAsyncRequestContext",
+				McpAsyncRequestContext.class);
+
+		BiFunction<McpAsyncServerExchange, CompleteRequest, Mono<CompleteResult>> callback = AsyncMcpCompleteMethodCallback
+			.builder()
+			.method(method)
+			.bean(provider)
+			.prompt("test-prompt")
+			.build();
+
+		McpAsyncServerExchange exchange = mock(McpAsyncServerExchange.class);
+		CompleteRequest request = new CompleteRequest(new PromptReference("test-prompt"),
+				new CompleteRequest.CompleteArgument("test", "value"));
+
+		Mono<CompleteResult> resultMono = callback.apply(exchange, request);
+
+		StepVerifier.create(resultMono).assertNext(result -> {
+			assertThat(result).isNotNull();
+			assertThat(result.completion()).isNotNull();
+			assertThat(result.completion().values()).hasSize(1);
+			assertThat(result.completion().values().get(0)).isEqualTo("Async completion with async context for: value");
+		}).verifyComplete();
+	}
+
+	@Test
+	public void testCallbackWithAsyncRequestContextAndValue() throws Exception {
+		TestAsyncCompleteProvider provider = new TestAsyncCompleteProvider();
+		Method method = TestAsyncCompleteProvider.class.getMethod("getCompletionWithAsyncRequestContextAndValue",
+				McpAsyncRequestContext.class, String.class);
+
+		BiFunction<McpAsyncServerExchange, CompleteRequest, Mono<CompleteResult>> callback = AsyncMcpCompleteMethodCallback
+			.builder()
+			.method(method)
+			.bean(provider)
+			.prompt("test-prompt")
+			.build();
+
+		McpAsyncServerExchange exchange = mock(McpAsyncServerExchange.class);
+		CompleteRequest request = new CompleteRequest(new PromptReference("test-prompt"),
+				new CompleteRequest.CompleteArgument("test", "value"));
+
+		Mono<CompleteResult> resultMono = callback.apply(exchange, request);
+
+		StepVerifier.create(resultMono).assertNext(result -> {
+			assertThat(result).isNotNull();
+			assertThat(result.completion()).isNotNull();
+			assertThat(result.completion().values()).hasSize(1);
+			assertThat(result.completion().values().get(0))
+				.isEqualTo("Async completion with async context and value: value for: value");
+		}).verifyComplete();
+	}
+
+	@Test
+	public void testDuplicateAsyncRequestContextParameters() throws Exception {
+		TestAsyncCompleteProvider provider = new TestAsyncCompleteProvider();
+		Method method = TestAsyncCompleteProvider.class.getMethod("duplicateAsyncRequestContextParameters",
+				McpAsyncRequestContext.class, McpAsyncRequestContext.class);
+
+		assertThatThrownBy(() -> AsyncMcpCompleteMethodCallback.builder()
+			.method(method)
+			.bean(provider)
+			.prompt("test-prompt")
+			.build()).isInstanceOf(IllegalArgumentException.class)
+			.hasMessageContaining("Method cannot have more than one request context parameter");
+	}
+
+	@Test
+	public void testInvalidSyncRequestContextInAsyncMethod() throws Exception {
+		TestAsyncCompleteProvider provider = new TestAsyncCompleteProvider();
+		Method method = TestAsyncCompleteProvider.class.getMethod("invalidSyncRequestContextInAsyncMethod",
+				McpSyncRequestContext.class);
+
+		assertThatThrownBy(() -> AsyncMcpCompleteMethodCallback.builder()
+			.method(method)
+			.bean(provider)
+			.prompt("test-prompt")
+			.build()).isInstanceOf(IllegalArgumentException.class)
+			.hasMessageContaining(
+					"Async complete methods should use McpAsyncRequestContext instead of McpSyncRequestContext parameter");
+	}
+
+	@Test
+	public void testCallbackWithProgressTokenNonNull() throws Exception {
+		TestAsyncCompleteProvider provider = new TestAsyncCompleteProvider();
+		Method method = TestAsyncCompleteProvider.class.getMethod("getCompletionWithProgressToken", String.class,
+				CompleteRequest.class);
+
+		BiFunction<McpAsyncServerExchange, CompleteRequest, Mono<CompleteResult>> callback = AsyncMcpCompleteMethodCallback
+			.builder()
+			.method(method)
+			.bean(provider)
+			.prompt("test-prompt")
+			.build();
+
+		McpAsyncServerExchange exchange = mock(McpAsyncServerExchange.class);
+		// Create a CompleteRequest with progressToken using a mock
+		CompleteRequest request = mock(CompleteRequest.class);
+		when(request.ref()).thenReturn(new PromptReference("test-prompt"));
+		when(request.argument()).thenReturn(new CompleteRequest.CompleteArgument("test", "value"));
+		when(request.progressToken()).thenReturn("progress-123");
+
+		Mono<CompleteResult> resultMono = callback.apply(exchange, request);
+
+		StepVerifier.create(resultMono).assertNext(result -> {
+			assertThat(result).isNotNull();
+			assertThat(result.completion()).isNotNull();
+			assertThat(result.completion().values()).hasSize(1);
+			assertThat(result.completion().values().get(0))
+				.isEqualTo("Async completion with progress (token: progress-123) for: value");
+		}).verifyComplete();
 	}
 
 }

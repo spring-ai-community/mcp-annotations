@@ -120,15 +120,15 @@ Each operation type has both synchronous and asynchronous implementations, allow
   - **`@McpToolParam`** - Annotates tool method parameters with descriptions and requirement specifications
 
 #### Special Parameters and Annotations
-- **`McpSyncRequestContext`** - Special parameter type for synchronous operations that provides a unified interface for accessing MCP request context, including the original request, server exchange (for stateful operations), transport context (for stateless operations), and convenient methods for logging, progress, sampling, and elicitation. This parameter is automatically injected and excluded from JSON schema generation
-- **`McpAsyncRequestContext`** - Special parameter type for asynchronous operations that provides the same unified interface as `McpSyncRequestContext` but with reactive (Mono-based) return types. This parameter is automatically injected and excluded from JSON schema generation
+- **`McpSyncRequestContext`** - Special parameter type for synchronous operations that provides a unified interface for accessing MCP request context, including the original request, server exchange (for stateful operations), transport context (for stateless operations), and convenient methods for logging, progress, sampling, and elicitation. This parameter is automatically injected and excluded from JSON schema generation. **Supported in Complete, Prompt, Resource, and Tool methods.**
+- **`McpAsyncRequestContext`** - Special parameter type for asynchronous operations that provides the same unified interface as `McpSyncRequestContext` but with reactive (Mono-based) return types. This parameter is automatically injected and excluded from JSON schema generation. **Supported in Complete, Prompt, Resource, and Tool methods.**
 - **(Deprecated and replaced by `McpSyncRequestContext`) `McpSyncServerExchange`** - Special parameter type for stateful synchronous operations that provides access to server exchange functionality including logging notifications, progress updates, and other server-side operations. This parameter is automatically injected and excluded from JSON schema generation. 
 - **(Deprecated and replaced by `McpAsyncRequestContext`) `McpAsyncServerExchange`** - Special parameter type for stateful asynchronous operations that provides access to server exchange functionality with reactive support. This parameter is automatically injected and excluded from JSON schema generation
 - **`McpTransportContext`** - Special parameter type for stateless operations that provides lightweight access to transport-level context without full server exchange functionality. This parameter is automatically injected and excluded from JSON schema generation
-- **(Deprecated. Handled internally by `McpSyncRequestContext` and `McpAsyncRequestContext`)`@McpProgressToken`** - Marks a method parameter to receive the progress token from the request. This parameter is automatically injected and excluded from the generated JSON schema
-**Note:** if using the `McpSyncRequestContext` or `McpAsyncRequestContext` the progress token is handled internally.
+- **`@McpProgressToken`** - Marks a method parameter to receive the progress token from the request. This parameter is automatically injected and excluded from the generated JSON schema. **Supported in Complete, Prompt, Resource, and Tool methods.**
+**Note:** When using `McpSyncRequestContext` or `McpAsyncRequestContext`, the progress token can be accessed via `ctx.request().progressToken()` instead of using this annotation.
 - **`McpMeta`** - Special parameter type that provides access to metadata from MCP requests, notifications, and results. This parameter is automatically injected and excluded from parameter count limits and JSON schema generation. 
-**Note:** if using the McpSyncRequestContext or McpAsyncRequestContext the meta can be obatined via `requestMeta()` instead.
+**Note:** When using `McpSyncRequestContext` or `McpAsyncRequestContext`, metadata can be obtained via `ctx.requestMeta()` instead.
 
 ### Method Callbacks
 

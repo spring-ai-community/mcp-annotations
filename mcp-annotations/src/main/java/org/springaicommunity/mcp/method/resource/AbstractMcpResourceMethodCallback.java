@@ -12,6 +12,11 @@ import java.util.Map;
 
 import org.springaicommunity.mcp.annotation.McpMeta;
 import org.springaicommunity.mcp.annotation.McpProgressToken;
+import org.springaicommunity.mcp.context.DefaultMcpAsyncRequestContext;
+import org.springaicommunity.mcp.context.DefaultMcpSyncRequestContext;
+import org.springaicommunity.mcp.context.McpAsyncRequestContext;
+import org.springaicommunity.mcp.context.McpSyncRequestContext;
+import org.springaicommunity.mcp.provider.McpProviderUtils;
 import io.modelcontextprotocol.common.McpTransportContext;
 import io.modelcontextprotocol.server.McpAsyncServerExchange;
 import io.modelcontextprotocol.server.McpSyncServerExchange;
@@ -149,9 +154,12 @@ public abstract class AbstractMcpResourceMethodCallback {
 
 		// Count parameters excluding @McpProgressToken and McpMeta annotated ones
 		int nonSpecialParamCount = 0;
+
 		for (Parameter param : parameters) {
-			if (!param.isAnnotationPresent(McpProgressToken.class)
-					&& !McpMeta.class.isAssignableFrom(param.getType())) {
+			if (!param.isAnnotationPresent(McpProgressToken.class) && !McpMeta.class.isAssignableFrom(param.getType())
+					&& !McpSyncRequestContext.class.isAssignableFrom(param.getType())
+					&& !McpAsyncRequestContext.class.isAssignableFrom(param.getType())
+					&& !isExchangeOrContextType(param.getType())) {
 				nonSpecialParamCount++;
 			}
 		}
@@ -169,6 +177,7 @@ public abstract class AbstractMcpResourceMethodCallback {
 		boolean hasExchangeParam = false;
 		boolean hasRequestOrUriParam = false;
 		boolean hasMetaParam = false;
+		boolean hasRequestContextParam = false;
 
 		for (Parameter param : parameters) {
 			// Skip @McpProgressToken annotated parameters
@@ -178,7 +187,31 @@ public abstract class AbstractMcpResourceMethodCallback {
 
 			Class<?> paramType = param.getType();
 
-			if (McpMeta.class.isAssignableFrom(paramType)) {
+			if (McpSyncRequestContext.class.isAssignableFrom(paramType)) {
+				if (hasRequestContextParam) {
+					throw new IllegalArgumentException("Method cannot have more than one request context parameter: "
+							+ method.getName() + " in " + method.getDeclaringClass().getName());
+				}
+				if (McpProviderUtils.isReactiveReturnType.test(method)) {
+					throw new IllegalArgumentException(
+							"Sync complete methods should use McpSyncRequestContext instead of McpAsyncRequestContext parameter: "
+									+ method.getName() + " in " + method.getDeclaringClass().getName());
+				}
+				hasRequestContextParam = true;
+			}
+			else if (McpAsyncRequestContext.class.isAssignableFrom(paramType)) {
+				if (hasRequestContextParam) {
+					throw new IllegalArgumentException("Method cannot have more than one request context parameter: "
+							+ method.getName() + " in " + method.getDeclaringClass().getName());
+				}
+				if (McpProviderUtils.isNotReactiveReturnType.test(method)) {
+					throw new IllegalArgumentException(
+							"Async complete methods should use McpAsyncRequestContext instead of McpSyncRequestContext parameter: "
+									+ method.getName() + " in " + method.getDeclaringClass().getName());
+				}
+				hasRequestContextParam = true;
+			}
+			else if (McpMeta.class.isAssignableFrom(paramType)) {
 				if (hasMetaParam) {
 					throw new IllegalArgumentException("Method cannot have more than one McpMeta parameter: "
 							+ method.getName() + " in " + method.getDeclaringClass().getName());
@@ -234,6 +267,7 @@ public abstract class AbstractMcpResourceMethodCallback {
 		int requestParamCount = 0;
 		int progressTokenParamCount = 0;
 		int metaParamCount = 0;
+		boolean hasRequestContextParam = false;
 
 		for (Parameter param : parameters) {
 			if (param.isAnnotationPresent(McpProgressToken.class)) {
@@ -252,6 +286,32 @@ public abstract class AbstractMcpResourceMethodCallback {
 				}
 				else if (ReadResourceRequest.class.isAssignableFrom(paramType)) {
 					requestParamCount++;
+				}
+				else if (McpSyncRequestContext.class.isAssignableFrom(paramType)) {
+					if (hasRequestContextParam) {
+						throw new IllegalArgumentException(
+								"Method cannot have more than one request context parameter: " + method.getName()
+										+ " in " + method.getDeclaringClass().getName());
+					}
+					if (McpProviderUtils.isReactiveReturnType.test(method)) {
+						throw new IllegalArgumentException(
+								"Sync complete methods should use McpSyncRequestContext instead of McpAsyncRequestContext parameter: "
+										+ method.getName() + " in " + method.getDeclaringClass().getName());
+					}
+					hasRequestContextParam = true;
+				}
+				else if (McpAsyncRequestContext.class.isAssignableFrom(paramType)) {
+					if (hasRequestContextParam) {
+						throw new IllegalArgumentException(
+								"Method cannot have more than one request context parameter: " + method.getName()
+										+ " in " + method.getDeclaringClass().getName());
+					}
+					if (McpProviderUtils.isNotReactiveReturnType.test(method)) {
+						throw new IllegalArgumentException(
+								"Async complete methods should use McpAsyncRequestContext instead of McpSyncRequestContext parameter: "
+										+ method.getName() + " in " + method.getDeclaringClass().getName());
+					}
+					hasRequestContextParam = true;
 				}
 			}
 		}
@@ -275,7 +335,9 @@ public abstract class AbstractMcpResourceMethodCallback {
 		}
 
 		// Calculate how many parameters should be for URI variables
-		int specialParamCount = exchangeParamCount + requestParamCount + progressTokenParamCount + metaParamCount;
+		int requestContextParamCount = hasRequestContextParam ? 1 : 0;
+		int specialParamCount = exchangeParamCount + requestParamCount + progressTokenParamCount + metaParamCount
+				+ requestContextParamCount;
 		int uriVarParamCount = parameters.length - specialParamCount;
 
 		// Check if we have the right number of parameters for URI variables
@@ -294,7 +356,9 @@ public abstract class AbstractMcpResourceMethodCallback {
 			}
 
 			Class<?> paramType = param.getType();
-			if (!isExchangeOrContextType(paramType) && !ReadResourceRequest.class.isAssignableFrom(paramType)
+			if (!McpSyncRequestContext.class.isAssignableFrom(paramType)
+					&& !McpAsyncRequestContext.class.isAssignableFrom(paramType) && !isExchangeOrContextType(paramType)
+					&& !ReadResourceRequest.class.isAssignableFrom(paramType)
 					&& !McpMeta.class.isAssignableFrom(paramType) && !String.class.isAssignableFrom(paramType)) {
 				throw new IllegalArgumentException("URI variable parameters must be of type String: " + method.getName()
 						+ " in " + method.getDeclaringClass().getName() + ", parameter of type " + paramType.getName()
@@ -337,6 +401,18 @@ public abstract class AbstractMcpResourceMethodCallback {
 					|| McpAsyncServerExchange.class.isAssignableFrom(paramType)) {
 
 				args[i] = this.assignExchangeType(paramType, exchange);
+			}
+			else if (McpSyncRequestContext.class.isAssignableFrom(paramType)) {
+				args[i] = DefaultMcpSyncRequestContext.builder()
+					.exchange((McpSyncServerExchange) exchange)
+					.request(request)
+					.build();
+			}
+			else if (McpAsyncRequestContext.class.isAssignableFrom(paramType)) {
+				args[i] = DefaultMcpAsyncRequestContext.builder()
+					.exchange((McpAsyncServerExchange) exchange)
+					.request(request)
+					.build();
 			}
 		}
 
@@ -424,6 +500,8 @@ public abstract class AbstractMcpResourceMethodCallback {
 			// (already handled)
 			if (parameters[i].isAnnotationPresent(McpProgressToken.class)
 					|| McpMeta.class.isAssignableFrom(parameters[i].getType())
+					|| McpSyncRequestContext.class.isAssignableFrom(parameters[i].getType())
+					|| McpAsyncRequestContext.class.isAssignableFrom(parameters[i].getType())
 					|| isExchangeOrContextType(parameters[i].getType())) {
 				continue;
 			}

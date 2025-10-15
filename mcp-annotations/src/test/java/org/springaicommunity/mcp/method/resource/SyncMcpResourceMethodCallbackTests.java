@@ -23,6 +23,10 @@ import org.springaicommunity.mcp.adapter.ResourceAdapter;
 import org.springaicommunity.mcp.annotation.McpMeta;
 import org.springaicommunity.mcp.annotation.McpProgressToken;
 import org.springaicommunity.mcp.annotation.McpResource;
+import org.springaicommunity.mcp.context.McpAsyncRequestContext;
+import org.springaicommunity.mcp.context.McpSyncRequestContext;
+
+import reactor.core.publisher.Mono;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -223,6 +227,33 @@ public class SyncMcpResourceMethodCallbackTests {
 				ReadResourceRequest request) {
 			return new ReadResourceResult(List.of(new TextResourceContents(request.uri(), "text/plain",
 					"Content with transport context for " + request.uri())));
+		}
+
+		public ReadResourceResult getResourceWithSyncRequestContext(McpSyncRequestContext context) {
+			ReadResourceRequest request = (ReadResourceRequest) context.request();
+			return new ReadResourceResult(List.of(new TextResourceContents(request.uri(), "text/plain",
+					"Content with sync context for " + request.uri())));
+		}
+
+		@McpResource(uri = "users/{userId}/posts/{postId}")
+		public ReadResourceResult getResourceWithSyncRequestContextAndUriVariables(McpSyncRequestContext context,
+				String userId, String postId) {
+			ReadResourceRequest request = (ReadResourceRequest) context.request();
+			return new ReadResourceResult(List.of(new TextResourceContents(request.uri(), "text/plain",
+					"User: " + userId + ", Post: " + postId + " with sync context")));
+		}
+
+		public ReadResourceResult duplicateSyncRequestContextParameters(McpSyncRequestContext context1,
+				McpSyncRequestContext context2) {
+			return new ReadResourceResult(List.of());
+		}
+
+		public ReadResourceResult invalidAsyncRequestContextInSyncMethod(McpAsyncRequestContext context) {
+			return new ReadResourceResult(List.of());
+		}
+
+		public Mono<ReadResourceResult> invalidSyncRequestContextInAsyncMethod(McpSyncRequestContext context) {
+			return Mono.just(new ReadResourceResult(List.of()));
 		}
 
 	}
@@ -1203,6 +1234,86 @@ public class SyncMcpResourceMethodCallbackTests {
 			.hasMessageContaining(
 					"Method parameters must be exchange, ReadResourceRequest, String, McpMeta, or @McpProgressToken")
 			.hasMessageContaining("McpTransportContext");
+	}
+
+	@Test
+	public void testCallbackWithSyncRequestContext() throws Exception {
+		TestResourceProvider provider = new TestResourceProvider();
+		Method method = TestResourceProvider.class.getMethod("getResourceWithSyncRequestContext",
+				McpSyncRequestContext.class);
+
+		BiFunction<McpSyncServerExchange, ReadResourceRequest, ReadResourceResult> callback = SyncMcpResourceMethodCallback
+			.builder()
+			.method(method)
+			.bean(provider)
+			.resource(ResourceAdapter.asResource(createMockMcpResource()))
+			.build();
+
+		McpSyncServerExchange exchange = mock(McpSyncServerExchange.class);
+		ReadResourceRequest request = new ReadResourceRequest("test/resource");
+
+		ReadResourceResult result = callback.apply(exchange, request);
+
+		assertThat(result).isNotNull();
+		assertThat(result.contents()).hasSize(1);
+		assertThat(result.contents().get(0)).isInstanceOf(TextResourceContents.class);
+		TextResourceContents textContent = (TextResourceContents) result.contents().get(0);
+		assertThat(textContent.text()).isEqualTo("Content with sync context for test/resource");
+	}
+
+	@Test
+	public void testCallbackWithSyncRequestContextAndUriVariables() throws Exception {
+		TestResourceProvider provider = new TestResourceProvider();
+		Method method = TestResourceProvider.class.getMethod("getResourceWithSyncRequestContextAndUriVariables",
+				McpSyncRequestContext.class, String.class, String.class);
+		McpResource resourceAnnotation = method.getAnnotation(McpResource.class);
+
+		BiFunction<McpSyncServerExchange, ReadResourceRequest, ReadResourceResult> callback = SyncMcpResourceMethodCallback
+			.builder()
+			.method(method)
+			.bean(provider)
+			.resource(ResourceAdapter.asResource(resourceAnnotation))
+			.build();
+
+		McpSyncServerExchange exchange = mock(McpSyncServerExchange.class);
+		ReadResourceRequest request = new ReadResourceRequest("users/123/posts/456");
+
+		ReadResourceResult result = callback.apply(exchange, request);
+
+		assertThat(result).isNotNull();
+		assertThat(result.contents()).hasSize(1);
+		assertThat(result.contents().get(0)).isInstanceOf(TextResourceContents.class);
+		TextResourceContents textContent = (TextResourceContents) result.contents().get(0);
+		assertThat(textContent.text()).isEqualTo("User: 123, Post: 456 with sync context");
+	}
+
+	@Test
+	public void testDuplicateSyncRequestContextParameters() throws Exception {
+		TestResourceProvider provider = new TestResourceProvider();
+		Method method = TestResourceProvider.class.getMethod("duplicateSyncRequestContextParameters",
+				McpSyncRequestContext.class, McpSyncRequestContext.class);
+
+		assertThatThrownBy(() -> SyncMcpResourceMethodCallback.builder()
+			.method(method)
+			.bean(provider)
+			.resource(ResourceAdapter.asResource(createMockMcpResource()))
+			.build()).isInstanceOf(IllegalArgumentException.class)
+			.hasMessageContaining("Method cannot have more than one request context parameter");
+	}
+
+	@Test
+	public void testInvalidAsyncRequestContextInSyncMethod() throws Exception {
+		TestResourceProvider provider = new TestResourceProvider();
+		Method method = TestResourceProvider.class.getMethod("invalidAsyncRequestContextInSyncMethod",
+				McpAsyncRequestContext.class);
+
+		assertThatThrownBy(() -> SyncMcpResourceMethodCallback.builder()
+			.method(method)
+			.bean(provider)
+			.resource(ResourceAdapter.asResource(createMockMcpResource()))
+			.build()).isInstanceOf(IllegalArgumentException.class)
+			.hasMessageContaining(
+					"Async complete methods should use McpAsyncRequestContext instead of McpSyncRequestContext parameter");
 	}
 
 }
