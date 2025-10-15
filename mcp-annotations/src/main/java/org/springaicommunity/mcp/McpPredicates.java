@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.springaicommunity.mcp.provider;
+package org.springaicommunity.mcp;
 
 import java.lang.reflect.Method;
 import java.util.function.Predicate;
@@ -30,9 +30,9 @@ import org.springaicommunity.mcp.context.McpSyncRequestContext;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
-public class McpProviderUtils {
+public class McpPredicates {
 
-	private static final Logger logger = LoggerFactory.getLogger(McpProviderUtils.class);
+	private static final Logger logger = LoggerFactory.getLogger(McpPredicates.class);
 
 	private static final Pattern URI_VARIABLE_PATTERN = Pattern.compile("\\{([^/]+?)\\}");
 

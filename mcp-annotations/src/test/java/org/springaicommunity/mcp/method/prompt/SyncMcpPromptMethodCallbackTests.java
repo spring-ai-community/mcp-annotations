@@ -19,8 +19,11 @@ import org.springaicommunity.mcp.annotation.McpArg;
 import org.springaicommunity.mcp.annotation.McpMeta;
 import org.springaicommunity.mcp.annotation.McpProgressToken;
 import org.springaicommunity.mcp.annotation.McpPrompt;
+import org.springaicommunity.mcp.context.McpAsyncRequestContext;
+import org.springaicommunity.mcp.context.McpSyncRequestContext;
 
 import io.modelcontextprotocol.server.McpSyncServerExchange;
+import reactor.core.publisher.Mono;
 import io.modelcontextprotocol.spec.McpError;
 import io.modelcontextprotocol.spec.McpSchema.GetPromptRequest;
 import io.modelcontextprotocol.spec.McpSchema.GetPromptResult;
@@ -160,6 +163,34 @@ public class SyncMcpPromptMethodCallbackTests {
 
 		public GetPromptResult duplicateMetaParameters(McpMeta meta1, McpMeta meta2) {
 			return new GetPromptResult("Invalid", List.of());
+		}
+
+		@McpPrompt(name = "sync-request-context-prompt", description = "A prompt with sync request context")
+		public GetPromptResult getPromptWithSyncRequestContext(McpSyncRequestContext context) {
+			GetPromptRequest request = (GetPromptRequest) context.request();
+			return new GetPromptResult("Sync request context prompt", List.of(new PromptMessage(Role.ASSISTANT,
+					new TextContent("Hello with sync context from " + request.name()))));
+		}
+
+		@McpPrompt(name = "sync-context-with-args", description = "A prompt with sync context and arguments")
+		public GetPromptResult getPromptWithSyncContextAndArgs(McpSyncRequestContext context,
+				@McpArg(name = "name", description = "The user's name", required = true) String name) {
+			GetPromptRequest request = (GetPromptRequest) context.request();
+			return new GetPromptResult("Sync context with args prompt", List.of(new PromptMessage(Role.ASSISTANT,
+					new TextContent("Hello " + name + " with sync context from " + request.name()))));
+		}
+
+		public GetPromptResult duplicateSyncRequestContextParameters(McpSyncRequestContext context1,
+				McpSyncRequestContext context2) {
+			return new GetPromptResult("Invalid", List.of());
+		}
+
+		public GetPromptResult invalidAsyncRequestContextInSyncMethod(McpAsyncRequestContext context) {
+			return new GetPromptResult("Invalid", List.of());
+		}
+
+		public Mono<GetPromptResult> invalidSyncRequestContextInAsyncMethod(McpSyncRequestContext context) {
+			return Mono.just(new GetPromptResult("Invalid", List.of()));
 		}
 
 	}
@@ -731,6 +762,97 @@ public class SyncMcpPromptMethodCallbackTests {
 				() -> SyncMcpPromptMethodCallback.builder().method(method).bean(provider).prompt(prompt).build())
 			.isInstanceOf(IllegalArgumentException.class)
 			.hasMessageContaining("Method cannot have more than one McpMeta parameter");
+	}
+
+	@Test
+	public void testCallbackWithSyncRequestContext() throws Exception {
+		TestPromptProvider provider = new TestPromptProvider();
+		Method method = TestPromptProvider.class.getMethod("getPromptWithSyncRequestContext",
+				McpSyncRequestContext.class);
+
+		Prompt prompt = createTestPrompt("sync-request-context-prompt", "A prompt with sync request context");
+
+		BiFunction<McpSyncServerExchange, GetPromptRequest, GetPromptResult> callback = SyncMcpPromptMethodCallback
+			.builder()
+			.method(method)
+			.bean(provider)
+			.prompt(prompt)
+			.build();
+
+		McpSyncServerExchange exchange = mock(McpSyncServerExchange.class);
+		Map<String, Object> args = new HashMap<>();
+		args.put("name", "John");
+		GetPromptRequest request = new GetPromptRequest("sync-request-context-prompt", args);
+
+		GetPromptResult result = callback.apply(exchange, request);
+
+		assertThat(result).isNotNull();
+		assertThat(result.description()).isEqualTo("Sync request context prompt");
+		assertThat(result.messages()).hasSize(1);
+		PromptMessage message = result.messages().get(0);
+		assertThat(message.role()).isEqualTo(Role.ASSISTANT);
+		assertThat(((TextContent) message.content()).text())
+			.isEqualTo("Hello with sync context from sync-request-context-prompt");
+	}
+
+	@Test
+	public void testCallbackWithSyncRequestContextAndArgs() throws Exception {
+		TestPromptProvider provider = new TestPromptProvider();
+		Method method = TestPromptProvider.class.getMethod("getPromptWithSyncContextAndArgs",
+				McpSyncRequestContext.class, String.class);
+
+		Prompt prompt = createTestPrompt("sync-context-with-args", "A prompt with sync context and arguments");
+
+		BiFunction<McpSyncServerExchange, GetPromptRequest, GetPromptResult> callback = SyncMcpPromptMethodCallback
+			.builder()
+			.method(method)
+			.bean(provider)
+			.prompt(prompt)
+			.build();
+
+		McpSyncServerExchange exchange = mock(McpSyncServerExchange.class);
+		Map<String, Object> args = new HashMap<>();
+		args.put("name", "John");
+		GetPromptRequest request = new GetPromptRequest("sync-context-with-args", args);
+
+		GetPromptResult result = callback.apply(exchange, request);
+
+		assertThat(result).isNotNull();
+		assertThat(result.description()).isEqualTo("Sync context with args prompt");
+		assertThat(result.messages()).hasSize(1);
+		PromptMessage message = result.messages().get(0);
+		assertThat(message.role()).isEqualTo(Role.ASSISTANT);
+		assertThat(((TextContent) message.content()).text())
+			.isEqualTo("Hello John with sync context from sync-context-with-args");
+	}
+
+	@Test
+	public void testDuplicateSyncRequestContextParameters() throws Exception {
+		TestPromptProvider provider = new TestPromptProvider();
+		Method method = TestPromptProvider.class.getMethod("duplicateSyncRequestContextParameters",
+				McpSyncRequestContext.class, McpSyncRequestContext.class);
+
+		Prompt prompt = createTestPrompt("invalid", "Invalid parameters");
+
+		assertThatThrownBy(
+				() -> SyncMcpPromptMethodCallback.builder().method(method).bean(provider).prompt(prompt).build())
+			.isInstanceOf(IllegalArgumentException.class)
+			.hasMessageContaining("Method cannot have more than one request context parameter");
+	}
+
+	@Test
+	public void testInvalidAsyncRequestContextInSyncMethod() throws Exception {
+		TestPromptProvider provider = new TestPromptProvider();
+		Method method = TestPromptProvider.class.getMethod("invalidAsyncRequestContextInSyncMethod",
+				McpAsyncRequestContext.class);
+
+		Prompt prompt = createTestPrompt("invalid", "Invalid parameter type");
+
+		assertThatThrownBy(
+				() -> SyncMcpPromptMethodCallback.builder().method(method).bean(provider).prompt(prompt).build())
+			.isInstanceOf(IllegalArgumentException.class)
+			.hasMessageContaining(
+					"Async complete methods should use McpAsyncRequestContext instead of McpSyncRequestContext parameter");
 	}
 
 }

@@ -23,9 +23,9 @@ import java.util.List;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
+import org.springaicommunity.mcp.McpPredicates;
 import org.springaicommunity.mcp.annotation.McpProgress;
 import org.springaicommunity.mcp.method.progress.AsyncProgressSpecification;
-import org.springaicommunity.mcp.provider.McpProviderUtils;
 import org.springaicommunity.mcp.method.progress.AsyncMcpProgressMethodCallback;
 
 import io.modelcontextprotocol.spec.McpSchema.ProgressNotification;
@@ -81,7 +81,7 @@ public class AsyncMcpProgressProvider {
 		List<AsyncProgressSpecification> progressHandlers = this.progressObjects.stream()
 			.map(progressObject -> Stream.of(doGetClassMethods(progressObject))
 				.filter(method -> method.isAnnotationPresent(McpProgress.class))
-				.filter(McpProviderUtils.filterNonReactiveReturnTypeMethod())
+				.filter(McpPredicates.filterNonReactiveReturnTypeMethod())
 				.filter(method -> {
 					// Check if it's specifically Mono<Void>
 					Type genericReturnType = method.getGenericReturnType();

@@ -22,10 +22,10 @@ import java.util.stream.Stream;
 
 import io.modelcontextprotocol.server.McpServerFeatures.SyncPromptSpecification;
 import io.modelcontextprotocol.util.Assert;
+import org.springaicommunity.mcp.McpPredicates;
 import org.springaicommunity.mcp.adapter.PromptAdapter;
 import org.springaicommunity.mcp.annotation.McpPrompt;
 import org.springaicommunity.mcp.method.prompt.SyncMcpPromptMethodCallback;
-import org.springaicommunity.mcp.provider.McpProviderUtils;
 import reactor.core.publisher.Mono;
 
 /**
@@ -44,7 +44,7 @@ public class SyncMcpPromptProvider {
 		List<SyncPromptSpecification> syncPromptSpecification = this.promptObjects.stream()
 			.map(resourceObject -> Stream.of(doGetClassMethods(resourceObject))
 				.filter(method -> method.isAnnotationPresent(McpPrompt.class))
-				.filter(McpProviderUtils.filterReactiveReturnTypeMethod())
+				.filter(McpPredicates.filterReactiveReturnTypeMethod())
 				.sorted((m1, m2) -> m1.getName().compareTo(m2.getName()))
 				.map(mcpPromptMethod -> {
 					var promptAnnotation = mcpPromptMethod.getAnnotation(McpPrompt.class);

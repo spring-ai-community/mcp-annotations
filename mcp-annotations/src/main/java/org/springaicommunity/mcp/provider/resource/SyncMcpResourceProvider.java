@@ -25,9 +25,9 @@ import io.modelcontextprotocol.server.McpServerFeatures.SyncResourceSpecificatio
 import io.modelcontextprotocol.server.McpServerFeatures.SyncResourceTemplateSpecification;
 import io.modelcontextprotocol.spec.McpSchema;
 import io.modelcontextprotocol.util.Assert;
+import org.springaicommunity.mcp.McpPredicates;
 import org.springaicommunity.mcp.annotation.McpResource;
 import org.springaicommunity.mcp.method.resource.SyncMcpResourceMethodCallback;
-import org.springaicommunity.mcp.provider.McpProviderUtils;
 
 /**
  */
@@ -45,14 +45,14 @@ public class SyncMcpResourceProvider {
 		List<SyncResourceSpecification> methodCallbacks = this.resourceObjects.stream()
 			.map(resourceObject -> Stream.of(this.doGetClassMethods(resourceObject))
 				.filter(resourceMethod -> resourceMethod.isAnnotationPresent(McpResource.class))
-				.filter(McpProviderUtils.filterReactiveReturnTypeMethod())
+				.filter(McpPredicates.filterReactiveReturnTypeMethod())
 				.sorted((m1, m2) -> m1.getName().compareTo(m2.getName()))
 				.map(mcpResourceMethod -> {
 					var resourceAnnotation = mcpResourceMethod.getAnnotation(McpResource.class);
 
 					var uri = resourceAnnotation.uri();
 
-					if (McpProviderUtils.isUriTemplate(uri)) {
+					if (McpPredicates.isUriTemplate(uri)) {
 						return null;
 					}
 
@@ -88,14 +88,14 @@ public class SyncMcpResourceProvider {
 		List<SyncResourceTemplateSpecification> methodCallbacks = this.resourceObjects.stream()
 			.map(resourceObject -> Stream.of(this.doGetClassMethods(resourceObject))
 				.filter(resourceMethod -> resourceMethod.isAnnotationPresent(McpResource.class))
-				.filter(McpProviderUtils.filterReactiveReturnTypeMethod())
+				.filter(McpPredicates.filterReactiveReturnTypeMethod())
 				.sorted((m1, m2) -> m1.getName().compareTo(m2.getName()))
 				.map(mcpResourceMethod -> {
 					var resourceAnnotation = mcpResourceMethod.getAnnotation(McpResource.class);
 
 					var uri = resourceAnnotation.uri();
 
-					if (!McpProviderUtils.isUriTemplate(uri)) {
+					if (!McpPredicates.isUriTemplate(uri)) {
 						return null;
 					}
 

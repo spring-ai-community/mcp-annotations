@@ -26,6 +26,8 @@ import org.springaicommunity.mcp.adapter.ResourceAdapter;
 import org.springaicommunity.mcp.annotation.McpMeta;
 import org.springaicommunity.mcp.annotation.McpProgressToken;
 import org.springaicommunity.mcp.annotation.McpResource;
+import org.springaicommunity.mcp.context.McpAsyncRequestContext;
+import org.springaicommunity.mcp.context.McpSyncRequestContext;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
@@ -251,6 +253,29 @@ public class AsyncMcpResourceMethodCallbackTests {
 				ReadResourceRequest request) {
 			return Mono.just(new ReadResourceResult(List.of(new TextResourceContents(request.uri(), "text/plain",
 					"Content with transport context for " + request.uri()))));
+		}
+
+		public Mono<ReadResourceResult> getResourceWithAsyncRequestContext(McpAsyncRequestContext context) {
+			ReadResourceRequest request = (ReadResourceRequest) context.request();
+			return Mono.just(new ReadResourceResult(List.of(new TextResourceContents(request.uri(), "text/plain",
+					"Async content with async context for " + request.uri()))));
+		}
+
+		@McpResource(uri = "users/{userId}/posts/{postId}")
+		public Mono<ReadResourceResult> getResourceWithAsyncRequestContextAndUriVariables(
+				McpAsyncRequestContext context, String userId, String postId) {
+			ReadResourceRequest request = (ReadResourceRequest) context.request();
+			return Mono.just(new ReadResourceResult(List.of(new TextResourceContents(request.uri(), "text/plain",
+					"Async User: " + userId + ", Post: " + postId + " with async context"))));
+		}
+
+		public Mono<ReadResourceResult> duplicateAsyncRequestContextParameters(McpAsyncRequestContext context1,
+				McpAsyncRequestContext context2) {
+			return Mono.just(new ReadResourceResult(List.of()));
+		}
+
+		public Mono<ReadResourceResult> invalidSyncRequestContextInAsyncMethod(McpSyncRequestContext context) {
+			return Mono.just(new ReadResourceResult(List.of()));
 		}
 
 	}
@@ -1215,6 +1240,90 @@ public class AsyncMcpResourceMethodCallbackTests {
 			.hasMessageContaining(
 					"Method parameters must be exchange, ReadResourceRequest, String, McpMeta, or @McpProgressToken")
 			.hasMessageContaining("McpSyncServerExchange");
+	}
+
+	@Test
+	public void testCallbackWithAsyncRequestContext() throws Exception {
+		TestAsyncResourceProvider provider = new TestAsyncResourceProvider();
+		Method method = TestAsyncResourceProvider.class.getMethod("getResourceWithAsyncRequestContext",
+				McpAsyncRequestContext.class);
+
+		BiFunction<McpAsyncServerExchange, ReadResourceRequest, Mono<ReadResourceResult>> callback = AsyncMcpResourceMethodCallback
+			.builder()
+			.method(method)
+			.bean(provider)
+			.resource(ResourceAdapter.asResource(createMockMcpResource()))
+			.build();
+
+		McpAsyncServerExchange exchange = mock(McpAsyncServerExchange.class);
+		ReadResourceRequest request = new ReadResourceRequest("test/resource");
+
+		Mono<ReadResourceResult> resultMono = callback.apply(exchange, request);
+
+		StepVerifier.create(resultMono).assertNext(result -> {
+			assertThat(result).isNotNull();
+			assertThat(result.contents()).hasSize(1);
+			assertThat(result.contents().get(0)).isInstanceOf(TextResourceContents.class);
+			TextResourceContents textContent = (TextResourceContents) result.contents().get(0);
+			assertThat(textContent.text()).isEqualTo("Async content with async context for test/resource");
+		}).verifyComplete();
+	}
+
+	@Test
+	public void testCallbackWithAsyncRequestContextAndUriVariables() throws Exception {
+		TestAsyncResourceProvider provider = new TestAsyncResourceProvider();
+		Method method = TestAsyncResourceProvider.class.getMethod("getResourceWithAsyncRequestContextAndUriVariables",
+				McpAsyncRequestContext.class, String.class, String.class);
+		McpResource resourceAnnotation = method.getAnnotation(McpResource.class);
+
+		BiFunction<McpAsyncServerExchange, ReadResourceRequest, Mono<ReadResourceResult>> callback = AsyncMcpResourceMethodCallback
+			.builder()
+			.method(method)
+			.bean(provider)
+			.resource(ResourceAdapter.asResource(resourceAnnotation))
+			.build();
+
+		McpAsyncServerExchange exchange = mock(McpAsyncServerExchange.class);
+		ReadResourceRequest request = new ReadResourceRequest("users/123/posts/456");
+
+		Mono<ReadResourceResult> resultMono = callback.apply(exchange, request);
+
+		StepVerifier.create(resultMono).assertNext(result -> {
+			assertThat(result).isNotNull();
+			assertThat(result.contents()).hasSize(1);
+			assertThat(result.contents().get(0)).isInstanceOf(TextResourceContents.class);
+			TextResourceContents textContent = (TextResourceContents) result.contents().get(0);
+			assertThat(textContent.text()).isEqualTo("Async User: 123, Post: 456 with async context");
+		}).verifyComplete();
+	}
+
+	@Test
+	public void testDuplicateAsyncRequestContextParameters() throws Exception {
+		TestAsyncResourceProvider provider = new TestAsyncResourceProvider();
+		Method method = TestAsyncResourceProvider.class.getMethod("duplicateAsyncRequestContextParameters",
+				McpAsyncRequestContext.class, McpAsyncRequestContext.class);
+
+		assertThatThrownBy(() -> AsyncMcpResourceMethodCallback.builder()
+			.method(method)
+			.bean(provider)
+			.resource(ResourceAdapter.asResource(createMockMcpResource()))
+			.build()).isInstanceOf(IllegalArgumentException.class)
+			.hasMessageContaining("Method cannot have more than one request context parameter");
+	}
+
+	@Test
+	public void testInvalidSyncRequestContextInAsyncMethod() throws Exception {
+		TestAsyncResourceProvider provider = new TestAsyncResourceProvider();
+		Method method = TestAsyncResourceProvider.class.getMethod("invalidSyncRequestContextInAsyncMethod",
+				McpSyncRequestContext.class);
+
+		assertThatThrownBy(() -> AsyncMcpResourceMethodCallback.builder()
+			.method(method)
+			.bean(provider)
+			.resource(ResourceAdapter.asResource(createMockMcpResource()))
+			.build()).isInstanceOf(IllegalArgumentException.class)
+			.hasMessageContaining(
+					"Sync complete methods should use McpSyncRequestContext instead of McpAsyncRequestContext parameter");
 	}
 
 }

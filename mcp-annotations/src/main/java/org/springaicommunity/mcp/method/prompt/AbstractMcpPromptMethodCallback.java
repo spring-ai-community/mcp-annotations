@@ -9,9 +9,14 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.springaicommunity.mcp.McpPredicates;
 import org.springaicommunity.mcp.annotation.McpArg;
 import org.springaicommunity.mcp.annotation.McpMeta;
 import org.springaicommunity.mcp.annotation.McpProgressToken;
+import org.springaicommunity.mcp.context.DefaultMcpAsyncRequestContext;
+import org.springaicommunity.mcp.context.DefaultMcpSyncRequestContext;
+import org.springaicommunity.mcp.context.McpAsyncRequestContext;
+import org.springaicommunity.mcp.context.McpSyncRequestContext;
 import io.modelcontextprotocol.common.McpTransportContext;
 import io.modelcontextprotocol.server.McpAsyncServerExchange;
 import io.modelcontextprotocol.server.McpSyncServerExchange;
@@ -96,6 +101,7 @@ public abstract class AbstractMcpPromptMethodCallback {
 		boolean hasMapParam = false;
 		boolean hasProgressTokenParam = false;
 		boolean hasMetaParam = false;
+		boolean hasRequestContextParam = false;
 
 		for (java.lang.reflect.Parameter param : parameters) {
 			Class<?> paramType = param.getType();
@@ -122,7 +128,31 @@ public abstract class AbstractMcpPromptMethodCallback {
 				continue;
 			}
 
-			if (isSupportedExchangeOrContextType(paramType)) {
+			if (McpSyncRequestContext.class.isAssignableFrom(paramType)) {
+				if (hasRequestContextParam) {
+					throw new IllegalArgumentException("Method cannot have more than one request context parameter: "
+							+ method.getName() + " in " + method.getDeclaringClass().getName());
+				}
+				if (McpPredicates.isReactiveReturnType.test(method)) {
+					throw new IllegalArgumentException(
+							"Sync complete methods should use McpSyncRequestContext instead of McpAsyncRequestContext parameter: "
+									+ method.getName() + " in " + method.getDeclaringClass().getName());
+				}
+				hasRequestContextParam = true;
+			}
+			else if (McpAsyncRequestContext.class.isAssignableFrom(paramType)) {
+				if (hasRequestContextParam) {
+					throw new IllegalArgumentException("Method cannot have more than one request context parameter: "
+							+ method.getName() + " in " + method.getDeclaringClass().getName());
+				}
+				if (McpPredicates.isNotReactiveReturnType.test(method)) {
+					throw new IllegalArgumentException(
+							"Async complete methods should use McpAsyncRequestContext instead of McpSyncRequestContext parameter: "
+									+ method.getName() + " in " + method.getDeclaringClass().getName());
+				}
+				hasRequestContextParam = true;
+			}
+			else if (isSupportedExchangeOrContextType(paramType)) {
 				if (hasExchangeParam) {
 					throw new IllegalArgumentException("Method cannot have more than one exchange parameter: "
 							+ method.getName() + " in " + method.getDeclaringClass().getName());
@@ -196,6 +226,18 @@ public abstract class AbstractMcpPromptMethodCallback {
 					|| McpAsyncServerExchange.class.isAssignableFrom(paramType)) {
 
 				args[i] = this.assignExchangeType(paramType, exchange);
+			}
+			else if (McpSyncRequestContext.class.isAssignableFrom(paramType)) {
+				args[i] = DefaultMcpSyncRequestContext.builder()
+					.exchange((McpSyncServerExchange) exchange)
+					.request(request)
+					.build();
+			}
+			else if (McpAsyncRequestContext.class.isAssignableFrom(paramType)) {
+				args[i] = DefaultMcpAsyncRequestContext.builder()
+					.exchange((McpAsyncServerExchange) exchange)
+					.request(request)
+					.build();
 			}
 			else if (GetPromptRequest.class.isAssignableFrom(paramType)) {
 				args[i] = request;

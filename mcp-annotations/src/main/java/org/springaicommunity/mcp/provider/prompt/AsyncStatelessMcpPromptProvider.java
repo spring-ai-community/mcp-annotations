@@ -28,10 +28,10 @@ import io.modelcontextprotocol.spec.McpSchema.GetPromptResult;
 import io.modelcontextprotocol.util.Assert;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springaicommunity.mcp.McpPredicates;
 import org.springaicommunity.mcp.adapter.PromptAdapter;
 import org.springaicommunity.mcp.annotation.McpPrompt;
 import org.springaicommunity.mcp.method.prompt.AsyncStatelessMcpPromptMethodCallback;
-import org.springaicommunity.mcp.provider.McpProviderUtils;
 import reactor.core.publisher.Mono;
 
 /**
@@ -68,8 +68,8 @@ public class AsyncStatelessMcpPromptProvider {
 		List<AsyncPromptSpecification> promptSpecs = this.promptObjects.stream()
 			.map(promptObject -> Stream.of(doGetClassMethods(promptObject))
 				.filter(method -> method.isAnnotationPresent(McpPrompt.class))
-				.filter(McpProviderUtils.filterNonReactiveReturnTypeMethod())
-				.filter(McpProviderUtils.filterMethodWithBidirectionalParameters())
+				.filter(McpPredicates.filterNonReactiveReturnTypeMethod())
+				.filter(McpPredicates.filterMethodWithBidirectionalParameters())
 				.sorted((m1, m2) -> m1.getName().compareTo(m2.getName()))
 				.map(mcpPromptMethod -> {
 					var promptAnnotation = mcpPromptMethod.getAnnotation(McpPrompt.class);

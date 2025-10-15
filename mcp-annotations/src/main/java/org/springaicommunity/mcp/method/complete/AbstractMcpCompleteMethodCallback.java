@@ -9,6 +9,8 @@ import java.lang.reflect.Parameter;
 import java.util.ArrayList;
 import java.util.List;
 
+import io.modelcontextprotocol.server.McpAsyncServerExchange;
+import io.modelcontextprotocol.server.McpSyncServerExchange;
 import io.modelcontextprotocol.spec.McpSchema;
 import io.modelcontextprotocol.spec.McpSchema.CompleteReference;
 import io.modelcontextprotocol.spec.McpSchema.CompleteRequest;
@@ -16,10 +18,15 @@ import io.modelcontextprotocol.util.Assert;
 import io.modelcontextprotocol.util.DefaultMcpUriTemplateManagerFactory;
 import io.modelcontextprotocol.util.McpUriTemplateManager;
 import io.modelcontextprotocol.util.McpUriTemplateManagerFactory;
+import org.springaicommunity.mcp.McpPredicates;
 import org.springaicommunity.mcp.adapter.CompleteAdapter;
 import org.springaicommunity.mcp.annotation.McpComplete;
 import org.springaicommunity.mcp.annotation.McpMeta;
 import org.springaicommunity.mcp.annotation.McpProgressToken;
+import org.springaicommunity.mcp.context.DefaultMcpAsyncRequestContext;
+import org.springaicommunity.mcp.context.DefaultMcpSyncRequestContext;
+import org.springaicommunity.mcp.context.McpAsyncRequestContext;
+import org.springaicommunity.mcp.context.McpSyncRequestContext;
 
 /**
  * Abstract base class for creating callbacks around complete methods.
@@ -150,6 +157,7 @@ public abstract class AbstractMcpCompleteMethodCallback {
 		boolean hasArgumentParam = false;
 		boolean hasProgressTokenParam = false;
 		boolean hasMetaParam = false;
+		boolean hasRequestContextParam = false;
 
 		for (Parameter param : parameters) {
 			Class<?> paramType = param.getType();
@@ -174,7 +182,32 @@ public abstract class AbstractMcpCompleteMethodCallback {
 				continue;
 			}
 
-			if (isExchangeType(paramType)) {
+			if (McpSyncRequestContext.class.isAssignableFrom(paramType)) {
+				if (hasRequestContextParam) {
+					throw new IllegalArgumentException("Method cannot have more than one request context parameter: "
+							+ method.getName() + " in " + method.getDeclaringClass().getName());
+				}
+				if (McpPredicates.isReactiveReturnType.test(method)) {
+					throw new IllegalArgumentException(
+							"Async complete methods should use McpAsyncRequestContext instead of McpSyncRequestContext parameter: "
+									+ method.getName() + " in " + method.getDeclaringClass().getName());
+				}
+
+				hasRequestContextParam = true;
+			}
+			else if (McpAsyncRequestContext.class.isAssignableFrom(paramType)) {
+				if (hasRequestContextParam) {
+					throw new IllegalArgumentException("Method cannot have more than one request context parameter: "
+							+ method.getName() + " in " + method.getDeclaringClass().getName());
+				}
+				if (McpPredicates.isNotReactiveReturnType.test(method)) {
+					throw new IllegalArgumentException(
+							"Sync complete methods should use McpSyncRequestContext instead of McpAsyncRequestContext parameter: "
+									+ method.getName() + " in " + method.getDeclaringClass().getName());
+				}
+				hasRequestContextParam = true;
+			}
+			else if (isExchangeType(paramType)) {
 				if (hasExchangeParam) {
 					throw new IllegalArgumentException("Method cannot have more than one exchange parameter: "
 							+ method.getName() + " in " + method.getDeclaringClass().getName());
@@ -224,10 +257,7 @@ public abstract class AbstractMcpCompleteMethodCallback {
 
 			// Handle @McpProgressToken annotated parameters
 			if (param.isAnnotationPresent(McpProgressToken.class)) {
-				// CompleteRequest doesn't have a progressToken method in the current spec
-				// Set to null for now - this would need to be updated when the spec
-				// supports it
-				args[i] = null;
+				args[i] = request.progressToken();
 			}
 			// Handle McpMeta parameters
 			else if (McpMeta.class.isAssignableFrom(paramType)) {
@@ -235,6 +265,18 @@ public abstract class AbstractMcpCompleteMethodCallback {
 			}
 			else if (isExchangeType(paramType)) {
 				args[i] = exchange;
+			}
+			else if (McpSyncRequestContext.class.isAssignableFrom(paramType)) {
+				args[i] = DefaultMcpSyncRequestContext.builder()
+					.exchange((McpSyncServerExchange) exchange)
+					.request(request)
+					.build();
+			}
+			else if (McpAsyncRequestContext.class.isAssignableFrom(paramType)) {
+				args[i] = DefaultMcpAsyncRequestContext.builder()
+					.exchange((McpAsyncServerExchange) exchange)
+					.request(request)
+					.build();
 			}
 			else if (CompleteRequest.class.isAssignableFrom(paramType)) {
 				args[i] = request;

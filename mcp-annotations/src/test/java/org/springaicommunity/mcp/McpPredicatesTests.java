@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.springaicommunity.mcp.provider;
+package org.springaicommunity.mcp;
 
 import java.lang.reflect.Method;
 import java.util.List;
@@ -32,11 +32,11 @@ import reactor.core.publisher.Mono;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * Tests for {@link McpProviderUtils}.
+ * Tests for {@link McpPredicates}.
  *
  * @author Christian Tzolov
  */
-public class McpProviderUtilsTests {
+public class McpPredicatesTests {
 
 	// Test classes for method reflection tests
 	static class TestMethods {
@@ -94,60 +94,60 @@ public class McpProviderUtilsTests {
 
 	@Test
 	public void testIsUriTemplateWithSimpleVariable() {
-		assertThat(McpProviderUtils.isUriTemplate("/api/{id}")).isTrue();
+		assertThat(McpPredicates.isUriTemplate("/api/{id}")).isTrue();
 	}
 
 	@Test
 	public void testIsUriTemplateWithMultipleVariables() {
-		assertThat(McpProviderUtils.isUriTemplate("/api/{userId}/posts/{postId}")).isTrue();
+		assertThat(McpPredicates.isUriTemplate("/api/{userId}/posts/{postId}")).isTrue();
 	}
 
 	@Test
 	public void testIsUriTemplateWithVariableAtStart() {
-		assertThat(McpProviderUtils.isUriTemplate("{id}/details")).isTrue();
+		assertThat(McpPredicates.isUriTemplate("{id}/details")).isTrue();
 	}
 
 	@Test
 	public void testIsUriTemplateWithVariableAtEnd() {
-		assertThat(McpProviderUtils.isUriTemplate("/api/users/{id}")).isTrue();
+		assertThat(McpPredicates.isUriTemplate("/api/users/{id}")).isTrue();
 	}
 
 	@Test
 	public void testIsUriTemplateWithComplexVariableName() {
-		assertThat(McpProviderUtils.isUriTemplate("/api/{user_id}")).isTrue();
-		assertThat(McpProviderUtils.isUriTemplate("/api/{userId123}")).isTrue();
+		assertThat(McpPredicates.isUriTemplate("/api/{user_id}")).isTrue();
+		assertThat(McpPredicates.isUriTemplate("/api/{userId123}")).isTrue();
 	}
 
 	@Test
 	public void testIsUriTemplateWithNoVariables() {
-		assertThat(McpProviderUtils.isUriTemplate("/api/users")).isFalse();
+		assertThat(McpPredicates.isUriTemplate("/api/users")).isFalse();
 	}
 
 	@Test
 	public void testIsUriTemplateWithEmptyString() {
-		assertThat(McpProviderUtils.isUriTemplate("")).isFalse();
+		assertThat(McpPredicates.isUriTemplate("")).isFalse();
 	}
 
 	@Test
 	public void testIsUriTemplateWithOnlySlashes() {
-		assertThat(McpProviderUtils.isUriTemplate("/")).isFalse();
-		assertThat(McpProviderUtils.isUriTemplate("//")).isFalse();
+		assertThat(McpPredicates.isUriTemplate("/")).isFalse();
+		assertThat(McpPredicates.isUriTemplate("//")).isFalse();
 	}
 
 	@Test
 	public void testIsUriTemplateWithIncompleteBraces() {
-		assertThat(McpProviderUtils.isUriTemplate("/api/{id")).isFalse();
-		assertThat(McpProviderUtils.isUriTemplate("/api/id}")).isFalse();
+		assertThat(McpPredicates.isUriTemplate("/api/{id")).isFalse();
+		assertThat(McpPredicates.isUriTemplate("/api/id}")).isFalse();
 	}
 
 	@Test
 	public void testIsUriTemplateWithEmptyBraces() {
-		assertThat(McpProviderUtils.isUriTemplate("/api/{}")).isFalse();
+		assertThat(McpPredicates.isUriTemplate("/api/{}")).isFalse();
 	}
 
 	@Test
 	public void testIsUriTemplateWithNestedPath() {
-		assertThat(McpProviderUtils.isUriTemplate("/api/v1/users/{userId}/posts/{postId}/comments")).isTrue();
+		assertThat(McpPredicates.isUriTemplate("/api/v1/users/{userId}/posts/{postId}/comments")).isTrue();
 	}
 
 	// Reactive Return Type Predicate Tests
@@ -155,37 +155,37 @@ public class McpProviderUtilsTests {
 	@Test
 	public void testIsReactiveReturnTypeWithMono() throws NoSuchMethodException {
 		Method method = TestMethods.class.getMethod("monoMethod");
-		assertThat(McpProviderUtils.isReactiveReturnType.test(method)).isTrue();
+		assertThat(McpPredicates.isReactiveReturnType.test(method)).isTrue();
 	}
 
 	@Test
 	public void testIsReactiveReturnTypeWithFlux() throws NoSuchMethodException {
 		Method method = TestMethods.class.getMethod("fluxMethod");
-		assertThat(McpProviderUtils.isReactiveReturnType.test(method)).isTrue();
+		assertThat(McpPredicates.isReactiveReturnType.test(method)).isTrue();
 	}
 
 	@Test
 	public void testIsReactiveReturnTypeWithPublisher() throws NoSuchMethodException {
 		Method method = TestMethods.class.getMethod("publisherMethod");
-		assertThat(McpProviderUtils.isReactiveReturnType.test(method)).isTrue();
+		assertThat(McpPredicates.isReactiveReturnType.test(method)).isTrue();
 	}
 
 	@Test
 	public void testIsReactiveReturnTypeWithNonReactive() throws NoSuchMethodException {
 		Method method = TestMethods.class.getMethod("nonReactiveMethod");
-		assertThat(McpProviderUtils.isReactiveReturnType.test(method)).isFalse();
+		assertThat(McpPredicates.isReactiveReturnType.test(method)).isFalse();
 	}
 
 	@Test
 	public void testIsReactiveReturnTypeWithVoid() throws NoSuchMethodException {
 		Method method = TestMethods.class.getMethod("voidMethod");
-		assertThat(McpProviderUtils.isReactiveReturnType.test(method)).isFalse();
+		assertThat(McpPredicates.isReactiveReturnType.test(method)).isFalse();
 	}
 
 	@Test
 	public void testIsReactiveReturnTypeWithList() throws NoSuchMethodException {
 		Method method = TestMethods.class.getMethod("listMethod");
-		assertThat(McpProviderUtils.isReactiveReturnType.test(method)).isFalse();
+		assertThat(McpPredicates.isReactiveReturnType.test(method)).isFalse();
 	}
 
 	// Non-Reactive Return Type Predicate Tests
@@ -193,37 +193,37 @@ public class McpProviderUtilsTests {
 	@Test
 	public void testIsNotReactiveReturnTypeWithMono() throws NoSuchMethodException {
 		Method method = TestMethods.class.getMethod("monoMethod");
-		assertThat(McpProviderUtils.isNotReactiveReturnType.test(method)).isFalse();
+		assertThat(McpPredicates.isNotReactiveReturnType.test(method)).isFalse();
 	}
 
 	@Test
 	public void testIsNotReactiveReturnTypeWithFlux() throws NoSuchMethodException {
 		Method method = TestMethods.class.getMethod("fluxMethod");
-		assertThat(McpProviderUtils.isNotReactiveReturnType.test(method)).isFalse();
+		assertThat(McpPredicates.isNotReactiveReturnType.test(method)).isFalse();
 	}
 
 	@Test
 	public void testIsNotReactiveReturnTypeWithPublisher() throws NoSuchMethodException {
 		Method method = TestMethods.class.getMethod("publisherMethod");
-		assertThat(McpProviderUtils.isNotReactiveReturnType.test(method)).isFalse();
+		assertThat(McpPredicates.isNotReactiveReturnType.test(method)).isFalse();
 	}
 
 	@Test
 	public void testIsNotReactiveReturnTypeWithNonReactive() throws NoSuchMethodException {
 		Method method = TestMethods.class.getMethod("nonReactiveMethod");
-		assertThat(McpProviderUtils.isNotReactiveReturnType.test(method)).isTrue();
+		assertThat(McpPredicates.isNotReactiveReturnType.test(method)).isTrue();
 	}
 
 	@Test
 	public void testIsNotReactiveReturnTypeWithVoid() throws NoSuchMethodException {
 		Method method = TestMethods.class.getMethod("voidMethod");
-		assertThat(McpProviderUtils.isNotReactiveReturnType.test(method)).isTrue();
+		assertThat(McpPredicates.isNotReactiveReturnType.test(method)).isTrue();
 	}
 
 	@Test
 	public void testIsNotReactiveReturnTypeWithList() throws NoSuchMethodException {
 		Method method = TestMethods.class.getMethod("listMethod");
-		assertThat(McpProviderUtils.isNotReactiveReturnType.test(method)).isTrue();
+		assertThat(McpPredicates.isNotReactiveReturnType.test(method)).isTrue();
 	}
 
 	// Filter Non-Reactive Return Type Method Tests
@@ -231,14 +231,14 @@ public class McpProviderUtilsTests {
 	@Test
 	public void testFilterNonReactiveReturnTypeMethodWithReactiveType() throws NoSuchMethodException {
 		Method method = TestMethods.class.getMethod("monoMethod");
-		Predicate<Method> filter = McpProviderUtils.filterNonReactiveReturnTypeMethod();
+		Predicate<Method> filter = McpPredicates.filterNonReactiveReturnTypeMethod();
 		assertThat(filter.test(method)).isTrue();
 	}
 
 	@Test
 	public void testFilterNonReactiveReturnTypeMethodWithNonReactiveType() throws NoSuchMethodException {
 		Method method = TestMethods.class.getMethod("nonReactiveMethod");
-		Predicate<Method> filter = McpProviderUtils.filterNonReactiveReturnTypeMethod();
+		Predicate<Method> filter = McpPredicates.filterNonReactiveReturnTypeMethod();
 		// This should return false and log a warning
 		assertThat(filter.test(method)).isFalse();
 	}
@@ -246,14 +246,14 @@ public class McpProviderUtilsTests {
 	@Test
 	public void testFilterNonReactiveReturnTypeMethodWithFlux() throws NoSuchMethodException {
 		Method method = TestMethods.class.getMethod("fluxMethod");
-		Predicate<Method> filter = McpProviderUtils.filterNonReactiveReturnTypeMethod();
+		Predicate<Method> filter = McpPredicates.filterNonReactiveReturnTypeMethod();
 		assertThat(filter.test(method)).isTrue();
 	}
 
 	@Test
 	public void testFilterNonReactiveReturnTypeMethodWithPublisher() throws NoSuchMethodException {
 		Method method = TestMethods.class.getMethod("publisherMethod");
-		Predicate<Method> filter = McpProviderUtils.filterNonReactiveReturnTypeMethod();
+		Predicate<Method> filter = McpPredicates.filterNonReactiveReturnTypeMethod();
 		assertThat(filter.test(method)).isTrue();
 	}
 
@@ -262,7 +262,7 @@ public class McpProviderUtilsTests {
 	@Test
 	public void testFilterReactiveReturnTypeMethodWithReactiveType() throws NoSuchMethodException {
 		Method method = TestMethods.class.getMethod("monoMethod");
-		Predicate<Method> filter = McpProviderUtils.filterReactiveReturnTypeMethod();
+		Predicate<Method> filter = McpPredicates.filterReactiveReturnTypeMethod();
 		// This should return false and log a warning
 		assertThat(filter.test(method)).isFalse();
 	}
@@ -270,14 +270,14 @@ public class McpProviderUtilsTests {
 	@Test
 	public void testFilterReactiveReturnTypeMethodWithNonReactiveType() throws NoSuchMethodException {
 		Method method = TestMethods.class.getMethod("nonReactiveMethod");
-		Predicate<Method> filter = McpProviderUtils.filterReactiveReturnTypeMethod();
+		Predicate<Method> filter = McpPredicates.filterReactiveReturnTypeMethod();
 		assertThat(filter.test(method)).isTrue();
 	}
 
 	@Test
 	public void testFilterReactiveReturnTypeMethodWithFlux() throws NoSuchMethodException {
 		Method method = TestMethods.class.getMethod("fluxMethod");
-		Predicate<Method> filter = McpProviderUtils.filterReactiveReturnTypeMethod();
+		Predicate<Method> filter = McpPredicates.filterReactiveReturnTypeMethod();
 		// This should return false and log a warning
 		assertThat(filter.test(method)).isFalse();
 	}
@@ -285,7 +285,7 @@ public class McpProviderUtilsTests {
 	@Test
 	public void testFilterReactiveReturnTypeMethodWithPublisher() throws NoSuchMethodException {
 		Method method = TestMethods.class.getMethod("publisherMethod");
-		Predicate<Method> filter = McpProviderUtils.filterReactiveReturnTypeMethod();
+		Predicate<Method> filter = McpPredicates.filterReactiveReturnTypeMethod();
 		// This should return false and log a warning
 		assertThat(filter.test(method)).isFalse();
 	}
@@ -293,7 +293,7 @@ public class McpProviderUtilsTests {
 	@Test
 	public void testFilterReactiveReturnTypeMethodWithVoid() throws NoSuchMethodException {
 		Method method = TestMethods.class.getMethod("voidMethod");
-		Predicate<Method> filter = McpProviderUtils.filterReactiveReturnTypeMethod();
+		Predicate<Method> filter = McpPredicates.filterReactiveReturnTypeMethod();
 		assertThat(filter.test(method)).isTrue();
 	}
 
@@ -302,7 +302,7 @@ public class McpProviderUtilsTests {
 	@Test
 	public void testFilterMethodWithBidirectionalParametersWithSyncContext() throws NoSuchMethodException {
 		Method method = TestMethods.class.getMethod("methodWithSyncContext", McpSyncRequestContext.class);
-		Predicate<Method> filter = McpProviderUtils.filterMethodWithBidirectionalParameters();
+		Predicate<Method> filter = McpPredicates.filterMethodWithBidirectionalParameters();
 		// This should return false and log a warning
 		assertThat(filter.test(method)).isFalse();
 	}
@@ -310,7 +310,7 @@ public class McpProviderUtilsTests {
 	@Test
 	public void testFilterMethodWithBidirectionalParametersWithAsyncContext() throws NoSuchMethodException {
 		Method method = TestMethods.class.getMethod("methodWithAsyncContext", McpAsyncRequestContext.class);
-		Predicate<Method> filter = McpProviderUtils.filterMethodWithBidirectionalParameters();
+		Predicate<Method> filter = McpPredicates.filterMethodWithBidirectionalParameters();
 		// This should return false and log a warning
 		assertThat(filter.test(method)).isFalse();
 	}
@@ -318,7 +318,7 @@ public class McpProviderUtilsTests {
 	@Test
 	public void testFilterMethodWithBidirectionalParametersWithSyncExchange() throws NoSuchMethodException {
 		Method method = TestMethods.class.getMethod("methodWithSyncExchange", McpSyncServerExchange.class);
-		Predicate<Method> filter = McpProviderUtils.filterMethodWithBidirectionalParameters();
+		Predicate<Method> filter = McpPredicates.filterMethodWithBidirectionalParameters();
 		// This should return false and log a warning
 		assertThat(filter.test(method)).isFalse();
 	}
@@ -326,7 +326,7 @@ public class McpProviderUtilsTests {
 	@Test
 	public void testFilterMethodWithBidirectionalParametersWithAsyncExchange() throws NoSuchMethodException {
 		Method method = TestMethods.class.getMethod("methodWithAsyncExchange", McpAsyncServerExchange.class);
-		Predicate<Method> filter = McpProviderUtils.filterMethodWithBidirectionalParameters();
+		Predicate<Method> filter = McpPredicates.filterMethodWithBidirectionalParameters();
 		// This should return false and log a warning
 		assertThat(filter.test(method)).isFalse();
 	}
@@ -335,7 +335,7 @@ public class McpProviderUtilsTests {
 	public void testFilterMethodWithBidirectionalParametersWithMultipleParams() throws NoSuchMethodException {
 		Method method = TestMethods.class.getMethod("methodWithMultipleParams", String.class,
 				McpSyncRequestContext.class, int.class);
-		Predicate<Method> filter = McpProviderUtils.filterMethodWithBidirectionalParameters();
+		Predicate<Method> filter = McpPredicates.filterMethodWithBidirectionalParameters();
 		// This should return false because it has a bidirectional parameter
 		assertThat(filter.test(method)).isFalse();
 	}
@@ -343,14 +343,14 @@ public class McpProviderUtilsTests {
 	@Test
 	public void testFilterMethodWithBidirectionalParametersWithoutBidirectionalParams() throws NoSuchMethodException {
 		Method method = TestMethods.class.getMethod("methodWithoutBidirectionalParams", String.class, int.class);
-		Predicate<Method> filter = McpProviderUtils.filterMethodWithBidirectionalParameters();
+		Predicate<Method> filter = McpPredicates.filterMethodWithBidirectionalParameters();
 		assertThat(filter.test(method)).isTrue();
 	}
 
 	@Test
 	public void testFilterMethodWithBidirectionalParametersWithNoParams() throws NoSuchMethodException {
 		Method method = TestMethods.class.getMethod("nonReactiveMethod");
-		Predicate<Method> filter = McpProviderUtils.filterMethodWithBidirectionalParameters();
+		Predicate<Method> filter = McpPredicates.filterMethodWithBidirectionalParameters();
 		assertThat(filter.test(method)).isTrue();
 	}
 
@@ -366,8 +366,8 @@ public class McpProviderUtilsTests {
 		Method reactiveMethod = TestMethods.class.getMethod("monoMethod");
 		Method bidirectionalMethod = TestMethods.class.getMethod("methodWithSyncContext", McpSyncRequestContext.class);
 
-		Predicate<Method> reactiveFilter = McpProviderUtils.filterReactiveReturnTypeMethod();
-		Predicate<Method> bidirectionalFilter = McpProviderUtils.filterMethodWithBidirectionalParameters();
+		Predicate<Method> reactiveFilter = McpPredicates.filterReactiveReturnTypeMethod();
+		Predicate<Method> bidirectionalFilter = McpPredicates.filterMethodWithBidirectionalParameters();
 		Predicate<Method> combinedFilter = reactiveFilter.and(bidirectionalFilter);
 
 		assertThat(combinedFilter.test(validMethod)).isTrue();
@@ -386,8 +386,8 @@ public class McpProviderUtilsTests {
 		Method bidirectionalMethod = TestMethods.class.getMethod("methodWithAsyncContext",
 				McpAsyncRequestContext.class);
 
-		Predicate<Method> nonReactiveFilter = McpProviderUtils.filterNonReactiveReturnTypeMethod();
-		Predicate<Method> bidirectionalFilter = McpProviderUtils.filterMethodWithBidirectionalParameters();
+		Predicate<Method> nonReactiveFilter = McpPredicates.filterNonReactiveReturnTypeMethod();
+		Predicate<Method> bidirectionalFilter = McpPredicates.filterMethodWithBidirectionalParameters();
 		Predicate<Method> combinedFilter = nonReactiveFilter.and(bidirectionalFilter);
 
 		assertThat(combinedFilter.test(validMethod)).isTrue();
@@ -399,30 +399,30 @@ public class McpProviderUtilsTests {
 
 	@Test
 	public void testIsUriTemplateWithSpecialCharacters() {
-		assertThat(McpProviderUtils.isUriTemplate("/api/{user-id}")).isTrue();
-		assertThat(McpProviderUtils.isUriTemplate("/api/{user.id}")).isTrue();
+		assertThat(McpPredicates.isUriTemplate("/api/{user-id}")).isTrue();
+		assertThat(McpPredicates.isUriTemplate("/api/{user.id}")).isTrue();
 	}
 
 	@Test
 	public void testIsUriTemplateWithQueryParameters() {
 		// Query parameters are not URI template variables
-		assertThat(McpProviderUtils.isUriTemplate("/api/users?id={id}")).isTrue();
+		assertThat(McpPredicates.isUriTemplate("/api/users?id={id}")).isTrue();
 	}
 
 	@Test
 	public void testIsUriTemplateWithFragment() {
-		assertThat(McpProviderUtils.isUriTemplate("/api/users#{id}")).isTrue();
+		assertThat(McpPredicates.isUriTemplate("/api/users#{id}")).isTrue();
 	}
 
 	@Test
 	public void testIsUriTemplateWithMultipleConsecutiveVariables() {
-		assertThat(McpProviderUtils.isUriTemplate("/{id}{name}")).isTrue();
+		assertThat(McpPredicates.isUriTemplate("/{id}{name}")).isTrue();
 	}
 
 	@Test
 	public void testPredicatesAreReusable() throws NoSuchMethodException {
 		// Test that predicates can be reused multiple times
-		Predicate<Method> filter = McpProviderUtils.filterReactiveReturnTypeMethod();
+		Predicate<Method> filter = McpPredicates.filterReactiveReturnTypeMethod();
 
 		Method method1 = TestMethods.class.getMethod("nonReactiveMethod");
 		Method method2 = TestMethods.class.getMethod("monoMethod");
