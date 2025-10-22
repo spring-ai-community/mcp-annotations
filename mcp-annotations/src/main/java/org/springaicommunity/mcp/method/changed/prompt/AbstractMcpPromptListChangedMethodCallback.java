@@ -4,7 +4,6 @@
 
 package org.springaicommunity.mcp.method.changed.prompt;
 
-import java.io.Serial;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
 import java.util.List;
@@ -119,7 +118,6 @@ public abstract class AbstractMcpPromptListChangedMethodCallback {
 	 */
 	public static class McpPromptListChangedConsumerMethodException extends RuntimeException {
 
-		@Serial
 		private static final long serialVersionUID = 1L;
 
 		/**

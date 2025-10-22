@@ -4,7 +4,6 @@
 
 package org.springaicommunity.mcp.method.changed.tool;
 
-import java.io.Serial;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
 import java.util.List;
@@ -119,7 +118,6 @@ public abstract class AbstractMcpToolListChangedMethodCallback {
 	 */
 	public static class McpToolListChangedConsumerMethodException extends RuntimeException {
 
-		@Serial
 		private static final long serialVersionUID = 1L;
 
 		/**
