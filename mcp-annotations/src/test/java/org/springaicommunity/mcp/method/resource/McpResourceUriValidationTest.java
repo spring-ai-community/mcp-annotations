@@ -12,10 +12,15 @@ import io.modelcontextprotocol.spec.McpSchema.ReadResourceResult;
 import io.modelcontextprotocol.spec.McpSchema.Role;
 import org.springaicommunity.mcp.adapter.ResourceAdapter;
 import org.springaicommunity.mcp.annotation.McpResource;
+import org.springaicommunity.mcp.context.DefaultMetaProvider;
+import org.springaicommunity.mcp.context.MetaProvider;
 
 /**
  * Simple test to verify that McpResourceMethodCallback requires a non-empty URI in the
  * McpResource annotation.
+ *
+ * @author Christian Tzolov
+ * @author Alexandros Pappas
  */
 public class McpResourceUriValidationTest {
 
@@ -90,6 +95,11 @@ public class McpResourceUriValidationTest {
 					}
 				};
 			}
+
+			@Override
+			public Class<? extends MetaProvider> metaProvider() {
+				return DefaultMetaProvider.class;
+			}
 		};
 	}
 
@@ -149,6 +159,11 @@ public class McpResourceUriValidationTest {
 						return 0.5;
 					}
 				};
+			}
+
+			@Override
+			public Class<? extends MetaProvider> metaProvider() {
+				return DefaultMetaProvider.class;
 			}
 		};
 	}

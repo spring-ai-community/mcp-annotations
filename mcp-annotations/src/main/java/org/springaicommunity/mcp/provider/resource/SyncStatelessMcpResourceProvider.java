@@ -18,6 +18,7 @@ package org.springaicommunity.mcp.provider.resource;
 
 import java.lang.reflect.Method;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.function.BiFunction;
 import java.util.stream.Stream;
@@ -29,11 +30,14 @@ import io.modelcontextprotocol.spec.McpSchema;
 import io.modelcontextprotocol.spec.McpSchema.ReadResourceRequest;
 import io.modelcontextprotocol.spec.McpSchema.ReadResourceResult;
 import io.modelcontextprotocol.util.Assert;
+import io.modelcontextprotocol.util.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springaicommunity.mcp.McpPredicates;
+import org.springaicommunity.mcp.MetaUtils;
 import org.springaicommunity.mcp.annotation.McpResource;
 import org.springaicommunity.mcp.method.resource.SyncStatelessMcpResourceMethodCallback;
+import org.springaicommunity.mcp.method.tool.utils.JsonParser;
 
 /**
  * Provider for synchronous stateless MCP resource methods.
@@ -43,6 +47,7 @@ import org.springaicommunity.mcp.method.resource.SyncStatelessMcpResourceMethodC
  * {@link McpTransportContext}.
  *
  * @author Christian Tzolov
+ * @author Alexandros Pappas
  */
 public class SyncStatelessMcpResourceProvider {
 
@@ -85,12 +90,14 @@ public class SyncStatelessMcpResourceProvider {
 					var name = getName(mcpResourceMethod, resourceAnnotation);
 					var description = resourceAnnotation.description();
 					var mimeType = resourceAnnotation.mimeType();
+					var meta = MetaUtils.getMeta(resourceAnnotation.metaProvider());
 
 					var mcpResource = McpSchema.Resource.builder()
 						.uri(uri)
 						.name(name)
 						.description(description)
 						.mimeType(mimeType)
+						.meta(meta)
 						.build();
 
 					BiFunction<McpTransportContext, ReadResourceRequest, ReadResourceResult> methodCallback = SyncStatelessMcpResourceMethodCallback
@@ -136,22 +143,24 @@ public class SyncStatelessMcpResourceProvider {
 					var name = getName(mcpResourceMethod, resourceAnnotation);
 					var description = resourceAnnotation.description();
 					var mimeType = resourceAnnotation.mimeType();
+					var meta = MetaUtils.getMeta(resourceAnnotation.metaProvider());
 
-					var mcpResource = McpSchema.ResourceTemplate.builder()
+					var mcpResourceTemplate = McpSchema.ResourceTemplate.builder()
 						.uriTemplate(uri)
 						.name(name)
 						.description(description)
 						.mimeType(mimeType)
+						.meta(meta)
 						.build();
 
 					BiFunction<McpTransportContext, ReadResourceRequest, ReadResourceResult> methodCallback = SyncStatelessMcpResourceMethodCallback
 						.builder()
 						.method(mcpResourceMethod)
 						.bean(resourceObject)
-						.resource(mcpResource)
+						.resource(mcpResourceTemplate)
 						.build();
 
-					var resourceSpec = new SyncResourceTemplateSpecification(mcpResource, methodCallback);
+					var resourceSpec = new SyncResourceTemplateSpecification(mcpResourceTemplate, methodCallback);
 
 					return resourceSpec;
 				})
@@ -173,6 +182,14 @@ public class SyncStatelessMcpResourceProvider {
 
 	protected McpResource doGetMcpResourceAnnotation(Method method) {
 		return method.getAnnotation(McpResource.class);
+	}
+
+	@SuppressWarnings("unchecked")
+	private static Map<String, Object> parseMeta(String metaJson) {
+		if (!Utils.hasText(metaJson)) {
+			return null;
+		}
+		return JsonParser.fromJson(metaJson, Map.class);
 	}
 
 	private static String getName(Method method, McpResource resource) {

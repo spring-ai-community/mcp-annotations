@@ -11,11 +11,14 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 import io.modelcontextprotocol.spec.McpSchema.Role;
+import org.springaicommunity.mcp.context.DefaultMetaProvider;
+import org.springaicommunity.mcp.context.MetaProvider;
 
 /**
  * Marks a method as a MCP Resource.
  *
  * @author Christian Tzolov
+ * @author Alexandros Pappas
  */
 @Target({ ElementType.METHOD, ElementType.ANNOTATION_TYPE })
 @Retention(RetentionPolicy.RUNTIME)
@@ -55,6 +58,13 @@ public @interface McpResource {
 	 * ignored.
 	 */
 	McpAnnotations annotations() default @McpAnnotations(audience = { Role.USER }, lastModified = "", priority = 0.5);
+
+	/**
+	 * Optional meta provider class that supplies data for "_meta" field for this resource
+	 * declaration. Defaults to {@link DefaultMetaProvider} implementation.
+	 * @return the meta provider class to use for this resource
+	 */
+	Class<? extends MetaProvider> metaProvider() default DefaultMetaProvider.class;
 
 	@Retention(RetentionPolicy.RUNTIME)
 	@Target(ElementType.ANNOTATION_TYPE)

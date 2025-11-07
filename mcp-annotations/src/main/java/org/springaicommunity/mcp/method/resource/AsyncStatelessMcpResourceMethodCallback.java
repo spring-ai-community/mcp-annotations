@@ -30,13 +30,14 @@ import reactor.core.publisher.Mono;
  * handles URI template variables.
  *
  * @author Christian Tzolov
+ * @author Alexandros Pappas
  */
 public final class AsyncStatelessMcpResourceMethodCallback extends AbstractMcpResourceMethodCallback
 		implements BiFunction<McpTransportContext, ReadResourceRequest, Mono<ReadResourceResult>> {
 
 	private AsyncStatelessMcpResourceMethodCallback(Builder builder) {
 		super(builder.method, builder.bean, builder.uri, builder.name, builder.description, builder.mimeType,
-				builder.resultConverter, builder.uriTemplateManagerFactory, builder.contentType);
+				builder.resultConverter, builder.uriTemplateManagerFactory, builder.contentType, builder.meta);
 		this.validateMethod(this.method);
 	}
 
@@ -120,13 +121,13 @@ public final class AsyncStatelessMcpResourceMethodCallback extends AbstractMcpRe
 				if (result instanceof Mono<?>) {
 					// If the result is already a Mono, use it
 					return ((Mono<?>) result).map(r -> this.resultConverter.convertToReadResourceResult(r,
-							request.uri(), this.mimeType, this.contentType));
+							request.uri(), this.mimeType, this.contentType, this.meta));
 				}
 				else {
 					// Otherwise, convert the result to a ReadResourceResult and wrap in a
 					// Mono
 					return Mono.just(this.resultConverter.convertToReadResourceResult(result, request.uri(),
-							this.mimeType, this.contentType));
+							this.mimeType, this.contentType, this.meta));
 				}
 			}
 			catch (Exception e) {
