@@ -6,6 +6,7 @@ package org.springaicommunity.mcp.method.resource;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import org.springaicommunity.mcp.method.resource.AbstractMcpResourceMethodCallback.ContentType;
 
@@ -21,6 +22,7 @@ import io.modelcontextprotocol.spec.McpSchema.TextResourceContents;
  * resource methods to a standardized {@link ReadResourceResult} format.
  *
  * @author Christian Tzolov
+ * @author Alexandros Pappas
  */
 public class DefaultMcpReadResourceResultConverter implements McpReadResourceResultConverter {
 
@@ -44,6 +46,23 @@ public class DefaultMcpReadResourceResultConverter implements McpReadResourceRes
 	@Override
 	public ReadResourceResult convertToReadResourceResult(Object result, String requestUri, String mimeType,
 			ContentType contentType) {
+		return convertToReadResourceResult(result, requestUri, mimeType, contentType, null);
+	}
+
+	/**
+	 * Converts the method's return value to a {@link ReadResourceResult}, propagating
+	 * resource-level metadata to the content items.
+	 * @param result The method's return value
+	 * @param requestUri The original request URI
+	 * @param mimeType The MIME type of the resource
+	 * @param contentType The content type of the resource
+	 * @param meta The resource-level metadata to propagate to content items
+	 * @return A {@link ReadResourceResult} containing the appropriate resource contents
+	 * @throws IllegalArgumentException if the return type is not supported
+	 */
+	@Override
+	public ReadResourceResult convertToReadResourceResult(Object result, String requestUri, String mimeType,
+			ContentType contentType, Map<String, Object> meta) {
 		if (result == null) {
 			return new ReadResourceResult(List.of());
 		}
@@ -62,7 +81,7 @@ public class DefaultMcpReadResourceResultConverter implements McpReadResourceRes
 		List<ResourceContents> contents;
 
 		if (result instanceof List<?>) {
-			contents = convertListResult((List<?>) result, requestUri, contentType, mimeType);
+			contents = convertListResult((List<?>) result, requestUri, contentType, mimeType, meta);
 		}
 		else if (result instanceof ResourceContents) {
 			// Single ResourceContents
@@ -71,7 +90,7 @@ public class DefaultMcpReadResourceResultConverter implements McpReadResourceRes
 		else if (result instanceof String) {
 			// Single String -> ResourceContents (TextResourceContents or
 			// BlobResourceContents)
-			contents = convertStringResult((String) result, requestUri, contentType, mimeType);
+			contents = convertStringResult((String) result, requestUri, contentType, mimeType, meta);
 		}
 		else {
 			throw new IllegalArgumentException("Unsupported return type: " + result.getClass().getName());
@@ -98,17 +117,18 @@ public class DefaultMcpReadResourceResultConverter implements McpReadResourceRes
 	}
 
 	/**
-	 * Converts a List result to a list of ResourceContents.
+	 * Converts a List result to a list of ResourceContents with metadata.
 	 * @param list The list result
 	 * @param requestUri The original request URI
 	 * @param contentType The content type (TEXT or BLOB)
 	 * @param mimeType The MIME type
+	 * @param meta The resource-level metadata to propagate to content items
 	 * @return A list of ResourceContents
 	 * @throws IllegalArgumentException if the list item type is not supported
 	 */
 	@SuppressWarnings("unchecked")
 	private List<ResourceContents> convertListResult(List<?> list, String requestUri, ContentType contentType,
-			String mimeType) {
+			String mimeType, Map<String, Object> meta) {
 		if (list.isEmpty()) {
 			return List.of();
 		}
@@ -127,12 +147,12 @@ public class DefaultMcpReadResourceResultConverter implements McpReadResourceRes
 
 			if (contentType == ContentType.TEXT) {
 				for (String text : stringList) {
-					result.add(new TextResourceContents(requestUri, mimeType, text));
+					result.add(new TextResourceContents(requestUri, mimeType, text, meta));
 				}
 			}
 			else { // BLOB
 				for (String blob : stringList) {
-					result.add(new BlobResourceContents(requestUri, mimeType, blob));
+					result.add(new BlobResourceContents(requestUri, mimeType, blob, meta));
 				}
 			}
 
@@ -145,20 +165,21 @@ public class DefaultMcpReadResourceResultConverter implements McpReadResourceRes
 	}
 
 	/**
-	 * Converts a String result to a list of ResourceContents.
+	 * Converts a String result to a list of ResourceContents with metadata.
 	 * @param stringResult The string result
 	 * @param requestUri The original request URI
 	 * @param contentType The content type (TEXT or BLOB)
 	 * @param mimeType The MIME type
+	 * @param meta The resource-level metadata to propagate to content items
 	 * @return A list containing a single ResourceContents
 	 */
 	private List<ResourceContents> convertStringResult(String stringResult, String requestUri, ContentType contentType,
-			String mimeType) {
+			String mimeType, Map<String, Object> meta) {
 		if (contentType == ContentType.TEXT) {
-			return List.of(new TextResourceContents(requestUri, mimeType, stringResult));
+			return List.of(new TextResourceContents(requestUri, mimeType, stringResult, meta));
 		}
 		else { // BLOB
-			return List.of(new BlobResourceContents(requestUri, mimeType, stringResult));
+			return List.of(new BlobResourceContents(requestUri, mimeType, stringResult, meta));
 		}
 	}
 

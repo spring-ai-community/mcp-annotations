@@ -16,12 +16,6 @@
 
 package org.springaicommunity.mcp.provider.resource;
 
-import java.lang.reflect.Method;
-import java.util.List;
-import java.util.Objects;
-import java.util.function.BiFunction;
-import java.util.stream.Stream;
-
 import io.modelcontextprotocol.server.McpAsyncServerExchange;
 import io.modelcontextprotocol.server.McpServerFeatures.AsyncResourceSpecification;
 import io.modelcontextprotocol.server.McpServerFeatures.AsyncResourceTemplateSpecification;
@@ -29,12 +23,22 @@ import io.modelcontextprotocol.spec.McpSchema;
 import io.modelcontextprotocol.spec.McpSchema.ReadResourceRequest;
 import io.modelcontextprotocol.spec.McpSchema.ReadResourceResult;
 import io.modelcontextprotocol.util.Assert;
+import io.modelcontextprotocol.util.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springaicommunity.mcp.McpPredicates;
+import org.springaicommunity.mcp.MetaUtils;
 import org.springaicommunity.mcp.annotation.McpResource;
 import org.springaicommunity.mcp.method.resource.AsyncMcpResourceMethodCallback;
+import org.springaicommunity.mcp.method.tool.utils.JsonParser;
 import reactor.core.publisher.Mono;
+
+import java.lang.reflect.Method;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Objects;
+import java.util.function.BiFunction;
+import java.util.stream.Stream;
 
 /**
  * Provider for asynchronous MCP resource methods.
@@ -44,6 +48,7 @@ import reactor.core.publisher.Mono;
  * return reactive types.
  *
  * @author Christian Tzolov
+ * @author Alexandros Pappas
  */
 public class AsyncMcpResourceProvider {
 
@@ -71,7 +76,7 @@ public class AsyncMcpResourceProvider {
 			.map(resourceObject -> Stream.of(doGetClassMethods(resourceObject))
 				.filter(method -> method.isAnnotationPresent(McpResource.class))
 				.filter(McpPredicates.filterNonReactiveReturnTypeMethod())
-				.sorted((m1, m2) -> m1.getName().compareTo(m2.getName()))
+				.sorted(Comparator.comparing(Method::getName))
 				.map(mcpResourceMethod -> {
 
 					var resourceAnnotation = doGetMcpResourceAnnotation(mcpResourceMethod);
@@ -85,12 +90,14 @@ public class AsyncMcpResourceProvider {
 					var name = getName(mcpResourceMethod, resourceAnnotation);
 					var description = resourceAnnotation.description();
 					var mimeType = resourceAnnotation.mimeType();
+					var meta = MetaUtils.getMeta(resourceAnnotation.metaProvider());
 
 					var mcpResource = McpSchema.Resource.builder()
 						.uri(uri)
 						.name(name)
 						.description(description)
 						.mimeType(mimeType)
+						.meta(meta)
 						.build();
 
 					BiFunction<McpAsyncServerExchange, ReadResourceRequest, Mono<ReadResourceResult>> methodCallback = AsyncMcpResourceMethodCallback
@@ -136,12 +143,14 @@ public class AsyncMcpResourceProvider {
 					var name = getName(mcpResourceMethod, resourceAnnotation);
 					var description = resourceAnnotation.description();
 					var mimeType = resourceAnnotation.mimeType();
+					var meta = MetaUtils.getMeta(resourceAnnotation.metaProvider());
 
 					var mcpResourceTemplate = McpSchema.ResourceTemplate.builder()
 						.uriTemplate(uri)
 						.name(name)
 						.description(description)
 						.mimeType(mimeType)
+						.meta(meta)
 						.build();
 
 					BiFunction<McpAsyncServerExchange, ReadResourceRequest, Mono<ReadResourceResult>> methodCallback = AsyncMcpResourceMethodCallback

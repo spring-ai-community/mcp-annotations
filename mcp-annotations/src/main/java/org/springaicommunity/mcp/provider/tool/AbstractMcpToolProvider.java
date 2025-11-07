@@ -2,12 +2,19 @@ package org.springaicommunity.mcp.provider.tool;
 
 import java.lang.reflect.Method;
 import java.util.List;
+import java.util.Map;
 
 import io.modelcontextprotocol.json.McpJsonDefaults;
 import io.modelcontextprotocol.json.McpJsonMapper;
 import io.modelcontextprotocol.util.Assert;
+import io.modelcontextprotocol.util.Utils;
 import org.springaicommunity.mcp.annotation.McpTool;
+import org.springaicommunity.mcp.method.tool.utils.JsonParser;
 
+/**
+ * @author Christian Tzolov
+ * @author Alexandros Pappas
+ */
 public abstract class AbstractMcpToolProvider {
 
 	protected final List<Object> toolObjects;
@@ -37,6 +44,14 @@ public abstract class AbstractMcpToolProvider {
 
 	public McpJsonMapper getJsonMapper() {
 		return this.jsonMapper;
+	}
+
+	@SuppressWarnings("unchecked")
+	protected Map<String, Object> parseMeta(String metaJson) {
+		if (!Utils.hasText(metaJson)) {
+			return null;
+		}
+		return JsonParser.fromJson(metaJson, Map.class);
 	}
 
 }
