@@ -28,6 +28,7 @@ import io.modelcontextprotocol.spec.McpSchema;
 import io.modelcontextprotocol.util.Assert;
 import io.modelcontextprotocol.util.Utils;
 import org.springaicommunity.mcp.McpPredicates;
+import org.springaicommunity.mcp.MetaUtils;
 import org.springaicommunity.mcp.annotation.McpResource;
 import org.springaicommunity.mcp.method.resource.SyncMcpResourceMethodCallback;
 import org.springaicommunity.mcp.method.tool.utils.JsonParser;
@@ -64,13 +65,14 @@ public class SyncMcpResourceProvider {
 					var name = getName(mcpResourceMethod, resourceAnnotation);
 					var description = resourceAnnotation.description();
 					var mimeType = resourceAnnotation.mimeType();
+					var meta = MetaUtils.getMeta(resourceAnnotation.metaProvider());
 
 					var mcpResource = McpSchema.Resource.builder()
 						.uri(uri)
 						.name(name)
 						.description(description)
 						.mimeType(mimeType)
-						.meta(parseMeta(resourceAnnotation.meta()))
+						.meta(meta)
 						.build();
 
 					var methodCallback = SyncMcpResourceMethodCallback.builder()

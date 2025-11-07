@@ -33,6 +33,7 @@ import io.modelcontextprotocol.spec.McpSchema.ReadResourceRequest;
 import io.modelcontextprotocol.spec.McpSchema.ReadResourceResult;
 import io.modelcontextprotocol.spec.McpSchema.ResourceContents;
 import io.modelcontextprotocol.spec.McpSchema.TextResourceContents;
+import org.springaicommunity.mcp.context.MetaProvider;
 import reactor.core.publisher.Mono;
 
 /**
@@ -40,6 +41,7 @@ import reactor.core.publisher.Mono;
  *
  * @author Christian Tzolov
  * @author Alexandros Pappas
+ * @author Craig Walls
  */
 public class SyncMcpResourceProviderTests {
 
@@ -304,12 +306,21 @@ public class SyncMcpResourceProviderTests {
 		assertThat(((TextResourceContents) content).text()).isEqualTo("Resource content for id: 123, type: document");
 	}
 
+	public static class ResourceMetaProvider implements MetaProvider {
+
+		@Override
+		public Map<String, Object> getMeta() {
+			return Map.of("ui", Map.of("csp", Map.of("resourceDomains", List.of("https://unpkg.com"))));
+		}
+
+	}
+
 	@Test
 	void testGetResourceSpecificationsWithMeta() {
 		class MetaResource {
 
 			@McpResource(uri = "ui://test/view.html", name = "test-view", mimeType = "text/html;profile=mcp-app",
-					meta = "{\"ui\": {\"csp\": {\"resourceDomains\": [\"https://unpkg.com\"]}}}")
+					metaProvider = ResourceMetaProvider.class)
 			public String testView() {
 				return "<html>test</html>";
 			}

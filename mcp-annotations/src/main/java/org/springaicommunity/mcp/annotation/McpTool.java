@@ -3,11 +3,15 @@
  */
 package org.springaicommunity.mcp.annotation;
 
+import org.springaicommunity.mcp.context.DefaultMetaProvider;
+import org.springaicommunity.mcp.context.MetaProvider;
+
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
+import java.util.Map;
 
 /**
  * @author Christian Tzolov
@@ -48,10 +52,10 @@ public @interface McpTool {
 	String title() default "";
 
 	/**
-	 * Optional JSON string representing the _meta field for this tool. The value is
-	 * parsed as a JSON object and passed to the Tool builder's meta method.
+	 * "_meta" field for the tool declaration. If not provided, no "_meta" appended to the
+	 * tool specification.
 	 */
-	String meta() default "";
+	Class<? extends MetaProvider> metaProvider() default DefaultMetaProvider.class;
 
 	/**
 	 * Additional properties describing a Tool to clients.

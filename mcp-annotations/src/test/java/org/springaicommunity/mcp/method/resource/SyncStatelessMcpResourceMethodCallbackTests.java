@@ -24,6 +24,8 @@ import org.springaicommunity.mcp.adapter.ResourceAdapter;
 import org.springaicommunity.mcp.annotation.McpMeta;
 import org.springaicommunity.mcp.annotation.McpProgressToken;
 import org.springaicommunity.mcp.annotation.McpResource;
+import org.springaicommunity.mcp.context.DefaultMetaProvider;
+import org.springaicommunity.mcp.context.MetaProvider;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -253,6 +255,11 @@ public class SyncStatelessMcpResourceMethodCallbackTests {
 						return 0.5;
 					}
 				};
+			}
+
+			@Override
+			public Class<? extends MetaProvider> metaProvider() {
+				return DefaultMetaProvider.class;
 			}
 		};
 	}
@@ -670,6 +677,11 @@ public class SyncStatelessMcpResourceMethodCallbackTests {
 						return 0.5;
 					}
 				};
+			}
+
+			@Override
+			public Class<? extends MetaProvider> metaProvider() {
+				return DefaultMetaProvider.class;
 			}
 		};
 

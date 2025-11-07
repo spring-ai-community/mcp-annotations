@@ -37,6 +37,7 @@ import io.modelcontextprotocol.spec.McpSchema.CallToolResult;
 import io.modelcontextprotocol.spec.McpSchema.TextContent;
 import io.modelcontextprotocol.spec.McpSchema.ToolAnnotations;
 import net.javacrumbs.jsonunit.core.Option;
+import org.springaicommunity.mcp.context.MetaProvider;
 import reactor.core.publisher.Mono;
 
 import static net.javacrumbs.jsonunit.assertj.JsonAssertions.assertThatJson;
@@ -47,6 +48,7 @@ import static net.javacrumbs.jsonunit.assertj.JsonAssertions.json;
  *
  * @author Christian Tzolov
  * @author Alexandros Pappas
+ * @author Craig Walls
  */
 public class SyncMcpToolProviderTests {
 
@@ -811,12 +813,21 @@ public class SyncMcpToolProviderTests {
 		assertThat(toolSpec.tool().outputSchema()).isNull();
 	}
 
+	public static class UiMetaProvider implements MetaProvider {
+
+		@Override
+		public Map<String, Object> getMeta() {
+			return Map.of("ui", Map.of("resourceUri", "ui://test/view.html", "visibility", List.of("model", "app")),
+					"ui/resourceUri", "ui://test/view.html");
+		}
+
+	}
+
 	@Test
 	void testToolWithMeta() {
 		class MetaTool {
 
-			@McpTool(name = "ui-tool", description = "Tool with meta",
-					meta = "{\"ui\": {\"resourceUri\": \"ui://test/view.html\", \"visibility\": [\"model\", \"app\"]}, \"ui/resourceUri\": \"ui://test/view.html\"}")
+			@McpTool(name = "ui-tool", description = "Tool with meta", metaProvider = UiMetaProvider.class)
 			public String uiTool(String input) {
 				return "result: " + input;
 			}

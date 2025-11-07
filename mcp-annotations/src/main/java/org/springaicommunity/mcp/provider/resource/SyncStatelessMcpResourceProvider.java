@@ -34,6 +34,7 @@ import io.modelcontextprotocol.util.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springaicommunity.mcp.McpPredicates;
+import org.springaicommunity.mcp.MetaUtils;
 import org.springaicommunity.mcp.annotation.McpResource;
 import org.springaicommunity.mcp.method.resource.SyncStatelessMcpResourceMethodCallback;
 import org.springaicommunity.mcp.method.tool.utils.JsonParser;
@@ -89,13 +90,14 @@ public class SyncStatelessMcpResourceProvider {
 					var name = getName(mcpResourceMethod, resourceAnnotation);
 					var description = resourceAnnotation.description();
 					var mimeType = resourceAnnotation.mimeType();
+					var meta = MetaUtils.getMeta(resourceAnnotation.metaProvider());
 
 					var mcpResource = McpSchema.Resource.builder()
 						.uri(uri)
 						.name(name)
 						.description(description)
 						.mimeType(mimeType)
-						.meta(parseMeta(resourceAnnotation.meta()))
+						.meta(meta)
 						.build();
 
 					BiFunction<McpTransportContext, ReadResourceRequest, ReadResourceResult> methodCallback = SyncStatelessMcpResourceMethodCallback
