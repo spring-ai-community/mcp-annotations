@@ -270,13 +270,14 @@ public class DefaultMcpSyncRequestContext implements McpSyncRequestContext {
 
 		progressSpec.accept(spec);
 
-		if (!Utils.hasText(this.request.progressToken())) {
+		var progressToken = this.request.progressToken();
+
+		if (progressToken == null || (progressToken instanceof String pt && !Utils.hasText(pt))) {
 			logger.warn("Progress notification not supported by the client!");
 			return;
 		}
 
-		this.progress(new ProgressNotification(this.request.progressToken(), spec.progress, spec.total, spec.message,
-				spec.meta));
+		this.progress(new ProgressNotification(progressToken, spec.progress, spec.total, spec.message, spec.meta));
 	}
 
 	@Override

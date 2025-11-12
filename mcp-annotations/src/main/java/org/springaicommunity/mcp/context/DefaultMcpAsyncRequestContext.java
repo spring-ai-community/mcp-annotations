@@ -175,7 +175,7 @@ public class DefaultMcpAsyncRequestContext implements McpAsyncRequestContext {
 
 		var progressToken = this.request.progressToken();
 
-		if (!Utils.hasText(progressToken)) {
+		if (progressToken == null || (progressToken instanceof String pt && !Utils.hasText(pt))) {
 			logger.warn("Progress notification not supported by the client!");
 		}
 		return this.sample(McpSchema.CreateMessageRequest.builder()
@@ -220,13 +220,15 @@ public class DefaultMcpAsyncRequestContext implements McpAsyncRequestContext {
 
 		progressSpec.accept(spec);
 
-		if (!Utils.hasText(this.request.progressToken())) {
+		var progressToken = this.request.progressToken();
+
+		if (progressToken == null || (progressToken instanceof String pt && !Utils.hasText(pt))) {
 			logger.warn("Progress notification not supported by the client!");
 			return Mono.empty();
 		}
 
-		return this.progress(new ProgressNotification(this.request.progressToken(), spec.progress, spec.total,
-				spec.message, spec.meta));
+		return this
+			.progress(new ProgressNotification(progressToken, spec.progress, spec.total, spec.message, spec.meta));
 	}
 
 	@Override
