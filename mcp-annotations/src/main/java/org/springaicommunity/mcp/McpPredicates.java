@@ -54,7 +54,7 @@ public class McpPredicates {
 				return true;
 			}
 			logger.warn(
-					"Sync providers doesn't support reactive return types. Skipping method {} with reactive return type {}",
+					"ASYNC Providers don't support imperative (non-reactive) return types. Skipping method {} with non-reactive return type {}",
 					method, method.getReturnType());
 			return false;
 		};
@@ -66,7 +66,7 @@ public class McpPredicates {
 				return true;
 			}
 			logger.warn(
-					"Sync providers doesn't support reactive return types. Skipping method {} with reactive return type {}",
+					"SYNC Providers don't support reactive return types. Skipping method {} with reactive return type {}",
 					method, method.getReturnType());
 			return false;
 		};
