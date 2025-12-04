@@ -28,14 +28,14 @@ import java.lang.annotation.Target;
  *
  * <p>
  * Example usage: <pre>{@code
- * &#64;McpPromptListChanged(clients = "test-client")
+ * @McpPromptListChanged(clients = "test-client")
  * public void onPromptListChanged(List<McpSchema.Prompt> updatedPrompts) {
  *     // Handle prompt list change notification with the updated prompts
  *     logger.info("Prompt list updated, now contains {} prompts", updatedPrompts.size());
  *     // Process the updated prompt list
  * }
  *
- * &#64;McpPromptListChanged(clients = "test-client")
+ * @McpPromptListChanged(clients = "test-client")
  * public Mono<Void> onPromptListChangedAsync(List<McpSchema.Prompt> updatedPrompts) {
  *     // Handle prompt list change notification asynchronously
  *     return processUpdatedPrompts(updatedPrompts);

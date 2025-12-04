@@ -24,7 +24,7 @@ import java.lang.annotation.Target;
  *
  * <p>
  * Example usage: <pre>{@code
- * &#64;McpElicitation(clients = "my-client-id")
+ * @McpElicitation(clients = "my-client-id")
  * public ElicitResult handleElicitationRequest(ElicitRequest request) {
  *     return ElicitResult.builder()
  *         .message("Generated response")
@@ -33,7 +33,7 @@ import java.lang.annotation.Target;
  *         .build();
  * }
  *
- * &#64;McpElicitation(clients = "my-client-id")
+ * @McpElicitation(clients = "my-client-id")
  * public Mono<ElicitResult> handleAsyncElicitationRequest(ElicitRequest request) {
  *     return Mono.just(ElicitResult.builder()
  *         .message("Generated response")

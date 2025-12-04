@@ -28,14 +28,14 @@ import java.lang.annotation.Target;
  *
  * <p>
  * Example usage: <pre>{@code
- * &#64;McpResourceListChanged(clients = "test-client")
+ * @McpResourceListChanged(clients = "test-client")
  * public void onResourceListChanged(List<McpSchema.Resource> updatedResources) {
  *     // Handle resource list change notification with the updated resources
  *     logger.info("Resource list updated, now contains {} resources", updatedResources.size());
  *     // Process the updated resource list
  * }
  *
- * &#64;McpResourceListChanged(clients = "test-client")
+ * @McpResourceListChanged(clients = "test-client")
  * public Mono<Void> onResourceListChangedAsync(List<McpSchema.Resource> updatedResources) {
  *     // Handle resource list change notification asynchronously
  *     return processUpdatedResources(updatedResources);
