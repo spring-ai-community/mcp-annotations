@@ -26,8 +26,10 @@ import org.springaicommunity.mcp.adapter.ResourceAdapter;
 import org.springaicommunity.mcp.annotation.McpMeta;
 import org.springaicommunity.mcp.annotation.McpProgressToken;
 import org.springaicommunity.mcp.annotation.McpResource;
+import org.springaicommunity.mcp.context.DefaultMetaProvider;
 import org.springaicommunity.mcp.context.McpAsyncRequestContext;
 import org.springaicommunity.mcp.context.McpSyncRequestContext;
+import org.springaicommunity.mcp.context.MetaProvider;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
@@ -336,6 +338,11 @@ public class AsyncMcpResourceMethodCallbackTests {
 						return 0.5;
 					}
 				};
+			}
+
+			@Override
+			public Class<? extends MetaProvider> metaProvider() {
+				return DefaultMetaProvider.class;
 			}
 		};
 	}
@@ -675,6 +682,11 @@ public class AsyncMcpResourceMethodCallbackTests {
 						return 0.5;
 					}
 				};
+			}
+
+			@Override
+			public Class<? extends MetaProvider> metaProvider() {
+				return DefaultMetaProvider.class;
 			}
 		};
 

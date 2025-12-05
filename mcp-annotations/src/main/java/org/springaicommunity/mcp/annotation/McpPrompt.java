@@ -4,6 +4,9 @@
 
 package org.springaicommunity.mcp.annotation;
 
+import org.springaicommunity.mcp.context.DefaultMetaProvider;
+import org.springaicommunity.mcp.context.MetaProvider;
+
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -34,5 +37,12 @@ public @interface McpPrompt {
 	 * Optional human-readable description.
 	 */
 	String description() default "";
+
+	/**
+	 * Optional meta provider class that implements the MetaProvider interface. Used to
+	 * provide additional metadata for the prompt. Defaults to {@link DefaultMetaProvider
+	 * DefaultMetaProvider.class} if not specified.
+	 */
+	Class<? extends MetaProvider> metaProvider() default DefaultMetaProvider.class;
 
 }

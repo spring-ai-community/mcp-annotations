@@ -16,6 +16,8 @@
 
 package org.springaicommunity.mcp.provider.tool;
 
+import java.lang.reflect.Method;
+import java.util.Comparator;
 import java.util.List;
 import java.util.function.BiFunction;
 import java.util.stream.Stream;
@@ -29,6 +31,7 @@ import io.modelcontextprotocol.util.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springaicommunity.mcp.McpPredicates;
+import org.springaicommunity.mcp.MetaUtils;
 import org.springaicommunity.mcp.annotation.McpTool;
 import org.springaicommunity.mcp.method.tool.ReturnMode;
 import org.springaicommunity.mcp.method.tool.SyncMcpToolMethodCallback;
@@ -62,7 +65,7 @@ public class SyncMcpToolProvider extends AbstractMcpToolProvider {
 			.map(toolObject -> Stream.of(this.doGetClassMethods(toolObject))
 				.filter(method -> method.isAnnotationPresent(McpTool.class))
 				.filter(McpPredicates.filterReactiveReturnTypeMethod())
-				.sorted((m1, m2) -> m1.getName().compareTo(m2.getName()))
+				.sorted(Comparator.comparing(Method::getName))
 				.map(mcpToolMethod -> {
 
 					McpTool toolJavaAnnotation = this.doGetMcpToolAnnotation(mcpToolMethod);
@@ -74,10 +77,13 @@ public class SyncMcpToolProvider extends AbstractMcpToolProvider {
 
 					String inputSchema = JsonSchemaGenerator.generateForMethodInput(mcpToolMethod);
 
-					McpSchema.Tool.Builder toolBuilder = McpSchema.Tool.builder()
+					var meta = MetaUtils.getMeta(toolJavaAnnotation.metaProvider());
+
+					var toolBuilder = McpSchema.Tool.builder()
 						.name(toolName)
 						.description(toolDescription)
-						.inputSchema(this.getJsonMapper(), inputSchema);
+						.inputSchema(this.getJsonMapper(), inputSchema)
+						.meta(meta);
 
 					var title = toolJavaAnnotation.title();
 
