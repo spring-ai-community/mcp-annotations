@@ -21,7 +21,7 @@ import java.lang.annotation.Target;
  *
  * <p>
  * Example usage: <pre>{@code
- * &#64;McpProgress(clientId = "my-client-id")
+ * @McpProgress(clientId = "my-client-id")
  * public void handleProgressMessage(ProgressNotification notification) {
  *     // Handle the progress notification
  * }</pre>
