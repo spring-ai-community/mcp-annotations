@@ -28,6 +28,7 @@ import io.modelcontextprotocol.spec.McpSchema.CallToolResult;
 import org.springaicommunity.mcp.annotation.McpMeta;
 import org.springaicommunity.mcp.annotation.McpProgressToken;
 import org.springaicommunity.mcp.annotation.McpTool;
+import org.springaicommunity.mcp.annotation.McpToolBody;
 import org.springaicommunity.mcp.context.McpAsyncRequestContext;
 import org.springaicommunity.mcp.context.McpRequestContextTypes;
 import org.springaicommunity.mcp.context.McpSyncRequestContext;
@@ -105,6 +106,11 @@ public abstract class AbstractMcpToolMethodCallback<T, RC extends McpRequestCont
 			if (parameter.isAnnotationPresent(McpProgressToken.class)) {
 				// Return the progress token from the request
 				return request != null ? request.progressToken() : null;
+			}
+
+			// Check if parameter is annotated with @McpToolBody
+			if (parameter.isAnnotationPresent(McpToolBody.class)) {
+				return buildTypedArgument(toolInputArguments, parameter.getParameterizedType());
 			}
 
 			// Check if parameter is McpMeta type

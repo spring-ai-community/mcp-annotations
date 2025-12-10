@@ -16,6 +16,8 @@
 
 package org.springaicommunity.mcp.method.tool.utils;
 
+import java.lang.reflect.AnnotatedElement;
+import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
 import java.lang.reflect.Type;
@@ -26,6 +28,7 @@ import java.util.Map;
 
 import org.springaicommunity.mcp.annotation.McpMeta;
 import org.springaicommunity.mcp.annotation.McpProgressToken;
+import org.springaicommunity.mcp.annotation.McpToolBody;
 import org.springaicommunity.mcp.annotation.McpToolParam;
 import org.springaicommunity.mcp.context.McpAsyncRequestContext;
 import org.springaicommunity.mcp.context.McpSyncRequestContext;
@@ -102,14 +105,15 @@ public class JsonSchemaGenerator {
 	private static String internalGenerateFromMethodArguments(Method method) {
 		// Check if method has CallToolRequest parameter
 		boolean hasCallToolRequestParam = Arrays.stream(method.getParameterTypes())
-			.anyMatch(type -> CallToolRequest.class.isAssignableFrom(type));
+			.anyMatch(CallToolRequest.class::isAssignableFrom);
 
 		// If method has CallToolRequest, return minimal schema
+		Parameter[] parameters = method.getParameters();
 		if (hasCallToolRequestParam) {
 			// Check if there are other parameters besides CallToolRequest, exchange
 			// types,
 			// @McpProgressToken annotated parameters, and McpMeta parameters
-			boolean hasOtherParams = Arrays.stream(method.getParameters()).anyMatch(param -> {
+			boolean hasOtherParams = Arrays.stream(parameters).anyMatch(param -> {
 				Class<?> type = param.getType();
 				return !McpSyncRequestContext.class.isAssignableFrom(type)
 						&& !McpAsyncRequestContext.class.isAssignableFrom(type)
@@ -136,10 +140,10 @@ public class JsonSchemaGenerator {
 		ObjectNode properties = schema.putObject("properties");
 		List<String> required = new ArrayList<>();
 
-		for (int i = 0; i < method.getParameterCount(); i++) {
-			Parameter parameter = method.getParameters()[i];
+		for (int i = 0; i < parameters.length; i++) {
+			Parameter parameter = parameters[i];
 			String parameterName = parameter.getName();
-			Type parameterType = method.getGenericParameterTypes()[i];
+			Type parameterType = parameter.getParameterizedType();
 
 			// Skip parameters annotated with @McpProgressToken
 			if (parameter.isAnnotationPresent(McpProgressToken.class)) {
@@ -161,11 +165,32 @@ public class JsonSchemaGenerator {
 				continue;
 			}
 
-			if (isMethodParameterRequired(method, i)) {
+			// support McpToolBody
+			if (parameter.isAnnotationPresent(McpToolBody.class)) {
+				Class<?> paramType = (Class<?>) parameter.getParameterizedType();
+				Field[] declaredFields = paramType.getDeclaredFields();
+
+				// handle field
+				for (Field field : declaredFields) {
+					if (isElementRequired(field)) {
+						required.add(field.getName());
+					}
+
+					ObjectNode parameterNode = SUBTYPE_SCHEMA_GENERATOR.generateSchema(field.getGenericType());
+					String parameterDescription = getMethodParameterDescription(field);
+					if (Utils.hasText(parameterDescription)) {
+						parameterNode.put("description", parameterDescription);
+					}
+					properties.set(field.getName(), parameterNode);
+				}
+				continue;
+			}
+
+			if (isElementRequired(parameter)) {
 				required.add(parameterName);
 			}
 			ObjectNode parameterNode = SUBTYPE_SCHEMA_GENERATOR.generateSchema(parameterType);
-			String parameterDescription = getMethodParameterDescription(method, i);
+			String parameterDescription = getMethodParameterDescription(parameter);
 			if (Utils.hasText(parameterDescription)) {
 				parameterNode.put("description", parameterDescription);
 			}
@@ -205,26 +230,24 @@ public class JsonSchemaGenerator {
 		return Arrays.stream(method.getParameterTypes()).anyMatch(type -> CallToolRequest.class.isAssignableFrom(type));
 	}
 
-	private static boolean isMethodParameterRequired(Method method, int index) {
-		Parameter parameter = method.getParameters()[index];
-
-		var toolParamAnnotation = parameter.getAnnotation(McpToolParam.class);
+	private static boolean isElementRequired(AnnotatedElement element) {
+		var toolParamAnnotation = element.getAnnotation(McpToolParam.class);
 		if (toolParamAnnotation != null) {
 			return toolParamAnnotation.required();
 		}
 
-		var propertyAnnotation = parameter.getAnnotation(JsonProperty.class);
+		var propertyAnnotation = element.getAnnotation(JsonProperty.class);
 		if (propertyAnnotation != null) {
 			return propertyAnnotation.required();
 		}
 
-		var schemaAnnotation = parameter.getAnnotation(Schema.class);
+		var schemaAnnotation = element.getAnnotation(Schema.class);
 		if (schemaAnnotation != null) {
 			return schemaAnnotation.requiredMode() == Schema.RequiredMode.REQUIRED
 					|| schemaAnnotation.requiredMode() == Schema.RequiredMode.AUTO || schemaAnnotation.required();
 		}
 
-		var nullableAnnotation = parameter.getAnnotation(Nullable.class);
+		var nullableAnnotation = element.getAnnotation(Nullable.class);
 		if (nullableAnnotation != null) {
 			return false;
 		}
@@ -232,25 +255,22 @@ public class JsonSchemaGenerator {
 		return PROPERTY_REQUIRED_BY_DEFAULT;
 	}
 
-	private static String getMethodParameterDescription(Method method, int index) {
-		Parameter parameter = method.getParameters()[index];
-
-		var toolParamAnnotation = parameter.getAnnotation(McpToolParam.class);
+	private static String getMethodParameterDescription(AnnotatedElement element) {
+		McpToolParam toolParamAnnotation = element.getAnnotation(McpToolParam.class);
 		if (toolParamAnnotation != null && Utils.hasText(toolParamAnnotation.description())) {
 			return toolParamAnnotation.description();
 		}
-
-		var jacksonAnnotation = parameter.getAnnotation(JsonPropertyDescription.class);
-		if (jacksonAnnotation != null && Utils.hasText(jacksonAnnotation.value())) {
-			return jacksonAnnotation.value();
+		else {
+			JsonPropertyDescription jacksonAnnotation = element.getAnnotation(JsonPropertyDescription.class);
+			if (jacksonAnnotation != null && Utils.hasText(jacksonAnnotation.value())) {
+				return jacksonAnnotation.value();
+			}
+			else {
+				Schema schemaAnnotation = element.getAnnotation(Schema.class);
+				return schemaAnnotation != null && Utils.hasText(schemaAnnotation.description())
+						? schemaAnnotation.description() : null;
+			}
 		}
-
-		var schemaAnnotation = parameter.getAnnotation(Schema.class);
-		if (schemaAnnotation != null && Utils.hasText(schemaAnnotation.description())) {
-			return schemaAnnotation.description();
-		}
-
-		return null;
 	}
 
 }
