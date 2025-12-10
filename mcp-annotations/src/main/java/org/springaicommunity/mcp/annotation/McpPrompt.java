@@ -11,7 +11,7 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Marks a method as a MCP Prompt.
+ * Marks a method as an MCP Prompt.
  *
  * @author Christian Tzolov
  */
