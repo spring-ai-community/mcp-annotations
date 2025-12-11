@@ -25,7 +25,7 @@ This project consists of one module:
 
 The MCP Annotations project enables developers to easily create and register methods for handling MCP operations using simple annotations. It provides a clean, declarative approach to implementing MCP server functionality, reducing boilerplate code and improving maintainability.
 
-This library builds on top of the [MCP Java SDK](https://github.com/modelcontextprotocol/sdk-java) to provide a higher-level, annotation-based programming model for implementing MCP servers and clients.
+This library builds on top of the [MCP Java SDK](https://github.com/modelcontextprotocol/java-sdk) to provide a higher-level, annotation-based programming model for implementing MCP servers and clients.
 
 ## Installation
 
