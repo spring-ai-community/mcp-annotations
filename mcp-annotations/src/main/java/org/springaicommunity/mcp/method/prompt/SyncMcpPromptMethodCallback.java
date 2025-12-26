@@ -4,6 +4,7 @@
 
 package org.springaicommunity.mcp.method.prompt;
 
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.List;
 import java.util.function.BiFunction;
@@ -107,7 +108,10 @@ public final class SyncMcpPromptMethodCallback extends AbstractMcpPromptMethodCa
 			return promptResult;
 		}
 		catch (Exception e) {
-			if (e instanceof McpError mcpError && mcpError.getJsonRpcError() != null) {
+
+			Throwable cause = e instanceof InvocationTargetException ite ? ite.getTargetException() : e;
+
+			if (cause instanceof McpError mcpError && mcpError.getJsonRpcError() != null) {
 				throw mcpError;
 			}
 
