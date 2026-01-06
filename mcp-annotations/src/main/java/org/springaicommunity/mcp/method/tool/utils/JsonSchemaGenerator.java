@@ -24,6 +24,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
+import io.modelcontextprotocol.common.McpTransportContext;
 import org.springaicommunity.mcp.annotation.McpMeta;
 import org.springaicommunity.mcp.annotation.McpProgressToken;
 import org.springaicommunity.mcp.annotation.McpToolParam;
@@ -157,7 +158,8 @@ public class JsonSchemaGenerator {
 							|| ClassUtils.isAssignable(McpAsyncRequestContext.class, parameterClass)
 							|| ClassUtils.isAssignable(McpSyncServerExchange.class, parameterClass)
 							|| ClassUtils.isAssignable(McpAsyncServerExchange.class, parameterClass)
-							|| ClassUtils.isAssignable(CallToolRequest.class, parameterClass))) {
+							|| ClassUtils.isAssignable(CallToolRequest.class, parameterClass)
+							|| ClassUtils.isAssignable(McpTransportContext.class, parameterClass))) {
 				continue;
 			}
 
