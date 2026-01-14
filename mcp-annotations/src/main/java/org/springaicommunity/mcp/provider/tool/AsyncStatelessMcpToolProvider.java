@@ -77,13 +77,13 @@ public class AsyncStatelessMcpToolProvider extends AbstractMcpToolProvider {
 					String toolName = Utils.hasText(toolJavaAnnotation.name()) ? toolJavaAnnotation.name()
 							: mcpToolMethod.getName();
 
-					String toolDescrption = toolJavaAnnotation.description();
+					String toolDescription = toolJavaAnnotation.description();
 
 					String inputSchema = JsonSchemaGenerator.generateForMethodInput(mcpToolMethod);
 
 					var toolBuilder = McpSchema.Tool.builder()
 						.name(toolName)
-						.description(toolDescrption)
+						.description(toolDescription)
 						.inputSchema(this.getJsonMapper(), inputSchema);
 
 					var title = toolJavaAnnotation.title();
