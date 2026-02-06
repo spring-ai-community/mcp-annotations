@@ -8,6 +8,7 @@ import java.lang.reflect.Method;
 import java.util.List;
 import java.util.function.BiFunction;
 
+import io.modelcontextprotocol.common.McpTransportContext;
 import io.modelcontextprotocol.server.McpAsyncServerExchange;
 import io.modelcontextprotocol.spec.McpSchema.CompleteRequest;
 import io.modelcontextprotocol.spec.McpSchema.CompleteResult;
@@ -201,6 +202,15 @@ public class AsyncMcpCompleteMethodCallbackTests {
 
 		public CompleteResult invalidAsyncRequestContextInSyncMethod(McpAsyncRequestContext context) {
 			return new CompleteResult(new CompleteCompletion(List.of(), 0, false));
+		}
+
+		public Mono<CompleteResult> getCompletionWithTransportContext(McpTransportContext transportContext,
+				CompleteRequest request) {
+			if (transportContext == null) {
+				return Mono.error(new IllegalStateException("Transport context must not be null"));
+			}
+			return Mono.just(new CompleteResult(new CompleteCompletion(
+					List.of("Async completion with transport context for " + request.argument().value()), 1, false)));
 		}
 
 	}
@@ -991,6 +1001,36 @@ public class AsyncMcpCompleteMethodCallbackTests {
 			assertThat(result.completion().values()).hasSize(1);
 			assertThat(result.completion().values().get(0))
 				.isEqualTo("Async completion with progress (token: progress-123) for: value");
+		}).verifyComplete();
+	}
+
+	@Test
+	public void testCallbackWithTransportContextParameter() throws Exception {
+		TestAsyncCompleteProvider provider = new TestAsyncCompleteProvider();
+		Method method = TestAsyncCompleteProvider.class.getMethod("getCompletionWithTransportContext",
+				McpTransportContext.class, CompleteRequest.class);
+
+		BiFunction<McpAsyncServerExchange, CompleteRequest, Mono<CompleteResult>> callback = AsyncMcpCompleteMethodCallback
+			.builder()
+			.method(method)
+			.bean(provider)
+			.prompt("test-prompt")
+			.build();
+
+		McpTransportContext transportContext = mock(McpTransportContext.class);
+		McpAsyncServerExchange exchange = mock(McpAsyncServerExchange.class);
+		when(exchange.transportContext()).thenReturn(transportContext);
+		CompleteRequest request = new CompleteRequest(new PromptReference("test-prompt"),
+				new CompleteRequest.CompleteArgument("test", "value"));
+
+		Mono<CompleteResult> resultMono = callback.apply(exchange, request);
+
+		StepVerifier.create(resultMono).assertNext(result -> {
+			assertThat(result).isNotNull();
+			assertThat(result.completion()).isNotNull();
+			assertThat(result.completion().values()).hasSize(1);
+			assertThat(result.completion().values().get(0))
+				.isEqualTo("Async completion with transport context for value");
 		}).verifyComplete();
 	}
 

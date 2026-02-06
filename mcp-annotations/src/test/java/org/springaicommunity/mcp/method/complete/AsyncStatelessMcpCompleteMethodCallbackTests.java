@@ -41,6 +41,9 @@ public class AsyncStatelessMcpCompleteMethodCallbackTests {
 		}
 
 		public Mono<CompleteResult> getCompletionWithContext(McpTransportContext context, CompleteRequest request) {
+			if (context == null) {
+				return Mono.error(new IllegalStateException("Transport context must not be null"));
+			}
 			return Mono.just(new CompleteResult(new CompleteCompletion(
 					List.of("Async stateless completion with context for " + request.argument().value()), 1, false)));
 		}
@@ -595,7 +598,7 @@ public class AsyncStatelessMcpCompleteMethodCallbackTests {
 			.bean(provider)
 			.prompt("test-prompt")
 			.build()).isInstanceOf(IllegalArgumentException.class)
-			.hasMessageContaining("Method cannot have more than one exchange parameter");
+			.hasMessageContaining("Method cannot have more than one transport context parameter");
 	}
 
 	@Test

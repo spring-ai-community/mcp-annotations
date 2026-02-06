@@ -38,6 +38,9 @@ public class SyncStatelessMcpCompleteMethodCallbackTests {
 		}
 
 		public CompleteResult getCompletionWithContext(McpTransportContext context, CompleteRequest request) {
+			if (context == null) {
+				throw new IllegalStateException("Transport context must not be null");
+			}
 			return new CompleteResult(new CompleteCompletion(
 					List.of("Completion with context for " + request.argument().value()), 1, false));
 		}
@@ -432,7 +435,7 @@ public class SyncStatelessMcpCompleteMethodCallbackTests {
 			.bean(provider)
 			.prompt("test-prompt")
 			.build()).isInstanceOf(IllegalArgumentException.class)
-			.hasMessageContaining("Method cannot have more than one exchange parameter");
+			.hasMessageContaining("Method cannot have more than one transport context parameter");
 	}
 
 	@Test

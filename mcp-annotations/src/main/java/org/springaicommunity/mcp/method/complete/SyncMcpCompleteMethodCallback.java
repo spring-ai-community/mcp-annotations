@@ -9,13 +9,14 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.BiFunction;
 
-import org.springaicommunity.mcp.annotation.McpComplete;
-
+import io.modelcontextprotocol.common.McpTransportContext;
+import io.modelcontextprotocol.server.McpAsyncServerExchange;
 import io.modelcontextprotocol.server.McpSyncServerExchange;
 import io.modelcontextprotocol.spec.McpSchema.CompleteRequest;
 import io.modelcontextprotocol.spec.McpSchema.CompleteResult;
 import io.modelcontextprotocol.spec.McpSchema.CompleteResult.CompleteCompletion;
 import io.modelcontextprotocol.util.DefaultMcpUriTemplateManagerFactory;
+import org.springaicommunity.mcp.annotation.McpComplete;
 
 /**
  * Class for creating BiFunction callbacks around complete methods.
@@ -164,6 +165,14 @@ public final class SyncMcpCompleteMethodCallback extends AbstractMcpCompleteMeth
 							+ method.getName() + " in " + method.getDeclaringClass().getName() + " returns "
 							+ returnType.getName());
 		}
+	}
+
+	@Override
+	protected McpTransportContext resolveTransportContext(Object exchange) {
+		if (exchange instanceof McpSyncServerExchange e) {
+			return e.transportContext();
+		}
+		return null;
 	}
 
 	/**

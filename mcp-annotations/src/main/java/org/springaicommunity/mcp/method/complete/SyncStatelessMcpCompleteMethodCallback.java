@@ -165,6 +165,14 @@ public final class SyncStatelessMcpCompleteMethodCallback extends AbstractMcpCom
 		}
 	}
 
+	@Override
+	protected McpTransportContext resolveTransportContext(Object context) {
+		if (context instanceof McpTransportContext c) {
+			return c;
+		}
+		return null;
+	}
+
 	/**
 	 * Checks if a parameter type is compatible with the exchange type.
 	 * @param paramType The parameter type to check
@@ -173,7 +181,7 @@ public final class SyncStatelessMcpCompleteMethodCallback extends AbstractMcpCom
 	 */
 	@Override
 	protected boolean isExchangeType(Class<?> paramType) {
-		return McpTransportContext.class.isAssignableFrom(paramType);
+		return false;
 	}
 
 }

@@ -9,6 +9,7 @@ import java.lang.reflect.Parameter;
 import java.util.ArrayList;
 import java.util.List;
 
+import io.modelcontextprotocol.common.McpTransportContext;
 import io.modelcontextprotocol.server.McpAsyncServerExchange;
 import io.modelcontextprotocol.server.McpSyncServerExchange;
 import io.modelcontextprotocol.spec.McpSchema;
@@ -153,6 +154,7 @@ public abstract class AbstractMcpCompleteMethodCallback {
 
 		// Check parameter types
 		boolean hasExchangeParam = false;
+		boolean hasTransportContext = false;
 		boolean hasRequestParam = false;
 		boolean hasArgumentParam = false;
 		boolean hasProgressTokenParam = false;
@@ -207,6 +209,13 @@ public abstract class AbstractMcpCompleteMethodCallback {
 				}
 				hasRequestContextParam = true;
 			}
+			else if (McpTransportContext.class.isAssignableFrom(paramType)) {
+				if (hasTransportContext) {
+					throw new IllegalArgumentException("Method cannot have more than one transport context parameter: "
+							+ method.getName() + " in " + method.getDeclaringClass().getName());
+				}
+				hasTransportContext = true;
+			}
 			else if (isExchangeType(paramType)) {
 				if (hasExchangeParam) {
 					throw new IllegalArgumentException("Method cannot have more than one exchange parameter: "
@@ -243,11 +252,11 @@ public abstract class AbstractMcpCompleteMethodCallback {
 	 * This method constructs an array of arguments based on the method's parameter types
 	 * and the available values (exchange, request, argument).
 	 * @param method The method to build arguments for
-	 * @param exchange The server exchange
+	 * @param exchangeOrContext The server exchange or transport context
 	 * @param request The complete request
 	 * @return An array of arguments for the method invocation
 	 */
-	protected Object[] buildArgs(Method method, Object exchange, CompleteRequest request) {
+	protected Object[] buildArgs(Method method, Object exchangeOrContext, CompleteRequest request) {
 		Parameter[] parameters = method.getParameters();
 		Object[] args = new Object[parameters.length];
 
@@ -263,18 +272,21 @@ public abstract class AbstractMcpCompleteMethodCallback {
 			else if (McpMeta.class.isAssignableFrom(paramType)) {
 				args[i] = request != null ? new McpMeta(request.meta()) : new McpMeta(null);
 			}
+			else if (McpTransportContext.class.isAssignableFrom(paramType)) {
+				args[i] = resolveTransportContext(exchangeOrContext);
+			}
 			else if (isExchangeType(paramType)) {
-				args[i] = exchange;
+				args[i] = exchangeOrContext;
 			}
 			else if (McpSyncRequestContext.class.isAssignableFrom(paramType)) {
 				args[i] = DefaultMcpSyncRequestContext.builder()
-					.exchange((McpSyncServerExchange) exchange)
+					.exchange((McpSyncServerExchange) exchangeOrContext)
 					.request(request)
 					.build();
 			}
 			else if (McpAsyncRequestContext.class.isAssignableFrom(paramType)) {
 				args[i] = DefaultMcpAsyncRequestContext.builder()
-					.exchange((McpAsyncServerExchange) exchange)
+					.exchange((McpAsyncServerExchange) exchangeOrContext)
 					.request(request)
 					.build();
 			}
@@ -294,6 +306,15 @@ public abstract class AbstractMcpCompleteMethodCallback {
 
 		return args;
 	}
+
+	/**
+	 * Resolves the transport context from the exchange or context object. This method
+	 * should be implemented by subclasses to extract the transport context from the
+	 * appropriate exchange type.
+	 * @param exchangeOrContext The server exchange or transport context
+	 * @return The resolved transport context
+	 */
+	protected abstract McpTransportContext resolveTransportContext(Object exchangeOrContext);
 
 	/**
 	 * Checks if a parameter type is compatible with the exchange type. This method should

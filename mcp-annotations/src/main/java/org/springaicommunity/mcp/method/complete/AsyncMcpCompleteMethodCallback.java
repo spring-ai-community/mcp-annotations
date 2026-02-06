@@ -9,13 +9,13 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.BiFunction;
 
-import org.springaicommunity.mcp.annotation.McpComplete;
-
+import io.modelcontextprotocol.common.McpTransportContext;
 import io.modelcontextprotocol.server.McpAsyncServerExchange;
 import io.modelcontextprotocol.spec.McpSchema.CompleteRequest;
 import io.modelcontextprotocol.spec.McpSchema.CompleteResult;
 import io.modelcontextprotocol.spec.McpSchema.CompleteResult.CompleteCompletion;
 import io.modelcontextprotocol.util.DefaultMcpUriTemplateManagerFactory;
+import org.springaicommunity.mcp.annotation.McpComplete;
 import reactor.core.publisher.Mono;
 
 /**
@@ -184,6 +184,14 @@ public final class AsyncMcpCompleteMethodCallback extends AbstractMcpCompleteMet
 							+ "String, or Mono<T>: " + method.getName() + " in " + method.getDeclaringClass().getName()
 							+ " returns " + returnType.getName());
 		}
+	}
+
+	@Override
+	protected McpTransportContext resolveTransportContext(Object exchange) {
+		if (exchange instanceof McpAsyncServerExchange e) {
+			return e.transportContext();
+		}
+		return null;
 	}
 
 	/**
