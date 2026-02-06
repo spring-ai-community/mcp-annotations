@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
+import io.modelcontextprotocol.common.McpTransportContext;
 import io.modelcontextprotocol.server.McpAsyncServerExchange;
 import io.modelcontextprotocol.spec.McpSchema.CallToolRequest;
 import io.modelcontextprotocol.spec.McpSchema.CallToolResult;
@@ -77,6 +78,11 @@ public class AsyncMcpToolMethodCallbackTests {
 		@McpTool(name = "context-mono-tool", description = "Mono tool with context parameter")
 		public Mono<String> monoToolWithContext(McpAsyncRequestContext context, String message) {
 			return Mono.just("Context tool: " + message);
+		}
+
+		@McpTool(name = "transport-context-mono-tool", description = "Mono tool with transport context parameter")
+		public Mono<String> monoToolWithTransportContext(McpTransportContext transportContext, String message) {
+			return Mono.just("Transport context tool: " + message);
 		}
 
 		@McpTool(name = "list-mono-tool", description = "Mono tool with list parameter")
@@ -673,6 +679,9 @@ public class AsyncMcpToolMethodCallbackTests {
 		// Test that McpAsyncRequestContext is recognized as context type
 		assertThat(callback.isExchangeOrContextType(McpAsyncRequestContext.class)).isTrue();
 
+		// Test that McpTransportContext is recognized as context type
+		assertThat(callback.isExchangeOrContextType(McpTransportContext.class)).isTrue();
+
 		// Test that other types are not recognized as exchange type
 		assertThat(callback.isExchangeOrContextType(String.class)).isFalse();
 		assertThat(callback.isExchangeOrContextType(Integer.class)).isFalse();
@@ -695,6 +704,27 @@ public class AsyncMcpToolMethodCallbackTests {
 			assertThat(result.content()).hasSize(1);
 			assertThat(result.content().get(0)).isInstanceOf(TextContent.class);
 			assertThat(((TextContent) result.content().get(0)).text()).isEqualTo("Context tool: hello");
+		}).verifyComplete();
+	}
+
+	@Test
+	public void testMonoToolWithTransportContextParameter() throws Exception {
+		TestAsyncToolProvider provider = new TestAsyncToolProvider();
+		Method method = TestAsyncToolProvider.class.getMethod("monoToolWithTransportContext", McpTransportContext.class,
+				String.class);
+		AsyncMcpToolMethodCallback callback = new AsyncMcpToolMethodCallback(ReturnMode.TEXT, method, provider);
+
+		McpTransportContext transportContext = mock(McpTransportContext.class);
+		McpAsyncServerExchange exchange = mock(McpAsyncServerExchange.class);
+		org.mockito.Mockito.when(exchange.transportContext()).thenReturn(transportContext);
+		CallToolRequest request = new CallToolRequest("transport-context-mono-tool", Map.of("message", "hello"));
+
+		StepVerifier.create(callback.apply(exchange, request)).assertNext(result -> {
+			assertThat(result).isNotNull();
+			assertThat(result.isError()).isFalse();
+			assertThat(result.content()).hasSize(1);
+			assertThat(result.content().get(0)).isInstanceOf(TextContent.class);
+			assertThat(((TextContent) result.content().get(0)).text()).isEqualTo("Transport context tool: hello");
 		}).verifyComplete();
 	}
 

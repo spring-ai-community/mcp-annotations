@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
+import io.modelcontextprotocol.common.McpTransportContext;
 import io.modelcontextprotocol.server.McpSyncServerExchange;
 import io.modelcontextprotocol.spec.McpSchema.CallToolRequest;
 import io.modelcontextprotocol.spec.McpSchema.CallToolResult;
@@ -60,6 +61,11 @@ public class SyncMcpToolMethodCallbackTests {
 		@McpTool(name = "context-tool", description = "Tool with context parameter")
 		public String toolWithContext(McpSyncRequestContext context, String message) {
 			return "Context tool: " + message;
+		}
+
+		@McpTool(name = "transport-context-tool", description = "Tool with transport context parameter")
+		public String toolWithTransportContext(McpTransportContext transportContext, String message) {
+			return "Transport context tool: " + message;
 		}
 
 		@McpTool(name = "list-tool", description = "Tool with list parameter")
@@ -452,6 +458,9 @@ public class SyncMcpToolMethodCallbackTests {
 		// Test that McpSyncRequestContext is recognized as context type
 		assertThat(callback.isExchangeOrContextType(McpSyncRequestContext.class)).isTrue();
 
+		// Test that McpTransportContext is recognized as context type
+		assertThat(callback.isExchangeOrContextType(McpTransportContext.class)).isTrue();
+
 		// Test that other types are not recognized as exchange type
 		assertThat(callback.isExchangeOrContextType(String.class)).isFalse();
 		assertThat(callback.isExchangeOrContextType(Integer.class)).isFalse();
@@ -474,6 +483,27 @@ public class SyncMcpToolMethodCallbackTests {
 		assertThat(result.content()).hasSize(1);
 		assertThat(result.content().get(0)).isInstanceOf(TextContent.class);
 		assertThat(((TextContent) result.content().get(0)).text()).isEqualTo("Context tool: hello");
+	}
+
+	@Test
+	public void testToolWithTransportContextParameter() throws Exception {
+		TestToolProvider provider = new TestToolProvider();
+		Method method = TestToolProvider.class.getMethod("toolWithTransportContext", McpTransportContext.class,
+				String.class);
+		SyncMcpToolMethodCallback callback = new SyncMcpToolMethodCallback(ReturnMode.TEXT, method, provider);
+
+		McpTransportContext transportContext = mock(McpTransportContext.class);
+		McpSyncServerExchange exchange = mock(McpSyncServerExchange.class);
+		org.mockito.Mockito.when(exchange.transportContext()).thenReturn(transportContext);
+		CallToolRequest request = new CallToolRequest("transport-context-tool", Map.of("message", "hello"));
+
+		CallToolResult result = callback.apply(exchange, request);
+
+		assertThat(result).isNotNull();
+		assertThat(result.isError()).isFalse();
+		assertThat(result.content()).hasSize(1);
+		assertThat(result.content().get(0)).isInstanceOf(TextContent.class);
+		assertThat(((TextContent) result.content().get(0)).text()).isEqualTo("Transport context tool: hello");
 	}
 
 	@Test

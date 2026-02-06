@@ -31,7 +31,6 @@ import org.springaicommunity.mcp.context.McpAsyncRequestContext;
 import org.springaicommunity.mcp.context.McpSyncRequestContext;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyDescription;
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.github.victools.jsonschema.generator.Option;
 import com.github.victools.jsonschema.generator.OptionPreset;
@@ -43,6 +42,7 @@ import com.github.victools.jsonschema.module.jackson.JacksonModule;
 import com.github.victools.jsonschema.module.jackson.JacksonOption;
 import com.github.victools.jsonschema.module.swagger2.Swagger2Module;
 
+import io.modelcontextprotocol.common.McpTransportContext;
 import io.modelcontextprotocol.server.McpAsyncServerExchange;
 import io.modelcontextprotocol.server.McpSyncServerExchange;
 import io.modelcontextprotocol.spec.McpSchema.CallToolRequest;
@@ -116,6 +116,7 @@ public class JsonSchemaGenerator {
 						&& !CallToolRequest.class.isAssignableFrom(type)
 						&& !McpSyncServerExchange.class.isAssignableFrom(type)
 						&& !McpAsyncServerExchange.class.isAssignableFrom(type)
+						&& !McpTransportContext.class.isAssignableFrom(type)
 						&& !param.isAnnotationPresent(McpProgressToken.class) && !McpMeta.class.isAssignableFrom(type);
 			});
 
@@ -157,6 +158,7 @@ public class JsonSchemaGenerator {
 							|| ClassUtils.isAssignable(McpAsyncRequestContext.class, parameterClass)
 							|| ClassUtils.isAssignable(McpSyncServerExchange.class, parameterClass)
 							|| ClassUtils.isAssignable(McpAsyncServerExchange.class, parameterClass)
+							|| ClassUtils.isAssignable(McpTransportContext.class, parameterClass)
 							|| ClassUtils.isAssignable(CallToolRequest.class, parameterClass))) {
 				continue;
 			}

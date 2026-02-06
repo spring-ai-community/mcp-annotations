@@ -23,6 +23,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Stream;
 
+import io.modelcontextprotocol.common.McpTransportContext;
 import io.modelcontextprotocol.spec.McpSchema.CallToolRequest;
 import io.modelcontextprotocol.spec.McpSchema.CallToolResult;
 import org.springaicommunity.mcp.annotation.McpMeta;
@@ -116,6 +117,10 @@ public abstract class AbstractMcpToolMethodCallback<T, RC extends McpRequestCont
 			// Check if parameter is CallToolRequest type
 			if (CallToolRequest.class.isAssignableFrom(parameter.getType())) {
 				return request;
+			}
+
+			if (McpTransportContext.class.isAssignableFrom(parameter.getType())) {
+				return this.resolveTransportContext(exchangeOrContext);
 			}
 
 			if (isExchangeOrContextType(parameter.getType())) {
@@ -215,5 +220,14 @@ public abstract class AbstractMcpToolMethodCallback<T, RC extends McpRequestCont
 	}
 
 	protected abstract RC createRequestContext(T exchange, CallToolRequest request);
+
+	/**
+	 * Resolves the {@link McpTransportContext} from the exchange or context object.
+	 * Subclasses must implement this method to extract or return the transport context
+	 * appropriately based on the type of the exchange parameter.
+	 * @param exchangeOrContext The exchange or context object
+	 * @return The resolved McpTransportContext
+	 */
+	protected abstract McpTransportContext resolveTransportContext(T exchangeOrContext);
 
 }

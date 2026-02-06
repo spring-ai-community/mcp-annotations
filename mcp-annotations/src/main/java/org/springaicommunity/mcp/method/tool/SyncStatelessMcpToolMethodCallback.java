@@ -61,6 +61,11 @@ public final class SyncStatelessMcpToolMethodCallback
 	}
 
 	@Override
+	protected McpTransportContext resolveTransportContext(McpTransportContext context) {
+		return context;
+	}
+
+	@Override
 	public CallToolResult apply(McpTransportContext mcpTransportContext, CallToolRequest callToolRequest) {
 		validateSyncRequest(callToolRequest);
 

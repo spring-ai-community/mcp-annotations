@@ -60,6 +60,11 @@ public final class AsyncStatelessMcpToolMethodCallback
 				"Stateless tool methods do not support McpAsyncRequestContext parameter.");
 	}
 
+	@Override
+	protected McpTransportContext resolveTransportContext(McpTransportContext context) {
+		return context;
+	}
+
 	/**
 	 * Apply the callback to the given request.
 	 * <p>

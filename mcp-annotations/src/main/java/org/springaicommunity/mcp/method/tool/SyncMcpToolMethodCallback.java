@@ -18,6 +18,7 @@ package org.springaicommunity.mcp.method.tool;
 
 import java.util.function.BiFunction;
 
+import io.modelcontextprotocol.common.McpTransportContext;
 import org.springaicommunity.mcp.annotation.McpTool;
 import org.springaicommunity.mcp.context.DefaultMcpSyncRequestContext;
 import org.springaicommunity.mcp.context.McpSyncRequestContext;
@@ -49,12 +50,18 @@ public final class SyncMcpToolMethodCallback
 	@Override
 	protected boolean isExchangeOrContextType(Class<?> paramType) {
 		return McpSyncServerExchange.class.isAssignableFrom(paramType)
-				|| McpSyncRequestContext.class.isAssignableFrom(paramType);
+				|| McpSyncRequestContext.class.isAssignableFrom(paramType)
+				|| McpTransportContext.class.isAssignableFrom(paramType);
 	}
 
 	@Override
 	protected McpSyncRequestContext createRequestContext(McpSyncServerExchange exchange, CallToolRequest request) {
 		return DefaultMcpSyncRequestContext.builder().request(request).exchange(exchange).build();
+	}
+
+	@Override
+	protected McpTransportContext resolveTransportContext(McpSyncServerExchange exchange) {
+		return exchange.transportContext();
 	}
 
 	/**

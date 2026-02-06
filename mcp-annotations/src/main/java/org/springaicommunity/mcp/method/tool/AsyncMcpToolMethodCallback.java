@@ -19,6 +19,7 @@ package org.springaicommunity.mcp.method.tool;
 import java.lang.reflect.Method;
 import java.util.function.BiFunction;
 
+import io.modelcontextprotocol.common.McpTransportContext;
 import io.modelcontextprotocol.server.McpAsyncServerExchange;
 import io.modelcontextprotocol.spec.McpSchema.CallToolRequest;
 import io.modelcontextprotocol.spec.McpSchema.CallToolResult;
@@ -51,13 +52,19 @@ public final class AsyncMcpToolMethodCallback
 	@Override
 	protected boolean isExchangeOrContextType(Class<?> paramType) {
 		return McpAsyncServerExchange.class.isAssignableFrom(paramType)
-				|| McpAsyncRequestContext.class.isAssignableFrom(paramType);
+				|| McpAsyncRequestContext.class.isAssignableFrom(paramType)
+				|| McpTransportContext.class.isAssignableFrom(paramType);
 	}
 
 	@Override
 	protected McpAsyncRequestContext createRequestContext(McpAsyncServerExchange exchange, CallToolRequest request) {
 
 		return DefaultMcpAsyncRequestContext.builder().request(request).exchange(exchange).build();
+	}
+
+	@Override
+	protected McpTransportContext resolveTransportContext(McpAsyncServerExchange exchange) {
+		return exchange.transportContext();
 	}
 
 	/**
