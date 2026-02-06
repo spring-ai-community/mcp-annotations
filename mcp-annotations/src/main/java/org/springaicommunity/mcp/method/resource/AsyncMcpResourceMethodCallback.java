@@ -214,7 +214,8 @@ public final class AsyncMcpResourceMethodCallback extends AbstractMcpResourceMet
 	 */
 	@Override
 	protected boolean isExchangeOrContextType(Class<?> paramType) {
-		return McpAsyncServerExchange.class.isAssignableFrom(paramType);
+		return McpAsyncServerExchange.class.isAssignableFrom(paramType)
+				|| McpTransportContext.class.isAssignableFrom(paramType);
 	}
 
 }

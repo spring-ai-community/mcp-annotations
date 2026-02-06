@@ -1326,4 +1326,33 @@ public class AsyncMcpResourceMethodCallbackTests {
 					"Sync complete methods should use McpSyncRequestContext instead of McpAsyncRequestContext parameter");
 	}
 
+	@Test
+	public void testCallbackWithTransportContextParameter() throws Exception {
+		TestAsyncResourceProvider provider = new TestAsyncResourceProvider();
+		Method method = TestAsyncResourceProvider.class.getMethod("getResourceWithTransportContext",
+				McpTransportContext.class, ReadResourceRequest.class);
+
+		BiFunction<McpAsyncServerExchange, ReadResourceRequest, Mono<ReadResourceResult>> callback = AsyncMcpResourceMethodCallback
+			.builder()
+			.method(method)
+			.bean(provider)
+			.resource(ResourceAdapter.asResource(createMockMcpResource()))
+			.build();
+
+		McpTransportContext transportContext = mock(McpTransportContext.class);
+		McpAsyncServerExchange exchange = mock(McpAsyncServerExchange.class);
+		when(exchange.transportContext()).thenReturn(transportContext);
+		ReadResourceRequest request = new ReadResourceRequest("test/resource");
+
+		Mono<ReadResourceResult> resultMono = callback.apply(exchange, request);
+
+		StepVerifier.create(resultMono).assertNext(result -> {
+			assertThat(result).isNotNull();
+			assertThat(result.contents()).hasSize(1);
+			assertThat(result.contents().get(0)).isInstanceOf(TextResourceContents.class);
+			TextResourceContents textContent = (TextResourceContents) result.contents().get(0);
+			assertThat(textContent.text()).isEqualTo("Content with transport context for test/resource");
+		}).verifyComplete();
+	}
+
 }

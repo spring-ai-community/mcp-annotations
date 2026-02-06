@@ -1223,17 +1223,25 @@ public class SyncMcpResourceMethodCallbackTests {
 				McpTransportContext.class, ReadResourceRequest.class);
 		McpResource resourceAnnotation = method.getAnnotation(McpResource.class);
 
-		// Should fail during callback creation due to parameter validation -
-		// McpTransportContext is not supported in resource methods
-		assertThatThrownBy(() -> SyncMcpResourceMethodCallback.builder()
+		BiFunction<McpSyncServerExchange, ReadResourceRequest, ReadResourceResult> callback = SyncMcpResourceMethodCallback
+			.builder()
 			.method(method)
 			.bean(provider)
 			.resource(ResourceAdapter.asResource(resourceAnnotation))
-			.build())
-			.isInstanceOf(IllegalArgumentException.class)
-			.hasMessageContaining(
-					"Method parameters must be exchange, ReadResourceRequest, String, McpMeta, or @McpProgressToken")
-			.hasMessageContaining("McpTransportContext");
+			.build();
+
+		McpTransportContext transportContext = mock(McpTransportContext.class);
+		McpSyncServerExchange exchange = mock(McpSyncServerExchange.class);
+		when(exchange.transportContext()).thenReturn(transportContext);
+		ReadResourceRequest request = new ReadResourceRequest("transport-context://resource");
+
+		ReadResourceResult result = callback.apply(exchange, request);
+
+		assertThat(result).isNotNull();
+		assertThat(result.contents()).hasSize(1);
+		assertThat(result.contents().get(0)).isInstanceOf(TextResourceContents.class);
+		TextResourceContents textContent = (TextResourceContents) result.contents().get(0);
+		assertThat(textContent.text()).isEqualTo("Content with transport context for transport-context://resource");
 	}
 
 	@Test
