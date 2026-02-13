@@ -13,7 +13,7 @@ import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 import org.springaicommunity.mcp.annotation.McpToolListChanged;
 import org.springaicommunity.mcp.method.changed.tool.SyncToolListChangedSpecification;
-import io.modelcontextprotocol.json.McpJsonMapper;
+import io.modelcontextprotocol.json.McpJsonDefaults;
 import io.modelcontextprotocol.spec.McpSchema;
 
 /**
@@ -27,12 +27,12 @@ public class SyncMcpToolListChangedProviderTests {
 			McpSchema.Tool.builder()
 				.name("test-tool-1")
 				.description("Test Tool 1")
-				.inputSchema(McpJsonMapper.createDefault(), "{}")
+				.inputSchema(McpJsonDefaults.getMapper(), "{}")
 				.build(),
 			McpSchema.Tool.builder()
 				.name("test-tool-2")
 				.description("Test Tool 2")
-				.inputSchema(McpJsonMapper.createDefault(), "{}")
+				.inputSchema(McpJsonDefaults.getMapper(), "{}")
 				.build());
 
 	/**
