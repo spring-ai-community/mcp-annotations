@@ -28,14 +28,14 @@ import java.lang.annotation.Target;
  *
  * <p>
  * Example usage: <pre>{@code
- * &#64;McpToolListChanged(clients = "test-client")
+ * @McpToolListChanged(clients = "test-client")
  * public void onToolListChanged(List<McpSchema.Tool> updatedTools) {
  *     // Handle tool list change notification with the updated tools
  *     logger.info("Tool list updated, now contains {} tools", updatedTools.size());
  *     // Process the updated tool list
  * }
  *
- * &#64;McpToolListChanged(clients = "test-client")
+ * @McpToolListChanged(clients = "test-client")
  * public Mono<Void> onToolListChangedAsync(List<McpSchema.Tool> updatedTools) {
  *     // Handle tool list change notification asynchronously
  *     return processUpdatedTools(updatedTools);
