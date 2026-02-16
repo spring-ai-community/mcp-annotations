@@ -4,6 +4,8 @@
 
 package org.springaicommunity.mcp.method.resource;
 
+import java.util.Map;
+
 import org.springaicommunity.mcp.method.resource.AbstractMcpResourceMethodCallback.ContentType;
 
 import io.modelcontextprotocol.spec.McpSchema.ReadResourceResult;
@@ -15,6 +17,7 @@ import io.modelcontextprotocol.spec.McpSchema.ReadResourceResult;
  * methods to a standardized {@link ReadResourceResult} format.
  *
  * @author Christian Tzolov
+ * @author Alexandros Pappas
  */
 public interface McpReadResourceResultConverter {
 
@@ -32,5 +35,25 @@ public interface McpReadResourceResultConverter {
 	 */
 	ReadResourceResult convertToReadResourceResult(Object result, String requestUri, String mimeType,
 			ContentType contentType);
+
+	/**
+	 * Converts the method's return value to a {@link ReadResourceResult}, propagating
+	 * resource-level metadata to the content items.
+	 * <p>
+	 * This default method delegates to the original
+	 * {@link #convertToReadResourceResult(Object, String, String, ContentType)} to ensure
+	 * backwards compatibility with existing custom implementations.
+	 * @param result The method's return value
+	 * @param requestUri The original request URI
+	 * @param mimeType The MIME type of the resource
+	 * @param contentType The content type of the resource
+	 * @param meta The resource-level metadata to propagate to content items
+	 * @return A {@link ReadResourceResult} containing the appropriate resource contents
+	 * @throws IllegalArgumentException if the return type is not supported
+	 */
+	default ReadResourceResult convertToReadResourceResult(Object result, String requestUri, String mimeType,
+			ContentType contentType, Map<String, Object> meta) {
+		return convertToReadResourceResult(result, requestUri, mimeType, contentType);
+	}
 
 }

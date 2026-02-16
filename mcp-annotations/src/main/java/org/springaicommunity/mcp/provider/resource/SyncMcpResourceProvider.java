@@ -18,6 +18,7 @@ package org.springaicommunity.mcp.provider.resource;
 
 import java.lang.reflect.Method;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Stream;
 
@@ -25,11 +26,15 @@ import io.modelcontextprotocol.server.McpServerFeatures.SyncResourceSpecificatio
 import io.modelcontextprotocol.server.McpServerFeatures.SyncResourceTemplateSpecification;
 import io.modelcontextprotocol.spec.McpSchema;
 import io.modelcontextprotocol.util.Assert;
+import io.modelcontextprotocol.util.Utils;
 import org.springaicommunity.mcp.McpPredicates;
 import org.springaicommunity.mcp.annotation.McpResource;
 import org.springaicommunity.mcp.method.resource.SyncMcpResourceMethodCallback;
+import org.springaicommunity.mcp.method.tool.utils.JsonParser;
 
 /**
+ * @author Christian Tzolov
+ * @author Alexandros Pappas
  */
 public class SyncMcpResourceProvider {
 
@@ -65,6 +70,7 @@ public class SyncMcpResourceProvider {
 						.name(name)
 						.description(description)
 						.mimeType(mimeType)
+						.meta(parseMeta(resourceAnnotation.meta()))
 						.build();
 
 					var methodCallback = SyncMcpResourceMethodCallback.builder()
@@ -108,6 +114,7 @@ public class SyncMcpResourceProvider {
 						.name(name)
 						.description(description)
 						.mimeType(mimeType)
+						.meta(parseMeta(resourceAnnotation.meta()))
 						.build();
 
 					var methodCallback = SyncMcpResourceMethodCallback.builder()
@@ -133,6 +140,14 @@ public class SyncMcpResourceProvider {
 	 */
 	protected Method[] doGetClassMethods(Object bean) {
 		return bean.getClass().getDeclaredMethods();
+	}
+
+	@SuppressWarnings("unchecked")
+	private static Map<String, Object> parseMeta(String metaJson) {
+		if (!Utils.hasText(metaJson)) {
+			return null;
+		}
+		return JsonParser.fromJson(metaJson, Map.class);
 	}
 
 	private static String getName(Method method, McpResource resource) {

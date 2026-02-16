@@ -35,6 +35,7 @@ import io.modelcontextprotocol.util.McpUriTemplateManagerFactory;
  * and other common operations.
  *
  * @author Christian Tzolov
+ * @author Alexandros Pappas
  */
 public abstract class AbstractMcpResourceMethodCallback {
 
@@ -75,6 +76,8 @@ public abstract class AbstractMcpResourceMethodCallback {
 
 	protected final ContentType contentType;
 
+	protected final Map<String, Object> meta;
+
 	/**
 	 * Constructor for AbstractMcpResourceMethodCallback.
 	 * @param method The method to create a callback for
@@ -86,10 +89,11 @@ public abstract class AbstractMcpResourceMethodCallback {
 	 * @param resultConverter The result converter
 	 * @param uriTemplateMangerFactory The URI template manager factory
 	 * @param contentType The content type
+	 * @param meta The resource metadata to propagate to content-level _meta
 	 */
 	protected AbstractMcpResourceMethodCallback(Method method, Object bean, String uri, String name, String description,
 			String mimeType, McpReadResourceResultConverter resultConverter,
-			McpUriTemplateManagerFactory uriTemplateMangerFactory, ContentType contentType) {
+			McpUriTemplateManagerFactory uriTemplateMangerFactory, ContentType contentType, Map<String, Object> meta) {
 
 		Assert.hasText(uri, "URI can't be null or empty!");
 		Assert.notNull(method, "Method can't be null!");
@@ -109,6 +113,7 @@ public abstract class AbstractMcpResourceMethodCallback {
 		this.uriVariables = this.uriTemplateManager.getVariableNames();
 
 		this.contentType = contentType;
+		this.meta = meta;
 	}
 
 	/**
@@ -567,6 +572,8 @@ public abstract class AbstractMcpResourceMethodCallback {
 
 		protected String uri; // Resource URI
 
+		protected Map<String, Object> meta; // Resource metadata
+
 		/**
 		 * Set the method to create a callback for.
 		 * @param method The method to create a callback for
@@ -609,6 +616,7 @@ public abstract class AbstractMcpResourceMethodCallback {
 			this.name = resource.name();
 			this.description = resource.description();
 			this.mimeType = resource.mimeType();
+			this.meta = resource.meta();
 			return (T) this;
 		}
 
@@ -622,6 +630,7 @@ public abstract class AbstractMcpResourceMethodCallback {
 			this.name = resourceTemplate.name();
 			this.description = resourceTemplate.description();
 			this.mimeType = resourceTemplate.mimeType();
+			this.meta = resourceTemplate.meta();
 			return (T) this;
 		}
 

@@ -45,6 +45,7 @@ import reactor.core.publisher.Mono;
  * return reactive types.
  *
  * @author Christian Tzolov
+ * @author Alexandros Pappas
  */
 public class AsyncStatelessMcpToolProvider extends AbstractMcpToolProvider {
 
@@ -110,6 +111,8 @@ public class AsyncStatelessMcpToolProvider extends AbstractMcpToolProvider {
 						title = toolName;
 					}
 					toolBuilder.title(title);
+
+					toolBuilder.meta(parseMeta(toolJavaAnnotation.meta()));
 
 					// Generate Output Schema from the method return type.
 					// Output schema is not generated for primitive types, void,

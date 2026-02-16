@@ -28,13 +28,14 @@ import io.modelcontextprotocol.spec.McpSchema.ResourceContents;
  * method signatures and return types, and handles URI template variables.
  *
  * @author Christian Tzolov
+ * @author Alexandros Pappas
  */
 public final class SyncMcpResourceMethodCallback extends AbstractMcpResourceMethodCallback
 		implements BiFunction<McpSyncServerExchange, ReadResourceRequest, ReadResourceResult> {
 
 	private SyncMcpResourceMethodCallback(Builder builder) {
 		super(builder.method, builder.bean, builder.uri, builder.name, builder.description, builder.mimeType,
-				builder.resultConverter, builder.uriTemplateManagerFactory, builder.contentType);
+				builder.resultConverter, builder.uriTemplateManagerFactory, builder.contentType, builder.meta);
 		this.validateMethod(this.method);
 	}
 
@@ -119,7 +120,7 @@ public final class SyncMcpResourceMethodCallback extends AbstractMcpResourceMeth
 
 			// Convert the result to a ReadResourceResult using the converter
 			return this.resultConverter.convertToReadResourceResult(result, request.uri(), this.mimeType,
-					this.contentType);
+					this.contentType, this.meta);
 		}
 		catch (Exception e) {
 			if (e instanceof McpError mcpError && mcpError.getJsonRpcError() != null) {

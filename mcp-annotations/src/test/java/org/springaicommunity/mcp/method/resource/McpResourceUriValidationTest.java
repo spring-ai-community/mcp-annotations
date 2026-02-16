@@ -16,6 +16,9 @@ import org.springaicommunity.mcp.annotation.McpResource;
 /**
  * Simple test to verify that McpResourceMethodCallback requires a non-empty URI in the
  * McpResource annotation.
+ *
+ * @author Christian Tzolov
+ * @author Alexandros Pappas
  */
 public class McpResourceUriValidationTest {
 
@@ -63,6 +66,11 @@ public class McpResourceUriValidationTest {
 
 			@Override
 			public String mimeType() {
+				return "";
+			}
+
+			@Override
+			public String meta() {
 				return "";
 			}
 
@@ -123,6 +131,11 @@ public class McpResourceUriValidationTest {
 
 			@Override
 			public String mimeType() {
+				return "";
+			}
+
+			@Override
+			public String meta() {
 				return "";
 			}
 

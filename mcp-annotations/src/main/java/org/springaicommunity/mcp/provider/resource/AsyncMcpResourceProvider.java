@@ -18,6 +18,7 @@ package org.springaicommunity.mcp.provider.resource;
 
 import java.lang.reflect.Method;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.function.BiFunction;
 import java.util.stream.Stream;
@@ -29,11 +30,13 @@ import io.modelcontextprotocol.spec.McpSchema;
 import io.modelcontextprotocol.spec.McpSchema.ReadResourceRequest;
 import io.modelcontextprotocol.spec.McpSchema.ReadResourceResult;
 import io.modelcontextprotocol.util.Assert;
+import io.modelcontextprotocol.util.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springaicommunity.mcp.McpPredicates;
 import org.springaicommunity.mcp.annotation.McpResource;
 import org.springaicommunity.mcp.method.resource.AsyncMcpResourceMethodCallback;
+import org.springaicommunity.mcp.method.tool.utils.JsonParser;
 import reactor.core.publisher.Mono;
 
 /**
@@ -44,6 +47,7 @@ import reactor.core.publisher.Mono;
  * return reactive types.
  *
  * @author Christian Tzolov
+ * @author Alexandros Pappas
  */
 public class AsyncMcpResourceProvider {
 
@@ -91,6 +95,7 @@ public class AsyncMcpResourceProvider {
 						.name(name)
 						.description(description)
 						.mimeType(mimeType)
+						.meta(parseMeta(resourceAnnotation.meta()))
 						.build();
 
 					BiFunction<McpAsyncServerExchange, ReadResourceRequest, Mono<ReadResourceResult>> methodCallback = AsyncMcpResourceMethodCallback
@@ -142,6 +147,7 @@ public class AsyncMcpResourceProvider {
 						.name(name)
 						.description(description)
 						.mimeType(mimeType)
+						.meta(parseMeta(resourceAnnotation.meta()))
 						.build();
 
 					BiFunction<McpAsyncServerExchange, ReadResourceRequest, Mono<ReadResourceResult>> methodCallback = AsyncMcpResourceMethodCallback
@@ -173,6 +179,14 @@ public class AsyncMcpResourceProvider {
 
 	protected McpResource doGetMcpResourceAnnotation(Method method) {
 		return method.getAnnotation(McpResource.class);
+	}
+
+	@SuppressWarnings("unchecked")
+	private static Map<String, Object> parseMeta(String metaJson) {
+		if (!Utils.hasText(metaJson)) {
+			return null;
+		}
+		return JsonParser.fromJson(metaJson, Map.class);
 	}
 
 	private static String getName(Method method, McpResource resource) {

@@ -16,6 +16,7 @@ import io.modelcontextprotocol.spec.McpSchema.Role;
  * Marks a method as a MCP Resource.
  *
  * @author Christian Tzolov
+ * @author Alexandros Pappas
  */
 @Target({ ElementType.METHOD, ElementType.ANNOTATION_TYPE })
 @Retention(RetentionPolicy.RUNTIME)
@@ -49,6 +50,12 @@ public @interface McpResource {
 	 * The MIME type of this resource, if known.
 	 */
 	String mimeType() default "text/plain";
+
+	/**
+	 * Optional JSON string representing the _meta field for this resource. The value is
+	 * parsed as a JSON object and passed to the Resource builder's meta method.
+	 */
+	String meta() default "";
 
 	/**
 	 * Optional annotations for the client. Note: The default annotations value is

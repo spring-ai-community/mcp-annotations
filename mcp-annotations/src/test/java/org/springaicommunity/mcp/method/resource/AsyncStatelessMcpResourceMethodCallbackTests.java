@@ -38,6 +38,7 @@ import static org.mockito.Mockito.when;
  * Tests for {@link AsyncStatelessMcpResourceMethodCallback}.
  *
  * @author Christian Tzolov
+ * @author Alexandros Pappas
  */
 public class AsyncStatelessMcpResourceMethodCallbackTests {
 
@@ -240,6 +241,11 @@ public class AsyncStatelessMcpResourceMethodCallbackTests {
 			@Override
 			public String mimeType() {
 				return "text/plain";
+			}
+
+			@Override
+			public String meta() {
+				return "";
 			}
 
 			@Override
@@ -584,6 +590,11 @@ public class AsyncStatelessMcpResourceMethodCallbackTests {
 
 			@Override
 			public String mimeType() {
+				return "";
+			}
+
+			@Override
+			public String meta() {
 				return "";
 			}
 

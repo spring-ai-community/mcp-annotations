@@ -11,6 +11,7 @@ import java.lang.annotation.Target;
 
 /**
  * @author Christian Tzolov
+ * @author Alexandros Pappas
  */
 @Target({ ElementType.METHOD, ElementType.ANNOTATION_TYPE })
 @Retention(RetentionPolicy.RUNTIME)
@@ -45,6 +46,12 @@ public @interface McpTool {
 	 * annotations.title should be given precedence over using name, if present).
 	 */
 	String title() default "";
+
+	/**
+	 * Optional JSON string representing the _meta field for this tool. The value is
+	 * parsed as a JSON object and passed to the Tool builder's meta method.
+	 */
+	String meta() default "";
 
 	/**
 	 * Additional properties describing a Tool to clients.

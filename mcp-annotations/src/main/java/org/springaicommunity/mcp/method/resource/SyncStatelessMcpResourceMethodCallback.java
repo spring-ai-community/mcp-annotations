@@ -29,13 +29,14 @@ import io.modelcontextprotocol.spec.McpSchema.ResourceContents;
  * template variables.
  *
  * @author Christian Tzolov
+ * @author Alexandros Pappas
  */
 public final class SyncStatelessMcpResourceMethodCallback extends AbstractMcpResourceMethodCallback
 		implements BiFunction<McpTransportContext, ReadResourceRequest, ReadResourceResult> {
 
 	private SyncStatelessMcpResourceMethodCallback(Builder builder) {
 		super(builder.method, builder.bean, builder.uri, builder.name, builder.description, builder.mimeType,
-				builder.resultConverter, builder.uriTemplateManagerFactory, builder.contentType);
+				builder.resultConverter, builder.uriTemplateManagerFactory, builder.contentType, builder.meta);
 		this.validateMethod(this.method);
 	}
 
@@ -114,7 +115,7 @@ public final class SyncStatelessMcpResourceMethodCallback extends AbstractMcpRes
 
 			// Convert the result to a ReadResourceResult using the converter
 			return this.resultConverter.convertToReadResourceResult(result, request.uri(), this.mimeType,
-					this.contentType);
+					this.contentType, this.meta);
 		}
 		catch (Exception e) {
 			if (e instanceof McpError mcpError && mcpError.getJsonRpcError() != null) {

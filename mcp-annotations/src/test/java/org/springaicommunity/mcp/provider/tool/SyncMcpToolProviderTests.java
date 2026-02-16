@@ -46,6 +46,7 @@ import static net.javacrumbs.jsonunit.assertj.JsonAssertions.json;
  * Tests for {@link SyncMcpToolProvider}.
  *
  * @author Christian Tzolov
+ * @author Alexandros Pappas
  */
 public class SyncMcpToolProviderTests {
 
@@ -808,6 +809,56 @@ public class SyncMcpToolProviderTests {
 		assertThat(toolSpec.tool().name()).isEqualTo("string-tool");
 		// Output schema should not be generated for simple value types like String
 		assertThat(toolSpec.tool().outputSchema()).isNull();
+	}
+
+	@Test
+	void testToolWithMeta() {
+		class MetaTool {
+
+			@McpTool(name = "ui-tool", description = "Tool with meta",
+					meta = "{\"ui\": {\"resourceUri\": \"ui://test/view.html\", \"visibility\": [\"model\", \"app\"]}, \"ui/resourceUri\": \"ui://test/view.html\"}")
+			public String uiTool(String input) {
+				return "result: " + input;
+			}
+
+		}
+
+		MetaTool toolObject = new MetaTool();
+		SyncMcpToolProvider provider = new SyncMcpToolProvider(List.of(toolObject));
+
+		List<SyncToolSpecification> toolSpecs = provider.getToolSpecifications();
+
+		assertThat(toolSpecs).hasSize(1);
+		McpSchema.Tool tool = toolSpecs.get(0).tool();
+		assertThat(tool.name()).isEqualTo("ui-tool");
+		assertThat(tool.meta()).isNotNull();
+		assertThat(tool.meta()).containsKey("ui");
+		assertThat(tool.meta()).containsKey("ui/resourceUri");
+		assertThat(tool.meta().get("ui/resourceUri")).isEqualTo("ui://test/view.html");
+
+		@SuppressWarnings("unchecked")
+		Map<String, Object> ui = (Map<String, Object>) tool.meta().get("ui");
+		assertThat(ui.get("resourceUri")).isEqualTo("ui://test/view.html");
+	}
+
+	@Test
+	void testToolWithEmptyMeta() {
+		class NoMetaTool {
+
+			@McpTool(name = "plain-tool", description = "Tool without meta")
+			public String plainTool(String input) {
+				return "result: " + input;
+			}
+
+		}
+
+		NoMetaTool toolObject = new NoMetaTool();
+		SyncMcpToolProvider provider = new SyncMcpToolProvider(List.of(toolObject));
+
+		List<SyncToolSpecification> toolSpecs = provider.getToolSpecifications();
+
+		assertThat(toolSpecs).hasSize(1);
+		assertThat(toolSpecs.get(0).tool().meta()).isNull();
 	}
 
 	@Test

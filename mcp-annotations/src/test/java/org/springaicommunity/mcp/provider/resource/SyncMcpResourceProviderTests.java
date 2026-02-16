@@ -21,6 +21,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
 
 import java.util.List;
+import java.util.Map;
 
 import org.junit.jupiter.api.Test;
 import org.springaicommunity.mcp.annotation.McpResource;
@@ -38,6 +39,7 @@ import reactor.core.publisher.Mono;
  * Tests for {@link SyncMcpResourceProvider}.
  *
  * @author Christian Tzolov
+ * @author Alexandros Pappas
  */
 public class SyncMcpResourceProviderTests {
 
@@ -300,6 +302,53 @@ public class SyncMcpResourceProviderTests {
 		ResourceContents content = result.contents().get(0);
 		assertThat(content).isInstanceOf(TextResourceContents.class);
 		assertThat(((TextResourceContents) content).text()).isEqualTo("Resource content for id: 123, type: document");
+	}
+
+	@Test
+	void testGetResourceSpecificationsWithMeta() {
+		class MetaResource {
+
+			@McpResource(uri = "ui://test/view.html", name = "test-view", mimeType = "text/html;profile=mcp-app",
+					meta = "{\"ui\": {\"csp\": {\"resourceDomains\": [\"https://unpkg.com\"]}}}")
+			public String testView() {
+				return "<html>test</html>";
+			}
+
+		}
+
+		MetaResource resourceObject = new MetaResource();
+		SyncMcpResourceProvider provider = new SyncMcpResourceProvider(List.of(resourceObject));
+
+		List<SyncResourceSpecification> resourceSpecs = provider.getResourceSpecifications();
+
+		assertThat(resourceSpecs).hasSize(1);
+		assertThat(resourceSpecs.get(0).resource().mimeType()).isEqualTo("text/html;profile=mcp-app");
+		assertThat(resourceSpecs.get(0).resource().meta()).isNotNull();
+		assertThat(resourceSpecs.get(0).resource().meta()).containsKey("ui");
+
+		@SuppressWarnings("unchecked")
+		Map<String, Object> ui = (Map<String, Object>) resourceSpecs.get(0).resource().meta().get("ui");
+		assertThat(ui).containsKey("csp");
+	}
+
+	@Test
+	void testGetResourceSpecificationsWithEmptyMeta() {
+		class NoMetaResource {
+
+			@McpResource(uri = "no-meta://resource", name = "no-meta-resource", description = "Resource without meta")
+			public String noMetaResource() {
+				return "No meta content";
+			}
+
+		}
+
+		NoMetaResource resourceObject = new NoMetaResource();
+		SyncMcpResourceProvider provider = new SyncMcpResourceProvider(List.of(resourceObject));
+
+		List<SyncResourceSpecification> resourceSpecs = provider.getResourceSpecifications();
+
+		assertThat(resourceSpecs).hasSize(1);
+		assertThat(resourceSpecs.get(0).resource().meta()).isNull();
 	}
 
 	@Test

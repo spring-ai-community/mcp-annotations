@@ -37,6 +37,7 @@ import static org.mockito.Mockito.when;
  * Tests for {@link SyncMcpResourceMethodCallback}.
  *
  * @author Christian Tzolov
+ * @author Alexandros Pappas
  */
 public class SyncMcpResourceMethodCallbackTests {
 
@@ -289,6 +290,11 @@ public class SyncMcpResourceMethodCallbackTests {
 			@Override
 			public String mimeType() {
 				return "text/plain";
+			}
+
+			@Override
+			public String meta() {
+				return "";
 			}
 
 			@Override
@@ -589,6 +595,11 @@ public class SyncMcpResourceMethodCallbackTests {
 			@Override
 			public String mimeType() {
 				return "text/plain";
+			}
+
+			@Override
+			public String meta() {
+				return "";
 			}
 
 			@Override
