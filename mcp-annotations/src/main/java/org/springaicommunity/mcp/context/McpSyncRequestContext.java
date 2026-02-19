@@ -4,10 +4,8 @@
 
 package org.springaicommunity.mcp.context;
 
-import java.util.Optional;
 import java.util.function.Consumer;
 
-import com.fasterxml.jackson.core.type.TypeReference;
 import io.modelcontextprotocol.server.McpSyncServerExchange;
 import io.modelcontextprotocol.spec.McpSchema.CreateMessageRequest;
 import io.modelcontextprotocol.spec.McpSchema.CreateMessageResult;
@@ -15,6 +13,7 @@ import io.modelcontextprotocol.spec.McpSchema.ElicitRequest;
 import io.modelcontextprotocol.spec.McpSchema.ElicitResult;
 import io.modelcontextprotocol.spec.McpSchema.ListRootsResult;
 import io.modelcontextprotocol.spec.McpSchema.ProgressNotification;
+import tools.jackson.core.type.TypeReference;
 
 /**
  * @author Christian Tzolov

@@ -8,7 +8,6 @@ import java.lang.reflect.Type;
 import java.util.Map;
 import java.util.function.Consumer;
 
-import com.fasterxml.jackson.core.type.TypeReference;
 import io.modelcontextprotocol.common.McpTransportContext;
 import io.modelcontextprotocol.server.McpSyncServerExchange;
 import io.modelcontextprotocol.spec.McpSchema;
@@ -29,6 +28,7 @@ import org.slf4j.LoggerFactory;
 import org.springaicommunity.mcp.method.tool.utils.ConcurrentReferenceHashMap;
 import org.springaicommunity.mcp.method.tool.utils.JsonParser;
 import org.springaicommunity.mcp.method.tool.utils.JsonSchemaGenerator;
+import tools.jackson.core.type.TypeReference;
 
 /**
  * @author Christian Tzolov

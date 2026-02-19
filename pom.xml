@@ -6,7 +6,7 @@
 
 	<groupId>org.springaicommunity</groupId>
 	<artifactId>mcp-annotations-parent</artifactId>
-	<version>0.9.0-SNAPSHOT</version>
+	<version>1.0.0-SNAPSHOT</version>
 
 	<packaging>pom</packaging>
 	<url>https://github.com/spring-ai-community/mcp-annotations</url>
@@ -56,9 +56,9 @@
 		<maven.compiler.source>17</maven.compiler.source>
 		<maven.compiler.target>17</maven.compiler.target>
 
-		<mcp.java.sdk.version>0.18.0-SNAPSHOT</mcp.java.sdk.version>
+		<mcp.java.sdk.version>1.0.0-SNAPSHOT</mcp.java.sdk.version>
 
-		<jsonschema.version>4.38.0</jsonschema.version>
+		<jsonschema.version>5.0.0</jsonschema.version>
 		<swagger-annotations.version>2.2.36</swagger-annotations.version>
 		
 		<!-- MUST KEEP JACKSON VERSION ALIGNED WITH the mcp-json-jackson2 version -->

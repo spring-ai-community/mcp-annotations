@@ -7,7 +7,6 @@ package org.springaicommunity.mcp.context;
 import java.util.Map;
 import java.util.function.Consumer;
 
-import com.fasterxml.jackson.core.type.TypeReference;
 import io.modelcontextprotocol.server.McpSyncServerExchange;
 import io.modelcontextprotocol.spec.McpSchema;
 import io.modelcontextprotocol.spec.McpSchema.CallToolRequest;
@@ -28,6 +27,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.springaicommunity.mcp.context.McpRequestContextTypes.ElicitationSpec;
+import tools.jackson.core.type.TypeReference;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;

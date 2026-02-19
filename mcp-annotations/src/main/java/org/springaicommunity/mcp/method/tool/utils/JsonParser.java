@@ -20,16 +20,15 @@ import java.lang.reflect.Type;
 import java.math.BigDecimal;
 import java.util.Map;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.JavaType;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.databind.json.JsonMapper;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-
 import io.modelcontextprotocol.util.Assert;
+import tools.jackson.core.JacksonException;
+import tools.jackson.core.type.TypeReference;
+import tools.jackson.databind.DeserializationFeature;
+import tools.jackson.databind.JavaType;
+import tools.jackson.databind.SerializationFeature;
+import tools.jackson.databind.cfg.DateTimeFeature;
+import tools.jackson.databind.json.JsonMapper;
+import tools.jackson.databind.module.SimpleModule;
 
 /**
  * Utilities to perform parsing operations between JSON and Java.
@@ -44,21 +43,21 @@ public final class JsonParser {
 		return OBJECT_MAPPER.convertValue(object, MAP_TYPE_REF);
 	}
 
-	private static final ObjectMapper OBJECT_MAPPER = JsonMapper.builder()
+	private static final JsonMapper OBJECT_MAPPER = JsonMapper.builder()
 		.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
 		.disable(SerializationFeature.FAIL_ON_EMPTY_BEANS)
-		.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
-		.addModule(new JavaTimeModule())
+		.disable(DateTimeFeature.WRITE_DATES_AS_TIMESTAMPS)
+		.addModule(new SimpleModule())
 		.build();
 
 	private JsonParser() {
 	}
 
 	/**
-	 * Returns a Jackson {@link ObjectMapper} instance tailored for JSON-parsing
-	 * operations for tool calling and structured output.
+	 * Returns a Jackson {@link JsonMapper} instance tailored for JSON-parsing operations
+	 * for tool calling and structured output.
 	 */
-	public static ObjectMapper getObjectMapper() {
+	public static JsonMapper getObjectMapper() {
 		return OBJECT_MAPPER;
 	}
 
@@ -72,7 +71,7 @@ public final class JsonParser {
 		try {
 			return OBJECT_MAPPER.readValue(json, type);
 		}
-		catch (JsonProcessingException ex) {
+		catch (JacksonException ex) {
 			throw new IllegalStateException("Conversion from JSON to %s failed".formatted(type.getName()), ex);
 		}
 	}
@@ -87,7 +86,7 @@ public final class JsonParser {
 		try {
 			return OBJECT_MAPPER.readValue(json, OBJECT_MAPPER.constructType(type));
 		}
-		catch (JsonProcessingException ex) {
+		catch (JacksonException ex) {
 			throw new IllegalStateException("Conversion from JSON to %s failed".formatted(type.getTypeName()), ex);
 		}
 	}
@@ -102,7 +101,7 @@ public final class JsonParser {
 		try {
 			return OBJECT_MAPPER.readValue(json, type);
 		}
-		catch (JsonProcessingException ex) {
+		catch (JacksonException ex) {
 			throw new IllegalStateException("Conversion from JSON to %s failed".formatted(type.getType().getTypeName()),
 					ex);
 		}
@@ -116,7 +115,7 @@ public final class JsonParser {
 			OBJECT_MAPPER.readTree(input);
 			return true;
 		}
-		catch (JsonProcessingException e) {
+		catch (JacksonException e) {
 			return false;
 		}
 	}
@@ -131,7 +130,7 @@ public final class JsonParser {
 		try {
 			return OBJECT_MAPPER.writeValueAsString(object);
 		}
-		catch (JsonProcessingException ex) {
+		catch (JacksonException ex) {
 			throw new IllegalStateException("Conversion from Object to JSON failed", ex);
 		}
 	}

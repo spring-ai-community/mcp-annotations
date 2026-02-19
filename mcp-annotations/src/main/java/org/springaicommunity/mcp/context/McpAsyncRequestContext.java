@@ -6,7 +6,6 @@ package org.springaicommunity.mcp.context;
 
 import java.util.function.Consumer;
 
-import com.fasterxml.jackson.core.type.TypeReference;
 import io.modelcontextprotocol.server.McpAsyncServerExchange;
 import io.modelcontextprotocol.spec.McpSchema.CreateMessageRequest;
 import io.modelcontextprotocol.spec.McpSchema.CreateMessageResult;
@@ -15,6 +14,7 @@ import io.modelcontextprotocol.spec.McpSchema.ElicitResult;
 import io.modelcontextprotocol.spec.McpSchema.ListRootsResult;
 import io.modelcontextprotocol.spec.McpSchema.ProgressNotification;
 import reactor.core.publisher.Mono;
+import tools.jackson.core.type.TypeReference;
 
 /**
  * Async (Reactor) version of McpSyncRequestContext that returns Mono of value types.

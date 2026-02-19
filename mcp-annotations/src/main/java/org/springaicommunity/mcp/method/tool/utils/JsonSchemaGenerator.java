@@ -31,7 +31,7 @@ import org.springaicommunity.mcp.context.McpAsyncRequestContext;
 import org.springaicommunity.mcp.context.McpSyncRequestContext;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyDescription;
-import com.fasterxml.jackson.databind.node.ObjectNode;
+
 import com.github.victools.jsonschema.generator.Option;
 import com.github.victools.jsonschema.generator.OptionPreset;
 import com.github.victools.jsonschema.generator.SchemaGenerator;
@@ -50,7 +50,7 @@ import io.modelcontextprotocol.util.Assert;
 import io.modelcontextprotocol.util.Utils;
 import io.swagger.v3.oas.annotations.media.Schema;
 import reactor.util.annotation.Nullable;
-
+import tools.jackson.databind.node.ObjectNode;
 import com.github.victools.jsonschema.generator.Module;
 
 public class JsonSchemaGenerator {
