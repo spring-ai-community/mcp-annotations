@@ -2,7 +2,8 @@ name: Publish Snapshot
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "main", "1.0.x" ]
+  workflow_dispatch:
 
 jobs:
   build:
