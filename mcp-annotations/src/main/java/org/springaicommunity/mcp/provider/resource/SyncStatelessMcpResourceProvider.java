@@ -143,13 +143,14 @@ public class SyncStatelessMcpResourceProvider {
 					var name = getName(mcpResourceMethod, resourceAnnotation);
 					var description = resourceAnnotation.description();
 					var mimeType = resourceAnnotation.mimeType();
+					var meta = MetaUtils.getMeta(resourceAnnotation.metaProvider());
 
 					var mcpResourceTemplate = McpSchema.ResourceTemplate.builder()
 						.uriTemplate(uri)
 						.name(name)
 						.description(description)
 						.mimeType(mimeType)
-						.meta(parseMeta(resourceAnnotation.meta()))
+						.meta(meta)
 						.build();
 
 					BiFunction<McpTransportContext, ReadResourceRequest, ReadResourceResult> methodCallback = SyncStatelessMcpResourceMethodCallback

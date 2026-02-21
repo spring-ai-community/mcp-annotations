@@ -246,11 +246,6 @@ public class AsyncStatelessMcpResourceMethodCallbackTests {
 			}
 
 			@Override
-			public String meta() {
-				return "";
-			}
-
-			@Override
 			public McpAnnotations annotations() {
 				return new McpAnnotations() {
 					@Override
@@ -597,11 +592,6 @@ public class AsyncStatelessMcpResourceMethodCallbackTests {
 
 			@Override
 			public String mimeType() {
-				return "";
-			}
-
-			@Override
-			public String meta() {
 				return "";
 			}
 

@@ -228,11 +228,6 @@ public class SyncStatelessMcpResourceMethodCallbackTests {
 			}
 
 			@Override
-			public String meta() {
-				return "";
-			}
-
-			@Override
 			public McpAnnotations annotations() {
 				return new McpAnnotations() {
 					@Override
@@ -647,11 +642,6 @@ public class SyncStatelessMcpResourceMethodCallbackTests {
 			@Override
 			public String mimeType() {
 				return "text/plain";
-			}
-
-			@Override
-			public String meta() {
-				return "";
 			}
 
 			@Override

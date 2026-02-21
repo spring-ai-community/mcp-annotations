@@ -54,12 +54,6 @@ public @interface McpResource {
 	String mimeType() default "text/plain";
 
 	/**
-	 * Optional JSON string representing the _meta field for this resource. The value is
-	 * parsed as a JSON object and passed to the Resource builder's meta method.
-	 */
-	String meta() default "";
-
-	/**
 	 * Optional annotations for the client. Note: The default annotations value is
 	 * ignored.
 	 */

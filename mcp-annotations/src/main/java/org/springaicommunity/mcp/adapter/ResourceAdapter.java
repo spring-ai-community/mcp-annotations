@@ -8,6 +8,7 @@ import java.util.Map;
 
 import io.modelcontextprotocol.spec.McpSchema;
 import io.modelcontextprotocol.util.Utils;
+import org.springaicommunity.mcp.MetaUtils;
 import org.springaicommunity.mcp.annotation.McpResource;
 import org.springaicommunity.mcp.method.tool.utils.JsonParser;
 
@@ -25,6 +26,7 @@ public class ResourceAdapter {
 		if (name == null || name.isEmpty()) {
 			name = "resource"; // Default name when not specified
 		}
+		var meta = MetaUtils.getMeta(mcpResourceAnnotation.metaProvider());
 
 		var resourceBuilder = McpSchema.Resource.builder()
 			.uri(mcpResourceAnnotation.uri())
@@ -32,7 +34,7 @@ public class ResourceAdapter {
 			.title(mcpResourceAnnotation.title())
 			.description(mcpResourceAnnotation.description())
 			.mimeType(mcpResourceAnnotation.mimeType())
-			.meta(parseMeta(mcpResourceAnnotation.meta()));
+			.meta(meta);
 
 		// Only set annotations if not default value is provided
 		// This is a workaround since Java annotations do not support null default values
@@ -53,12 +55,14 @@ public class ResourceAdapter {
 		if (name == null || name.isEmpty()) {
 			name = "resource"; // Default name when not specified
 		}
+		var meta = MetaUtils.getMeta(mcpResource.metaProvider());
+
 		return McpSchema.ResourceTemplate.builder()
 			.uriTemplate(mcpResource.uri())
 			.name(name)
 			.description(mcpResource.description())
 			.mimeType(mcpResource.mimeType())
-			.meta(parseMeta(mcpResource.meta()))
+			.meta(meta)
 			.build();
 	}
 
