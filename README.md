@@ -895,6 +895,63 @@ public List<String> smartComplete(
 
 This feature enables context-aware MCP operations where the behavior can be customized based on client-provided metadata such as user identity, preferences, session information, or any other contextual data.
 
+#### metaProvider (_meta) Support
+
+The `@McpTool`, `@McpPrompt`, and `@McpResource` annotations support a `metaProvider` attribute that allows attaching arbitrary `_meta` data to MCP tool, prompt, and resource declarations. This metadata is propagated to both the declarations and to resource content in `ReadResourceResult`.
+
+To use this feature, implement the `MetaProvider` interface and reference the class in the annotation:
+
+```java
+class MyMetaProvider implements MetaProvider {
+    @Override
+    public Map<String, Object> getMeta() {
+        return Map.of(
+            "openai/widgetPrefersBorder", true,
+            "openai/widgetDomain", "https://chatgpt.com"
+        );
+    }
+}
+```
+
+**Tool with _meta:**
+```java
+@McpTool(name = "my-tool",
+         description = "A tool with metadata",
+         metaProvider = MyMetaProvider.class)
+public String myTool(@McpToolParam(description = "Input", required = true) String input) {
+    return "Processed: " + input;
+}
+```
+
+**Prompt with _meta:**
+```java
+@McpPrompt(name = "my-prompt",
+           description = "A prompt with metadata",
+           metaProvider = MyMetaProvider.class)
+public GetPromptResult myPrompt(
+        @McpArg(name = "topic", required = true) String topic) {
+    return new GetPromptResult("My Prompt",
+        List.of(new PromptMessage(Role.ASSISTANT, new TextContent("About: " + topic))));
+}
+```
+
+**Resource with _meta:**
+```java
+@McpResource(uri = "data://{id}",
+             name = "My Resource",
+             description = "A resource with metadata",
+             metaProvider = MyMetaProvider.class)
+public String getData(String id) {
+    return "Data for: " + id;
+}
+```
+
+**MetaProvider behavior:**
+- **Default**: `DefaultMetaProvider.class` — returns `null`, meaning no `_meta` is appended to declarations
+- **Custom**: Implement `MetaProvider` and return a `Map<String, Object>` with the desired key-value pairs
+- The provider must have a public no-arg constructor (it is instantiated via reflection)
+- Metadata is propagated to both the MCP declaration and to resource content in `ReadResourceResult`
+
 #### McpRequestContext Support
 
 The library provides unified request context interfaces (`McpSyncRequestContext` and `McpAsyncRequestContext`) that offer a higher-level abstraction over the underlying MCP infrastructure. These context objects provide convenient access to:
@@ -2275,6 +2332,7 @@ Override `AbstractMcpToolProvider#doGetToolCallException()` to customize the exc
 - **Sampling support** - Handle sampling requests from MCP servers
 - **Progress notification support** - Handle progress notifications for long-running operations
 - **Tool list changed support** - Handle tool list change notifications from MCP servers when tools are dynamically added, removed, or modified
+- **_meta support via metaProvider** - Attach arbitrary `_meta` data to tool, prompt, and resource declarations using a pluggable `MetaProvider` interface on `@McpTool`, `@McpPrompt`, and `@McpResource`
 
 ## Requirements
 

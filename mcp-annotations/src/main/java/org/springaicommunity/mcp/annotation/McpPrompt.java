@@ -17,6 +17,8 @@ import java.lang.annotation.Target;
  * Marks a method as a MCP Prompt.
  *
  * @author Christian Tzolov
+ * @author Vadzim Shurmialiou
+ * @author Craig Walls
  */
 @Target({ ElementType.METHOD, ElementType.ANNOTATION_TYPE })
 @Retention(RetentionPolicy.RUNTIME)

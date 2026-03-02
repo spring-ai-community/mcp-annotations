@@ -41,6 +41,8 @@ import org.springaicommunity.mcp.method.tool.utils.JsonSchemaGenerator;
 /**
  * @author Christian Tzolov
  * @author Alexandros Pappas
+ * @author Vadzim Shurmialiou
+ * @author Craig Walls
  */
 public class SyncMcpToolProvider extends AbstractMcpToolProvider {
 

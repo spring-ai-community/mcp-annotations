@@ -49,6 +49,8 @@ import java.util.stream.Stream;
  *
  * @author Christian Tzolov
  * @author Alexandros Pappas
+ * @author Vadzim Shurmialiou
+ * @author Craig Walls
  */
 public class AsyncMcpResourceProvider {
 

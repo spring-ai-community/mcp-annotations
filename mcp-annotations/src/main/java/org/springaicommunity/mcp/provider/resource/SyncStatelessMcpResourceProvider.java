@@ -48,6 +48,8 @@ import org.springaicommunity.mcp.method.tool.utils.JsonParser;
  *
  * @author Christian Tzolov
  * @author Alexandros Pappas
+ * @author Vadzim Shurmialiou
+ * @author Craig Walls
  */
 public class SyncStatelessMcpResourceProvider {
 

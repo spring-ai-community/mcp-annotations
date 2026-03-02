@@ -18,6 +18,8 @@ import io.modelcontextprotocol.spec.McpSchema.ReadResourceResult;
  *
  * @author Christian Tzolov
  * @author Alexandros Pappas
+ * @author Vadzim Shurmialiou
+ * @author Craig Walls
  */
 public interface McpReadResourceResultConverter {
 

@@ -21,6 +21,9 @@ import org.springaicommunity.mcp.context.MetaProvider;
  * {@link IllegalArgumentException IllegalArgumentExceptions}. This class is stateless and
  * not intended to be instantiated.
  * </p>
+ *
+ * @author Vadzim Shurmialiou
+ * @author Craig Walls
  */
 public final class MetaUtils {
 

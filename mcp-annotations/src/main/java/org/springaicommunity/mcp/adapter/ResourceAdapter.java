@@ -4,17 +4,21 @@
 package org.springaicommunity.mcp.adapter;
 
 import java.util.List;
-import java.util.Map;
 
 import io.modelcontextprotocol.spec.McpSchema;
-import io.modelcontextprotocol.util.Utils;
 import org.springaicommunity.mcp.MetaUtils;
 import org.springaicommunity.mcp.annotation.McpResource;
-import org.springaicommunity.mcp.method.tool.utils.JsonParser;
 
 /**
+ * Utility class that converts {@link McpResource} annotations into MCP schema objects.
+ * Provides factory methods to build {@link McpSchema.Resource} and
+ * {@link McpSchema.ResourceTemplate} instances from annotation metadata, including URI,
+ * name, description, MIME type, annotations, and optional {@code _meta} fields.
+ *
  * @author Christian Tzolov
  * @author Alexandros Pappas
+ * @author Vadzim Shurmialiou
+ * @author Craig Walls
  */
 public class ResourceAdapter {
 
@@ -64,14 +68,6 @@ public class ResourceAdapter {
 			.mimeType(mcpResource.mimeType())
 			.meta(meta)
 			.build();
-	}
-
-	@SuppressWarnings("unchecked")
-	private static Map<String, Object> parseMeta(String metaJson) {
-		if (!Utils.hasText(metaJson)) {
-			return null;
-		}
-		return JsonParser.fromJson(metaJson, Map.class);
 	}
 
 }
