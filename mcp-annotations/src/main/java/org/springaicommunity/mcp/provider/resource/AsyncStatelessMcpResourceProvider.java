@@ -49,6 +49,8 @@ import reactor.core.publisher.Mono;
  *
  * @author Christian Tzolov
  * @author Alexandros Pappas
+ * @author Vadzim Shurmialiou
+ * @author Craig Walls
  */
 public class AsyncStatelessMcpResourceProvider {
 

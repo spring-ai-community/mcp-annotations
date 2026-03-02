@@ -19,6 +19,8 @@ import org.springaicommunity.mcp.annotation.McpPrompt;
  * Utility class for adapting between McpPrompt annotations and McpSchema.Prompt objects.
  *
  * @author Christian Tzolov
+ * @author Vadzim Shurmialiou
+ * @author Craig Walls
  */
 public class PromptAdapter {
 

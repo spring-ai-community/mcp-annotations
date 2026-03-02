@@ -3,19 +3,20 @@
  */
 package org.springaicommunity.mcp.annotation;
 
-import org.springaicommunity.mcp.context.DefaultMetaProvider;
-import org.springaicommunity.mcp.context.MetaProvider;
-
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
-import java.util.Map;
+
+import org.springaicommunity.mcp.context.DefaultMetaProvider;
+import org.springaicommunity.mcp.context.MetaProvider;
 
 /**
  * @author Christian Tzolov
  * @author Alexandros Pappas
+ * @author Vadzim Shurmialiou
+ * @author Craig Walls
  */
 @Target({ ElementType.METHOD, ElementType.ANNOTATION_TYPE })
 @Retention(RetentionPolicy.RUNTIME)

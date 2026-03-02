@@ -19,6 +19,8 @@ import org.springaicommunity.mcp.context.MetaProvider;
  *
  * @author Christian Tzolov
  * @author Alexandros Pappas
+ * @author Vadzim Shurmialiou
+ * @author Craig Walls
  */
 @Target({ ElementType.METHOD, ElementType.ANNOTATION_TYPE })
 @Retention(RetentionPolicy.RUNTIME)

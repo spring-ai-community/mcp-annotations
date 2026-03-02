@@ -23,6 +23,8 @@ import io.modelcontextprotocol.spec.McpSchema.TextResourceContents;
  *
  * @author Christian Tzolov
  * @author Alexandros Pappas
+ * @author Vadzim Shurmialiou
+ * @author Craig Walls
  */
 public class DefaultMcpReadResourceResultConverter implements McpReadResourceResultConverter {
 

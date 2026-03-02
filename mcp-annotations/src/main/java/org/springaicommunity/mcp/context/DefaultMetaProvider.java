@@ -15,6 +15,9 @@ import java.util.Map;
  * Use this when your tool, prompt, or resource does not need to expose any meta
  * information or you want to keep responses minimal by default.
  * </p>
+ *
+ * @author Vadzim Shurmialiou
+ * @author Craig Walls
  */
 public class DefaultMetaProvider implements MetaProvider {
 
