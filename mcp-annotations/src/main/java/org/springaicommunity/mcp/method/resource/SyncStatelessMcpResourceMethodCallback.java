@@ -30,6 +30,8 @@ import io.modelcontextprotocol.spec.McpSchema.ResourceContents;
  *
  * @author Christian Tzolov
  * @author Alexandros Pappas
+ * @author Vadzim Shurmialiou
+ * @author Craig Walls
  */
 public final class SyncStatelessMcpResourceMethodCallback extends AbstractMcpResourceMethodCallback
 		implements BiFunction<McpTransportContext, ReadResourceRequest, ReadResourceResult> {

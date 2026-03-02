@@ -31,6 +31,8 @@ import reactor.core.publisher.Mono;
  *
  * @author Christian Tzolov
  * @author Alexandros Pappas
+ * @author Vadzim Shurmialiou
+ * @author Craig Walls
  */
 public final class AsyncMcpResourceMethodCallback extends AbstractMcpResourceMethodCallback
 		implements BiFunction<McpAsyncServerExchange, ReadResourceRequest, Mono<ReadResourceResult>> {

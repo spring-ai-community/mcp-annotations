@@ -36,6 +36,8 @@ import io.modelcontextprotocol.util.McpUriTemplateManagerFactory;
  *
  * @author Christian Tzolov
  * @author Alexandros Pappas
+ * @author Vadzim Shurmialiou
+ * @author Craig Walls
  */
 public abstract class AbstractMcpResourceMethodCallback {
 

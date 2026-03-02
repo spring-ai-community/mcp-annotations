@@ -5,6 +5,9 @@ import java.util.Map;
 /**
  * Common interface for classes that provide metadata for the "_meta" field. This metadata
  * is used in tool, prompt, and resource declarations.
+ *
+ * @author Vadzim Shurmialiou
+ * @author Craig Walls
  */
 public interface MetaProvider {
 
