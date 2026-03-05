@@ -147,6 +147,7 @@ The library automatically filters methods based on the server type and method ch
 - **`@McpResource`** - Annotates methods that provide access to resources
 - **`@McpTool`** - Annotates methods that implement MCP tools with automatic JSON schema generation
   - **`@McpToolParam`** - Annotates tool method parameters with descriptions and requirement specifications
+  - **`@McpToolBody`** - Annotates tool method parameter which is a business object
 
 #### Special Parameters and Annotations
 - **`McpSyncRequestContext`** - Special parameter type for synchronous operations that provides a unified interface for accessing MCP request context, including the original request, server exchange (for stateful operations), transport context (for stateless operations), and convenient methods for logging, progress, sampling, and elicitation. This parameter is automatically injected and excluded from JSON schema generation. **Supported in Complete, Prompt, Resource, and Tool methods.**
@@ -452,10 +453,8 @@ public class CalculatorToolProvider {
                  idempotentHint = true
              ))
     public AreaResult calculateRectangleArea(
-            @McpToolParam(description = "Width of the rectangle", required = true) double width,
-            @McpToolParam(description = "Height of the rectangle", required = true) double height) {
-        
-        double area = width * height;
+            @McpToolBody CalculateAreaRequest toolBody) {
+        double area = toolBody.getWidth() * toolBody.getHeight();
         return new AreaResult(area, "square units");
     }
 
@@ -507,6 +506,29 @@ public class CalculatorToolProvider {
         Map<String, Object> additionalArgs = request.arguments();
         
         return actionResult + " with " + (additionalArgs.size() - 1) + " additional parameters";
+    }
+
+    public static class CalculateAreaRequest {
+        @McpToolParam(description = "Width of the rectangle", required = true)
+        private double width;
+        @McpToolParam(description = "Height of the rectangle", required = true) 
+        private double height;
+
+        public double getWidth() {
+            return width;
+        }
+
+        public void setWidth(double width) {
+            this.width = width;
+        }
+
+        public double getHeight() {
+            return height;
+        }
+
+        public void setHeight(double height) {
+            this.height = height;
+        }
     }
 
     public static class AreaResult {
