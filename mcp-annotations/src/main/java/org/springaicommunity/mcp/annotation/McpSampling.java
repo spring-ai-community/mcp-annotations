@@ -28,7 +28,7 @@ import java.lang.annotation.Target;
  *
  * <p>
  * Example usage: <pre>{@code
- * &#64;McpSampling(clients = "test-client")
+ * @McpSampling(clients = "test-client")
  * public CreateMessageResult handleSamplingRequest(CreateMessageRequest request) {
  *     // Process the request and return a result
  *     return CreateMessageResult.builder()
@@ -36,7 +36,7 @@ import java.lang.annotation.Target;
  *         .build();
  * }
  *
- * &#64;McpSampling(clients = "test-client")
+ * @McpSampling(clients = "test-client")
  * public Mono<CreateMessageResult> handleAsyncSamplingRequest(CreateMessageRequest request) {
  *     // Process the request asynchronously and return a result
  *     return Mono.just(CreateMessageResult.builder()
