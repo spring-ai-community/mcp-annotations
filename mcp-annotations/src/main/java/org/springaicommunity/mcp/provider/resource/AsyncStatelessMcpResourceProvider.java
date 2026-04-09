@@ -91,6 +91,7 @@ public class AsyncStatelessMcpResourceProvider {
 					}
 
 					var name = getName(mcpResourceMethod, resourceAnnotation);
+					var title = resourceAnnotation.title();
 					var description = resourceAnnotation.description();
 					var mimeType = resourceAnnotation.mimeType();
 					var meta = MetaUtils.getMeta(resourceAnnotation.metaProvider());
@@ -98,6 +99,7 @@ public class AsyncStatelessMcpResourceProvider {
 					var mcpResource = McpSchema.Resource.builder()
 						.uri(uri)
 						.name(name)
+						.title(title)
 						.description(description)
 						.mimeType(mimeType)
 						.meta(meta)
@@ -144,6 +146,7 @@ public class AsyncStatelessMcpResourceProvider {
 					}
 
 					var name = getName(mcpResourceMethod, resourceAnnotation);
+					var title = resourceAnnotation.title();
 					var description = resourceAnnotation.description();
 					var mimeType = resourceAnnotation.mimeType();
 					var meta = MetaUtils.getMeta(resourceAnnotation.metaProvider());
@@ -151,6 +154,7 @@ public class AsyncStatelessMcpResourceProvider {
 					var mcpResourceTemplate = McpSchema.ResourceTemplate.builder()
 						.uriTemplate(uri)
 						.name(name)
+						.title(title)
 						.description(description)
 						.mimeType(mimeType)
 						.meta(meta)
