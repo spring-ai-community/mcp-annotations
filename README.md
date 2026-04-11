@@ -1,3 +1,10 @@
+> [!IMPORTANT]
+> This project has **graduated** and moved into **Spring AI 2.x+**.
+> Please refer to the official repository for the latest updates:
+> 👉 https://github.com/spring-projects/spring-ai/tree/main/mcp/mcp-annotations
+>
+> This repository is no longer actively maintained.
+
 # MCP Annotations
 
 📖 **[Documentation](https://springaicommunity.mintlify.app/projects/incubating/mcp-annotations)**
