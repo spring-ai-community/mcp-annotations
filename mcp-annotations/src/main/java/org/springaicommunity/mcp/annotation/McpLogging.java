@@ -29,14 +29,12 @@ import java.lang.annotation.Target;
  *
  * <p>
  * Example usage: <pre>{@code
- * &#64;McpLogging
+ * @McpLogging
  * public void handleLoggingMessage(LoggingMessageNotification notification) {
  *     // Handle the notification
  * }
  *
- *
-
-&#64;McpLogging
+ * @McpLogging
  * public void handleLoggingMessageWithParams(LoggingLevel level, String logger, String data) {
  *     // Handle the logging message
  * }
