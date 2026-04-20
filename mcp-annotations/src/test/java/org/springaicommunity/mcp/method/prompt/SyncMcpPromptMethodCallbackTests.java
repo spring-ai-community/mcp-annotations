@@ -14,6 +14,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.BiFunction;
 
+import io.modelcontextprotocol.spec.McpSchema;
 import org.junit.jupiter.api.Test;
 import org.springaicommunity.mcp.annotation.McpArg;
 import org.springaicommunity.mcp.annotation.McpMeta;
@@ -44,7 +45,10 @@ public class SyncMcpPromptMethodCallbackTests {
 
 		@McpPrompt(name = "failing-prompt", description = "A prompt that throws an exception")
 		public GetPromptResult getFailingPrompt(GetPromptRequest request) {
-			throw new RuntimeException("Test exception");
+			if (request.arguments().get("type").toString().equals("runTimeException")) {
+				throw new RuntimeException("Test exception");
+			}
+			throw McpError.builder(McpSchema.ErrorCodes.INTERNAL_ERROR).message("Internal error").build();
 		}
 
 		@McpPrompt(name = "greeting", description = "A simple greeting prompt")
@@ -215,14 +219,27 @@ public class SyncMcpPromptMethodCallbackTests {
 			.build();
 
 		McpSyncServerExchange exchange = mock(McpSyncServerExchange.class);
-		Map<String, Object> args = new HashMap<>();
-		args.put("name", "John");
-		GetPromptRequest request = new GetPromptRequest("failing-prompt", args);
+		GetPromptRequest runTimeExceptionRequest = new GetPromptRequest("failing-prompt",
+				Map.of("type", "runTimeException"));
 
 		// The new error handling should throw McpError instead of
 		// McpPromptMethodException
-		assertThatThrownBy(() -> callback.apply(exchange, request)).isInstanceOf(McpError.class)
-			.hasMessageContaining("Error invoking prompt method");
+		assertThatThrownBy(() -> callback.apply(exchange, runTimeExceptionRequest)).isInstanceOf(McpError.class)
+			.satisfies(t -> {
+				McpError e = (McpError) t;
+				assertThat(e.getJsonRpcError().code()).isEqualTo(McpSchema.ErrorCodes.INVALID_PARAMS);
+				assertThat(e.getJsonRpcError().message()).contains("Error invoking prompt method");
+			});
+
+		// McpError should be preserved
+		GetPromptRequest mcpErrorRequest = new GetPromptRequest("failing-prompt", Map.of("type", "mcpError"));
+
+		assertThatThrownBy(() -> callback.apply(exchange, mcpErrorRequest)).isInstanceOf(McpError.class)
+			.satisfies(t -> {
+				McpError e = (McpError) t;
+				assertThat(e.getJsonRpcError().code()).isEqualTo(McpSchema.ErrorCodes.INTERNAL_ERROR);
+				assertThat(e.getJsonRpcError().message()).isEqualTo("Internal error");
+			});
 	}
 
 	@Test
