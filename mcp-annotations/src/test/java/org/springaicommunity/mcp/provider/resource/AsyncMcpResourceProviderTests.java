@@ -462,6 +462,50 @@ public class AsyncMcpResourceProviderTests {
 	}
 
 	@Test
+	void testGetResourceSpecificationsWithTitle() {
+		class TitleResource {
+
+			@McpResource(uri = "title://resource", name = "title-resource", title = "My Resource Title",
+					description = "Resource with title")
+			public Mono<String> titleResource() {
+				return Mono.just("Title resource content");
+			}
+
+		}
+
+		TitleResource resourceObject = new TitleResource();
+		AsyncMcpResourceProvider provider = new AsyncMcpResourceProvider(List.of(resourceObject));
+
+		List<AsyncResourceSpecification> resourceSpecs = provider.getResourceSpecifications();
+
+		assertThat(resourceSpecs).hasSize(1);
+		assertThat(resourceSpecs.get(0).resource().title()).isEqualTo("My Resource Title");
+		assertThat(resourceSpecs.get(0).resource().name()).isEqualTo("title-resource");
+	}
+
+	@Test
+	void testGetResourceTemplateSpecificationsWithTitle() {
+		class TitleTemplateResource {
+
+			@McpResource(uri = "title://resource/{id}", name = "title-template", title = "My Template Title",
+					description = "Template with title")
+			public Mono<String> titleTemplateResource(String id) {
+				return Mono.just("Template content for: " + id);
+			}
+
+		}
+
+		TitleTemplateResource resourceObject = new TitleTemplateResource();
+		AsyncMcpResourceProvider provider = new AsyncMcpResourceProvider(List.of(resourceObject));
+
+		var resourceTemplateSpecs = provider.getResourceTemplateSpecifications();
+
+		assertThat(resourceTemplateSpecs).hasSize(1);
+		assertThat(resourceTemplateSpecs.get(0).resourceTemplate().title()).isEqualTo("My Template Title");
+		assertThat(resourceTemplateSpecs.get(0).resourceTemplate().name()).isEqualTo("title-template");
+	}
+
+	@Test
 	void testGetResourceSpecificationsWithSyncMethodReturningMono() {
 		class SyncMethodReturningMono {
 
