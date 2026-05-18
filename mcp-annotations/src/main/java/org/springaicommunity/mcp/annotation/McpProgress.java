@@ -16,7 +16,7 @@ import java.lang.annotation.Target;
  *
  * <p>
  * Methods annotated with this annotation can be used to consume progress messages from
- * MCP servers. The methods takes a single parameter of type {@code ProgressNotification}
+ * MCP servers. The methods take a single parameter of type {@code ProgressNotification}
  *
  *
  * <p>
