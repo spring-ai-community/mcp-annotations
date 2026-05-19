@@ -64,6 +64,7 @@ public class ResourceAdapter {
 		return McpSchema.ResourceTemplate.builder()
 			.uriTemplate(mcpResource.uri())
 			.name(name)
+			.title(mcpResource.title())
 			.description(mcpResource.description())
 			.mimeType(mcpResource.mimeType())
 			.meta(meta)
